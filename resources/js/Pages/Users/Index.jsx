@@ -1,5 +1,5 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import SidebarLayout from '@/Layouts/SidebarLayout';
 import {
     Container,
     Paper,
@@ -68,7 +68,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
     };
 
     return (
-        <AuthenticatedLayout header={<Typography variant="h6">Users</Typography>}>
+        <SidebarLayout header={<Typography variant="h6">Users</Typography>}>
             <Head title="Users" />
 
             <Container sx={{ py: 4 }}>
@@ -181,6 +181,6 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                     </Paper>
                 </Stack>
             </Container>
-        </AuthenticatedLayout>
+        </SidebarLayout>
     );
 }

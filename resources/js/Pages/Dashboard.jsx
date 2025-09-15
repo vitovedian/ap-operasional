@@ -1,12 +1,10 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Head } from '@inertiajs/react';
 import { Container, Paper, Typography, Button, Stack } from '@mui/material';
 
 export default function Dashboard() {
     return (
-        <AuthenticatedLayout
-            header={<Typography variant="h6">Dashboard</Typography>}
-        >
+        <SidebarLayout header={<Typography variant="h6">Dashboard</Typography>}>
             <Head title="Dashboard" />
 
             <Container sx={{ py: 6 }}>
@@ -17,6 +15,6 @@ export default function Dashboard() {
                     </Stack>
                 </Paper>
             </Container>
-        </AuthenticatedLayout>
+        </SidebarLayout>
     );
 }
