@@ -6,6 +6,9 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,13 +62,14 @@ class UserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'string', 'min:8'],
+            // Treat empty string as "no change"; only validate if provided and not empty
+            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
-        if (!empty($validated['password'])) {
-            $user->password = bcrypt($validated['password']);
+        if ($request->filled('password')) {
+            $user->password = Hash::make($validated['password']);
         }
         $user->save();
 
@@ -78,4 +82,3 @@ class UserController extends Controller
         return back()->with('success', 'User deleted');
     }
 }
-
