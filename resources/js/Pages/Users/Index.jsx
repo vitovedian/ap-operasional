@@ -16,12 +16,19 @@ import {
 import { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 export default function UsersIndex({ users, filters, roles = [], currentUserId }) {
     const { flash } = usePage().props;
     const [search, setSearch] = useState(filters?.search || '');
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [openCreate, setOpenCreate] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
 
     const onSearch = (e) => {
         e.preventDefault();
@@ -29,11 +36,15 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
     };
 
     const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
+    const [editForm, setEditForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
 
     const submitCreate = (e) => {
         e.preventDefault();
         router.post(route('users.store'), form, {
-            onSuccess: () => setForm({ name: '', email: '', password: '' }),
+            onSuccess: () => {
+                setForm({ name: '', email: '', password: '', role: roles[0] || 'User' });
+                setOpenCreate(false);
+            },
         });
     };
 
@@ -71,11 +82,41 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
         }
     };
 
+    const openEditDialog = (u) => {
+        setEditingUser(u);
+        setEditForm({
+            name: u.name,
+            email: u.email,
+            password: '',
+            role: u.role || roles[0] || '',
+        });
+        setOpenEdit(true);
+    };
+
+    const submitUpdate = (e) => {
+        e.preventDefault();
+        if (!editingUser) return;
+        const payload = {
+            name: editForm.name,
+            email: editForm.email,
+        };
+        if (editForm.password && editForm.password.length > 0) {
+            payload.password = editForm.password;
+        }
+        if (editForm.role && editForm.role !== '') {
+            payload.role = editForm.role;
+        }
+        router.put(route('users.update', editingUser.id), payload, {
+            preserveScroll: true,
+            onSuccess: () => setOpenEdit(false),
+        });
+    };
+
     // Simple mobile pagination helpers
     const firstLink = users.links?.[0] || {};
     const lastLink = users.links?.[users.links.length - 1] || {};
 
-    return (
+    return (<>
         <SidebarLayout header={<Typography variant="h6">Users</Typography>}>
             <Head title="Users" />
 
@@ -102,66 +143,23 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                         </form>
                     </Paper>
 
-                    <Paper sx={{ p: 2 }}>
-                        <Typography variant="subtitle1" sx={{ mb: 2 }}>Tambah User</Typography>
-                        <form onSubmit={submitCreate}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <TextField required size="small" label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth />
-                                <TextField required size="small" label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
-                                <TextField required size="small" label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} fullWidth />
-                                <TextField
-                                    select
-                                    size="small"
-                                    label="Role"
-                                    value={form.role}
-                                    onChange={(e) => setForm({ ...form, role: e.target.value })}
-                                    SelectProps={{ native: true }}
-                                    fullWidth
-                                >
-                                    {roles.map((r) => (
-                                        <option key={r} value={r}>{r}</option>
-                                    ))}
-                                </TextField>
-                                <Button type="submit" variant="contained" sx={{ width: { xs: '100%', sm: 'auto' } }}>Simpan</Button>
-                            </Stack>
-                        </form>
+                    <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1">Manajemen Pengguna</Typography>
+                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                            Tambah User
+                        </Button>
                     </Paper>
 
                     {isMobile ? (
                         <>
                             {users.data.map((u) => (
                                 <Paper key={u.id} sx={{ p: 2 }}>
-                                    <Stack spacing={1}>
-                                        <Typography variant="subtitle2">ID: {u.id}</Typography>
-                                        <TextField
-                                            size="small"
-                                            label="Nama"
-                                            defaultValue={u.name}
-                                            onChange={(e) => onEditChange(u.id, 'name', e.target.value)}
-                                            fullWidth
-                                        />
-                                        <TextField
-                                            size="small"
-                                            label="Email"
-                                            defaultValue={u.email}
-                                            onChange={(e) => onEditChange(u.id, 'email', e.target.value)}
-                                            fullWidth
-                                        />
-                                        <TextField
-                                            select
-                                            size="small"
-                                            label="Role"
-                                            defaultValue={u.role || roles[0] || ''}
-                                            onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
-                                            SelectProps={{ native: true }}
-                                            fullWidth
-                                        >
-                                            {roles.map((r) => (
-                                                <option key={r} value={r}>{r}</option>
-                                            ))}
-                                        </TextField>
-                                        <Stack direction="row" spacing={1}>
-                                            <Button fullWidth size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="subtitle2">{u.name}</Typography>
+                                        <Typography variant="body2" color="text.secondary">{u.email}</Typography>
+                                        <Typography variant="body2">Role: {u.role || '-'}</Typography>
+                                        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                            <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
                                             <Button fullWidth size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
                                         </Stack>
                                     </Stack>
@@ -181,7 +179,6 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell>ID</TableCell>
                                         <TableCell>Nama</TableCell>
                                         <TableCell>Email</TableCell>
                                         <TableCell>Role</TableCell>
@@ -191,37 +188,12 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                                 <TableBody>
                                     {users.data.map((u) => (
                                         <TableRow key={u.id}>
-                                            <TableCell>{u.id}</TableCell>
-                                            <TableCell>
-                                                <TextField
-                                                    size="small"
-                                                    defaultValue={u.name}
-                                                    onChange={(e) => onEditChange(u.id, 'name', e.target.value)}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <TextField
-                                                    size="small"
-                                                    defaultValue={u.email}
-                                                    onChange={(e) => onEditChange(u.id, 'email', e.target.value)}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <TextField
-                                                    select
-                                                    size="small"
-                                                    defaultValue={u.role || roles[0] || ''}
-                                                    onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
-                                                    SelectProps={{ native: true }}
-                                                >
-                                                    {roles.map((r) => (
-                                                        <option key={r} value={r}>{r}</option>
-                                                    ))}
-                                                </TextField>
-                                            </TableCell>
+                                            <TableCell>{u.name}</TableCell>
+                                            <TableCell>{u.email}</TableCell>
+                                            <TableCell>{u.role || '-'}</TableCell>
                                             <TableCell>
                                                 <Stack direction="row" spacing={1}>
-                                                    <Button size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
+                                                    <Button size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
                                                     <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
                                                 </Stack>
                                             </TableCell>
@@ -241,6 +213,67 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                     )}
                 </Stack>
             </Container>
+
+            {/* Dialog Tambah User */}
+            <Dialog open={openCreate} onClose={() => setOpenCreate(false)} fullWidth maxWidth="sm">
+                <DialogTitle>Tambah User</DialogTitle>
+                <form onSubmit={submitCreate}>
+                    <DialogContent dividers>
+                        <Stack spacing={2}>
+                            <TextField required size="small" label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth />
+                            <TextField required size="small" label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
+                            <TextField required size="small" label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} fullWidth />
+                            <TextField
+                                select
+                                size="small"
+                                label="Role"
+                                value={form.role}
+                                onChange={(e) => setForm({ ...form, role: e.target.value })}
+                                SelectProps={{ native: true }}
+                                fullWidth
+                            >
+                                {roles.map((r) => (
+                                    <option key={r} value={r}>{r}</option>
+                                ))}
+                            </TextField>
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setOpenCreate(false)}>Batal</Button>
+                        <Button type="submit" variant="contained">Simpan</Button>
+                    </DialogActions>
+                </form>
+            </Dialog>
         </SidebarLayout>
-    );
+        {/* Dialog Edit User */}
+        <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Edit User</DialogTitle>
+            <form onSubmit={submitUpdate}>
+                <DialogContent dividers>
+                    <Stack spacing={2}>
+                        <TextField required size="small" label="Name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} fullWidth />
+                        <TextField required size="small" label="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} fullWidth />
+                        <TextField size="small" label="Password (opsional)" type="password" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} fullWidth />
+                        <TextField
+                            select
+                            size="small"
+                            label="Role"
+                            value={editForm.role}
+                            onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                            SelectProps={{ native: true }}
+                            fullWidth
+                        >
+                            {roles.map((r) => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                        </TextField>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenEdit(false)}>Batal</Button>
+                    <Button type="submit" variant="contained">Simpan</Button>
+                </DialogActions>
+            </form>
+        </Dialog>
+    </>);
 }
