@@ -67,8 +67,8 @@ class UserController extends Controller
             'password' => bcrypt($validated['password']),
         ]);
 
-        // Assign role (default to User if available)
-        $roleName = $validated['role'] ?? Role::query()->where('name', 'User')->value('name');
+        // Assign role (default to Karyawan if available)
+        $roleName = $validated['role'] ?? Role::query()->where('name', 'Karyawan')->value('name');
         if ($roleName) {
             $user->syncRoles([$roleName]);
         }

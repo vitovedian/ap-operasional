@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
         ]);
 
         // Assign default role "User" if available
-        $defaultRole = Role::firstOrCreate(['name' => 'User']);
+        $defaultRole = Role::firstOrCreate(['name' => 'Karyawan']);
         $user->syncRoles([$defaultRole->name]);
 
         event(new Registered($user));

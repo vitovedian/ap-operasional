@@ -17,7 +17,17 @@ class DatabaseSeeder extends Seeder
     {
         // Ensure base roles
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        $userRole = Role::firstOrCreate(['name' => 'User']);
+
+        // Rename legacy role 'User' to 'Karyawan' if exists
+        $legacyUser = Role::where('name', 'User')->first();
+        if ($legacyUser) {
+            $legacyUser->name = 'Karyawan';
+            $legacyUser->save();
+        }
+
+        $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
+        Role::firstOrCreate(['name' => 'Manager Operasional']);
+        Role::firstOrCreate(['name' => 'Manager Keuangan']);
 
         // Create a demo admin if not exists
         $admin = User::firstOrCreate(

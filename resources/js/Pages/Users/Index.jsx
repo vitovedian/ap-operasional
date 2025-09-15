@@ -35,14 +35,14 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
         router.get(route('users.index'), { search }, { preserveState: true, replace: true });
     };
 
-    const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
+    const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'Karyawan' });
     const [editForm, setEditForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
 
     const submitCreate = (e) => {
         e.preventDefault();
         router.post(route('users.store'), form, {
             onSuccess: () => {
-                setForm({ name: '', email: '', password: '', role: roles[0] || 'User' });
+                setForm({ name: '', email: '', password: '', role: roles[0] || 'Karyawan' });
                 setOpenCreate(false);
             },
         });
