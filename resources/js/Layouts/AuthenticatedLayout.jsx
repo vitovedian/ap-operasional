@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
+    const isAdmin = usePage().props.auth.isAdmin;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -30,6 +31,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Dashboard
                                 </NavLink>
+                                {isAdmin && (
+                                    <NavLink
+                                        href={route('users.index')}
+                                        active={route().current('users.*')}
+                                    >
+                                        Users
+                                    </NavLink>
+                                )}
                             </div>
                         </div>
 
@@ -134,6 +143,14 @@ export default function AuthenticatedLayout({ header, children }) {
                         >
                             Dashboard
                         </ResponsiveNavLink>
+                        {isAdmin && (
+                            <ResponsiveNavLink
+                                href={route('users.index')}
+                                active={route().current('users.*')}
+                            >
+                                Users
+                            </ResponsiveNavLink>
+                        )}
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">

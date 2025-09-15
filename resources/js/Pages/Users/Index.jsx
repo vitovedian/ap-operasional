@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 
-export default function UsersIndex({ users, filters }) {
+export default function UsersIndex({ users, filters, roles = [], currentUserId }) {
     const { flash } = usePage().props;
     const [search, setSearch] = useState(filters?.search || '');
 
@@ -24,7 +24,7 @@ export default function UsersIndex({ users, filters }) {
         router.get(route('users.index'), { search }, { preserveState: true, replace: true });
     };
 
-    const [form, setForm] = useState({ name: '', email: '', password: '' });
+    const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
 
     const submitCreate = (e) => {
         e.preventDefault();
@@ -40,8 +40,25 @@ export default function UsersIndex({ users, filters }) {
     };
 
     const onUpdate = (user) => {
-        const payload = editMap[user.id] || { name: user.name, email: user.email, password: '' };
-        router.put(route('users.update', user.id), payload);
+        const current = editMap[user.id] || {};
+
+        // Merge defaults so required fields are always sent
+        const payload = {
+            name: current.name ?? user.name,
+            email: current.email ?? user.email,
+        };
+
+        // Only send password if non-empty
+        if (current.password && current.password.length > 0) {
+            payload.password = current.password;
+        }
+
+        // Only send role when explicitly chosen
+        if (current.role !== undefined && current.role !== '') {
+            payload.role = current.role;
+        }
+
+        router.put(route('users.update', user.id), payload, { preserveScroll: true });
     };
 
     const onDelete = (user) => {
@@ -83,6 +100,18 @@ export default function UsersIndex({ users, filters }) {
                                 <TextField required size="small" label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                                 <TextField required size="small" label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                                 <TextField required size="small" label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                                <TextField
+                                    select
+                                    size="small"
+                                    label="Role"
+                                    value={form.role}
+                                    onChange={(e) => setForm({ ...form, role: e.target.value })}
+                                    SelectProps={{ native: true }}
+                                >
+                                    {roles.map((r) => (
+                                        <option key={r} value={r}>{r}</option>
+                                    ))}
+                                </TextField>
                                 <Button type="submit" variant="contained">Simpan</Button>
                             </Stack>
                         </form>
@@ -95,6 +124,7 @@ export default function UsersIndex({ users, filters }) {
                                     <TableCell>ID</TableCell>
                                     <TableCell>Nama</TableCell>
                                     <TableCell>Email</TableCell>
+                                    <TableCell>Role</TableCell>
                                     <TableCell width={220}>Aksi</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -117,9 +147,23 @@ export default function UsersIndex({ users, filters }) {
                                             />
                                         </TableCell>
                                         <TableCell>
+                                            <TextField
+                                                select
+                                                size="small"
+                                                defaultValue={u.role || ''}
+                                                onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
+                                                SelectProps={{ native: true }}
+                                            >
+                                                <option value=""></option>
+                                                {roles.map((r) => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </TextField>
+                                        </TableCell>
+                                        <TableCell>
                                             <Stack direction="row" spacing={1}>
                                                 <Button size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
-                                                <Button size="small" color="error" variant="outlined" onClick={() => onDelete(u)}>Delete</Button>
+                                                <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
                                             </Stack>
                                         </TableCell>
                                     </TableRow>
@@ -140,4 +184,3 @@ export default function UsersIndex({ users, filters }) {
         </AuthenticatedLayout>
     );
 }
-
