@@ -18,6 +18,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 
 const drawerWidth = 240;
 
@@ -25,6 +26,7 @@ export default function SidebarLayout({ header, children }) {
     const { props } = usePage();
     const user = props.auth.user;
     const isAdmin = props.auth.isAdmin;
+    const isFinanceManager = props.auth.isFinanceManager;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = () => setMobileOpen((v) => !v);
@@ -37,6 +39,23 @@ export default function SidebarLayout({ header, children }) {
             href: route('dashboard'),
             active: isActive('dashboard'),
         },
+        ...(isFinanceManager || isAdmin
+            ? [
+                  {
+                      label: 'Daftar Invoice',
+                      icon: <RequestQuoteIcon />,
+                      href: route('invoices.index'),
+                      active: isActive('invoices.index'),
+                  },
+              ]
+            : [
+                  {
+                      label: 'Pengajuan Invoice',
+                      icon: <RequestQuoteIcon />,
+                      href: route('invoices.create'),
+                      active: isActive('invoices.create'),
+                  },
+              ]),
         ...(isAdmin
             ? [
                   {

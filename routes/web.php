@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InvoiceSubmissionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -31,6 +32,17 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Invoice: List for Finance Manager/Admin; Create for non-Finance roles
+Route::middleware(['auth', 'verified', 'role:Manager Keuangan|Admin'])->group(function () {
+    Route::get('/invoices', [InvoiceSubmissionController::class, 'index'])->name('invoices.index');
+    Route::get('/invoices/{invoice}/download', [InvoiceSubmissionController::class, 'download'])->name('invoices.download');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|Manager Operasional'])->group(function () {
+    Route::get('/invoices/create', [InvoiceSubmissionController::class, 'create'])->name('invoices.create');
+    Route::post('/invoices', [InvoiceSubmissionController::class, 'store'])->name('invoices.store');
 });
 
 require __DIR__.'/auth.php';
