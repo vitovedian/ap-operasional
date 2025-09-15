@@ -49,6 +49,8 @@ export default function SidebarLayout({ header, children }) {
             : []),
     ];
 
+    const onLogout = () => router.post(route('logout'));
+
     const drawer = (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Box sx={{ p: 2 }}>
@@ -72,7 +74,7 @@ export default function SidebarLayout({ header, children }) {
                 <Button startIcon={<AccountCircleIcon />} component={Link} href={route('profile.edit')} sx={{ mr: 1 }}>
                     Profile
                 </Button>
-                <Button startIcon={<LogoutIcon />} component={Link} href={route('logout')} method="post" as="button" color="error">
+                <Button startIcon={<LogoutIcon />} onClick={onLogout} color="error">
                     Logout
                 </Button>
             </Box>
@@ -123,4 +125,3 @@ export default function SidebarLayout({ header, children }) {
         </Box>
     );
 }
-

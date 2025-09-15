@@ -14,10 +14,14 @@ import {
     Stack,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 export default function UsersIndex({ users, filters, roles = [], currentUserId }) {
     const { flash } = usePage().props;
     const [search, setSearch] = useState(filters?.search || '');
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const onSearch = (e) => {
         e.preventDefault();
@@ -67,11 +71,15 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
         }
     };
 
+    // Simple mobile pagination helpers
+    const firstLink = users.links?.[0] || {};
+    const lastLink = users.links?.[users.links.length - 1] || {};
+
     return (
         <SidebarLayout header={<Typography variant="h6">Users</Typography>}>
             <Head title="Users" />
 
-            <Container sx={{ py: 4 }}>
+            <Container sx={{ py: 2 }}>
                 <Stack spacing={3}>
                     {flash?.success && (
                         <Paper sx={{ p: 2 }}>
@@ -81,14 +89,15 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
 
                     <Paper sx={{ p: 2 }}>
                         <form onSubmit={onSearch}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
                                 <TextField
                                     size="small"
                                     label="Search"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
+                                    fullWidth
                                 />
-                                <Button type="submit" variant="outlined">Cari</Button>
+                                <Button type="submit" variant="outlined" sx={{ width: { xs: '100%', sm: 'auto' } }}>Cari</Button>
                             </Stack>
                         </form>
                     </Paper>
@@ -97,9 +106,9 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                         <Typography variant="subtitle1" sx={{ mb: 2 }}>Tambah User</Typography>
                         <form onSubmit={submitCreate}>
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <TextField required size="small" label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                                <TextField required size="small" label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                                <TextField required size="small" label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                                <TextField required size="small" label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} fullWidth />
+                                <TextField required size="small" label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} fullWidth />
+                                <TextField required size="small" label="Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} fullWidth />
                                 <TextField
                                     select
                                     size="small"
@@ -107,78 +116,129 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                                     value={form.role}
                                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                                     SelectProps={{ native: true }}
+                                    fullWidth
                                 >
                                     {roles.map((r) => (
                                         <option key={r} value={r}>{r}</option>
                                     ))}
                                 </TextField>
-                                <Button type="submit" variant="contained">Simpan</Button>
+                                <Button type="submit" variant="contained" sx={{ width: { xs: '100%', sm: 'auto' } }}>Simpan</Button>
                             </Stack>
                         </form>
                     </Paper>
 
-                    <Paper>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>ID</TableCell>
-                                    <TableCell>Nama</TableCell>
-                                    <TableCell>Email</TableCell>
-                                    <TableCell>Role</TableCell>
-                                    <TableCell width={220}>Aksi</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {users.data.map((u) => (
-                                    <TableRow key={u.id}>
-                                        <TableCell>{u.id}</TableCell>
-                                        <TableCell>
-                                            <TextField
-                                                size="small"
-                                                defaultValue={u.name}
-                                                onChange={(e) => onEditChange(u.id, 'name', e.target.value)}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <TextField
-                                                size="small"
-                                                defaultValue={u.email}
-                                                onChange={(e) => onEditChange(u.id, 'email', e.target.value)}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <TextField
-                                                select
-                                                size="small"
-                                                defaultValue={u.role || ''}
-                                                onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
-                                                SelectProps={{ native: true }}
-                                            >
-                                                <option value=""></option>
-                                                {roles.map((r) => (
-                                                    <option key={r} value={r}>{r}</option>
-                                                ))}
-                                            </TextField>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Stack direction="row" spacing={1}>
-                                                <Button size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
-                                                <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
-                                            </Stack>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                        {/* Simple pagination links */}
-                        <Stack direction="row" spacing={1} sx={{ p: 2 }}>
-                            {users.links.map((l, idx) => (
-                                <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} onClick={() => l.url && router.visit(l.url, { preserveState: true })}>
-                                    {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                                </Button>
+                    {isMobile ? (
+                        <>
+                            {users.data.map((u) => (
+                                <Paper key={u.id} sx={{ p: 2 }}>
+                                    <Stack spacing={1}>
+                                        <Typography variant="subtitle2">ID: {u.id}</Typography>
+                                        <TextField
+                                            size="small"
+                                            label="Nama"
+                                            defaultValue={u.name}
+                                            onChange={(e) => onEditChange(u.id, 'name', e.target.value)}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            size="small"
+                                            label="Email"
+                                            defaultValue={u.email}
+                                            onChange={(e) => onEditChange(u.id, 'email', e.target.value)}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            select
+                                            size="small"
+                                            label="Role"
+                                            defaultValue={u.role || roles[0] || ''}
+                                            onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
+                                            SelectProps={{ native: true }}
+                                            fullWidth
+                                        >
+                                            {roles.map((r) => (
+                                                <option key={r} value={r}>{r}</option>
+                                            ))}
+                                        </TextField>
+                                        <Stack direction="row" spacing={1}>
+                                            <Button fullWidth size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
+                                            <Button fullWidth size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
+                                        </Stack>
+                                    </Stack>
+                                </Paper>
                             ))}
-                        </Stack>
-                    </Paper>
+                            <Stack direction="row" spacing={1} sx={{ p: 1 }}>
+                                <Button fullWidth size="small" disabled={!firstLink.url} onClick={() => firstLink.url && router.visit(firstLink.url, { preserveState: true })}>
+                                    Sebelumnya
+                                </Button>
+                                <Button fullWidth size="small" disabled={!lastLink.url} onClick={() => lastLink.url && router.visit(lastLink.url, { preserveState: true })}>
+                                    Berikutnya
+                                </Button>
+                            </Stack>
+                        </>
+                    ) : (
+                        <Paper>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>ID</TableCell>
+                                        <TableCell>Nama</TableCell>
+                                        <TableCell>Email</TableCell>
+                                        <TableCell>Role</TableCell>
+                                        <TableCell width={220}>Aksi</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {users.data.map((u) => (
+                                        <TableRow key={u.id}>
+                                            <TableCell>{u.id}</TableCell>
+                                            <TableCell>
+                                                <TextField
+                                                    size="small"
+                                                    defaultValue={u.name}
+                                                    onChange={(e) => onEditChange(u.id, 'name', e.target.value)}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <TextField
+                                                    size="small"
+                                                    defaultValue={u.email}
+                                                    onChange={(e) => onEditChange(u.id, 'email', e.target.value)}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <TextField
+                                                    select
+                                                    size="small"
+                                                    defaultValue={u.role || roles[0] || ''}
+                                                    onChange={(e) => onEditChange(u.id, 'role', e.target.value)}
+                                                    SelectProps={{ native: true }}
+                                                >
+                                                    {roles.map((r) => (
+                                                        <option key={r} value={r}>{r}</option>
+                                                    ))}
+                                                </TextField>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Stack direction="row" spacing={1}>
+                                                    <Button size="small" variant="outlined" onClick={() => onUpdate(u)}>Update</Button>
+                                                    <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
+                                                </Stack>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            {/* Simple pagination links */}
+                            <Stack direction="row" spacing={1} sx={{ p: 2 }}>
+                                {users.links.map((l, idx) => (
+                                    <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} onClick={() => l.url && router.visit(l.url, { preserveState: true })}>
+                                        {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
+                                    </Button>
+                                ))}
+                            </Stack>
+                        </Paper>
+                    )}
                 </Stack>
             </Container>
         </SidebarLayout>
