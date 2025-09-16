@@ -19,9 +19,15 @@ class SuratTugasSubmissionController extends Controller
 
     public function index(Request $request): Response
     {
-        $submissions = SuratTugasSubmission::query()
-            ->with(['user', 'pic'])
+        $user = $request->user();
+        $query = SuratTugasSubmission::query()
+            ->with(['user', 'pic', 'processor'])
             ->orderByDesc('id')
+            ->when($user && $user->hasRole('Karyawan') && ! $user->hasRole('Admin') && ! $user->hasRole('Manager Operasional'), function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+
+        $submissions = $query
             ->paginate(10)
             ->through(function (SuratTugasSubmission $submission) {
                 return [
@@ -43,6 +49,13 @@ class SuratTugasSubmissionController extends Controller
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
                     ] : null,
+                    'status' => $submission->status ?? 'pending',
+                    'catatan_revisi' => $submission->catatan_revisi,
+                    'processed_by' => $submission->processor ? [
+                        'id' => $submission->processor->id,
+                        'name' => $submission->processor->name,
+                    ] : null,
+                    'processed_at' => optional($submission->processed_at)->toDateTimeString(),
                 ];
             })
             ->withQueryString();
@@ -56,7 +69,8 @@ class SuratTugasSubmissionController extends Controller
         return Inertia::render('SuratTugas/Index', [
             'submissions' => $submissions,
             'picOptions' => $picOptions,
-            'canManage' => Auth::user()?->hasRole('Admin') ?? false,
+            'canManage' => $user?->hasRole('Admin') ?? false,
+            'canModerate' => $user?->hasRole('Manager Operasional') ?? false,
         ]);
     }
 
@@ -109,6 +123,7 @@ class SuratTugasSubmissionController extends Controller
             'instruktor_1_fee' => $instruktor1Fee,
             'instruktor_2_nama' => $validated['instruktor_2_nama'] ?? null,
             'instruktor_2_fee' => $instruktor2Fee,
+            'status' => 'pending',
         ]);
 
         return back()->with('success', 'Pengajuan Surat Tugas tersimpan');
@@ -157,5 +172,33 @@ class SuratTugasSubmissionController extends Controller
         $suratTugas->delete();
 
         return back()->with('success', 'Surat tugas dihapus');
+    }
+
+    public function approve(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
+    {
+        $suratTugas->update([
+            'status' => 'approved',
+            'catatan_revisi' => null,
+            'processed_by' => $request->user()->id,
+            'processed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Surat tugas diterima');
+    }
+
+    public function reject(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
+    {
+        $validated = $request->validate([
+            'catatan_revisi' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $suratTugas->update([
+            'status' => 'rejected',
+            'catatan_revisi' => $validated['catatan_revisi'],
+            'processed_by' => $request->user()->id,
+            'processed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Surat tugas ditolak dengan catatan');
     }
 }

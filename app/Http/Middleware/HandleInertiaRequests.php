@@ -42,6 +42,7 @@ class HandleInertiaRequests extends Middleware
                 'isAdmin' => fn () => $isAdmin,
                 'isFinanceManager' => fn () => $isFinanceManager,
                 'isOperationalManager' => fn () => $isOperationalManager,
+                'isKaryawan' => fn () => $isKaryawan,
                 'canSubmitSuratTugas' => fn () => $isKaryawan,
                 'canSubmitInvoice' => fn () => $isKaryawan,
             ],

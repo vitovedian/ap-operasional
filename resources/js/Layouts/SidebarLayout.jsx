@@ -29,15 +29,16 @@ export default function SidebarLayout({ header, children }) {
     const isAdmin = props.auth.isAdmin;
     const isFinanceManager = props.auth.isFinanceManager;
     const isOperationalManager = props.auth.isOperationalManager;
+    const isKaryawan = props.auth.isKaryawan;
     const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
     const canSubmitInvoice = props.auth.canSubmitInvoice;
-    const canViewSuratTugasList = isAdmin || isOperationalManager;
+    const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = () => setMobileOpen((v) => !v);
     const isActive = (namePattern) => route().current(namePattern);
 
-    const navItems = [
+    const dataNavItems = [
         {
             label: 'Dashboard',
             icon: <DashboardIcon />,
@@ -53,16 +54,7 @@ export default function SidebarLayout({ header, children }) {
                       active: isActive('invoices.index'),
                   },
               ]
-            : (canSubmitInvoice
-                  ? [
-                        {
-                            label: 'Pengajuan Invoice',
-                            icon: <RequestQuoteIcon />,
-                            href: route('invoices.create'),
-                            active: isActive('invoices.create'),
-                        },
-                    ]
-                  : [])),
+            : []),
         ...(canViewSuratTugasList
             ? [
                   {
@@ -73,16 +65,6 @@ export default function SidebarLayout({ header, children }) {
                   },
               ]
             : []),
-        ...(canSubmitSuratTugas
-            ? [
-                  {
-                      label: 'Pengajuan Surat Tugas',
-                      icon: <RequestQuoteIcon />,
-                      href: route('surat-tugas.create'),
-                      active: isActive('surat-tugas.create'),
-                  },
-              ]
-            : []),
         ...(isAdmin
             ? [
                   {
@@ -90,6 +72,29 @@ export default function SidebarLayout({ header, children }) {
                       icon: <PeopleIcon />,
                       href: route('users.index'),
                       active: isActive('users.*'),
+                  },
+              ]
+            : []),
+    ];
+
+    const submissionNavItems = [
+        ...(canSubmitInvoice
+            ? [
+                  {
+                      label: 'Pengajuan Invoice',
+                      icon: <RequestQuoteIcon />,
+                      href: route('invoices.create'),
+                      active: isActive('invoices.create'),
+                  },
+              ]
+            : []),
+        ...(canSubmitSuratTugas
+            ? [
+                  {
+                      label: 'Pengajuan Surat Tugas',
+                      icon: <RequestQuoteIcon />,
+                      href: route('surat-tugas.create'),
+                      active: isActive('surat-tugas.create'),
                   },
               ]
             : []),
@@ -106,7 +111,7 @@ export default function SidebarLayout({ header, children }) {
             </Box>
             <Divider />
             <List sx={{ flex: 1 }}>
-                {navItems.map((item) => (
+                {dataNavItems.map((item) => (
                     <ListItem key={item.label} disablePadding>
                         <ListItemButton selected={item.active} onClick={() => router.visit(item.href)}>
                             <ListItemIcon>{item.icon}</ListItemIcon>
@@ -114,6 +119,24 @@ export default function SidebarLayout({ header, children }) {
                         </ListItemButton>
                     </ListItem>
                 ))}
+
+                {submissionNavItems.length > 0 && (
+                    <>
+                        <Divider sx={{ my: 1 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                Pengajuan
+                            </Typography>
+                        </Divider>
+                        {submissionNavItems.map((item) => (
+                            <ListItem key={item.label} disablePadding>
+                                <ListItemButton selected={item.active} onClick={() => router.visit(item.href)}>
+                                    <ListItemIcon>{item.icon}</ListItemIcon>
+                                    <ListItemText primary={item.label} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </>
+                )}
             </List>
             <Divider />
             <Box sx={{ p: 2 }}>

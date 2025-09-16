@@ -31,7 +31,13 @@ function toIDR(n) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
-export default function SuratTugasIndex({ submissions, picOptions = [], canManage = false }) {
+function statusColor(status) {
+  if (status === 'approved') return 'success.main';
+  if (status === 'rejected') return 'error.main';
+  return 'warning.main';
+}
+
+export default function SuratTugasIndex({ submissions, picOptions = [], canManage = false, canModerate = false }) {
   const { props } = usePage();
   const { flash } = props;
   const theme = useTheme();
@@ -59,6 +65,9 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(initialForm);
+  const [openReject, setOpenReject] = useState(false);
+  const [rejecting, setRejecting] = useState(null);
+  const [rejectNote, setRejectNote] = useState('');
 
   const openEditDialog = (submission) => {
     setEditing(submission);
@@ -108,6 +117,29 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     }
   };
 
+  const onApprove = (submission) => {
+    router.post(route('surat-tugas.approve', submission.id), {}, { preserveScroll: true });
+  };
+
+  const openRejectDialog = (submission) => {
+    setRejecting(submission);
+    setRejectNote(submission.catatan_revisi || '');
+    setOpenReject(true);
+  };
+
+  const submitReject = (e) => {
+    e.preventDefault();
+    if (!rejecting) return;
+    router.post(route('surat-tugas.reject', rejecting.id), { catatan_revisi: rejectNote }, {
+      preserveScroll: true,
+      onSuccess: () => {
+        setOpenReject(false);
+        setRejecting(null);
+        setRejectNote('');
+      },
+    });
+  };
+
   return (
     <SidebarLayout header={<Typography variant="h6">Daftar Surat Tugas</Typography>}>
       <Head title="Daftar Surat Tugas" />
@@ -126,13 +158,16 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
 
           {isMobile ? (
             <Stack spacing={2}>
-              {submissions.data.map((item) => (
-                <Card key={item.id} variant="outlined">
+              {submissions.data.map((item) => {
+                const status = item.status || 'pending';
+                return (
+                  <Card key={item.id} variant="outlined">
                   <CardContent>
                     <Stack spacing={0.75}>
                       <Typography variant="subtitle2">{item.kegiatan}</Typography>
                       <Typography variant="body2" color="text.secondary">Tgl Pengajuan: {item.tanggal_pengajuan}</Typography>
                       <Typography variant="body2" color="text.secondary">Tgl Kegiatan: {item.tanggal_kegiatan}</Typography>
+                      <Typography variant="body2" color={statusColor(status)}>Status: {status}</Typography>
                       <Divider flexItem sx={{ my: 0.5 }} />
                       <Typography variant="body2">PIC: {item.pic?.name || '-'}</Typography>
                       <Typography variant="body2">Pendampingan: {item.nama_pendampingan}</Typography>
@@ -140,18 +175,32 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       <Typography variant="body2">Instruktor 1: {item.instruktor_1_nama} (Rp {toIDR(item.instruktor_1_fee)})</Typography>
                       <Typography variant="body2">Instruktor 2: {item.instruktor_2_nama || '-'}{item.instruktor_2_nama ? ` (Rp ${toIDR(item.instruktor_2_fee)})` : ''}</Typography>
                       <Typography variant="body2" color="text.secondary">Diajukan oleh: {item.pengaju?.name || '-'}</Typography>
+                      {item.catatan_revisi && (
+                        <Typography variant="body2" color="warning.dark">Catatan: {item.catatan_revisi}</Typography>
+                      )}
                     </Stack>
                   </CardContent>
-                  {canManage && (
+                  {(canManage || (canModerate && status === 'pending')) && (
                     <CardActions>
-                      <Stack spacing={1} direction="row" sx={{ width: '100%' }}>
-                        <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
-                        <Button fullWidth size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
+                      <Stack spacing={1} direction="row" sx={{ width: '100%', flexWrap: 'wrap' }}>
+                        {canManage && (
+                          <>
+                            <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
+                            <Button fullWidth size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
+                          </>
+                        )}
+                        {canModerate && status === 'pending' && (
+                          <>
+                            <Button fullWidth size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
+                            <Button fullWidth size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
+                          </>
+                        )}
                       </Stack>
                     </CardActions>
                   )}
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
               <Stack direction="row" spacing={1}>
                 {submissions.links.map((link, idx) => (
                   <Button
@@ -181,19 +230,22 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <TableCell>Instruktor 1</TableCell>
                     <TableCell>Instruktor 2</TableCell>
                     <TableCell>Diajukan oleh</TableCell>
-                    {canManage && <TableCell>Aksi</TableCell>}
+                    <TableCell>Status</TableCell>
+                    {(canManage || canModerate) && <TableCell>Aksi</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {submissions.data.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.tanggal_pengajuan}</TableCell>
+                  {submissions.data.map((item) => {
+                    const status = item.status || 'pending';
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.tanggal_pengajuan}</TableCell>
                       <TableCell>{item.kegiatan}</TableCell>
                       <TableCell>{item.tanggal_kegiatan}</TableCell>
                       <TableCell>{item.pic?.name || '-'}</TableCell>
                       <TableCell>{item.nama_pendampingan}</TableCell>
                       <TableCell>{toIDR(item.fee_pendampingan)}</TableCell>
-                      <TableCell>
+                        <TableCell>
                         <Stack spacing={0.25}>
                           <Typography variant="body2">{item.instruktor_1_nama}</Typography>
                           <Typography variant="caption">{toIDR(item.instruktor_1_fee)}</Typography>
@@ -210,16 +262,35 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                         )}
                       </TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
-                      {canManage && (
-                        <TableCell>
-                          <Stack direction="column" spacing={1}>
-                            <Button size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
-                            <Button size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
+                      <TableCell>
+                        <Stack spacing={0.5}>
+                          <Typography variant="body2" color={statusColor(status)}>{status}</Typography>
+                          {item.catatan_revisi && (
+                            <Typography variant="caption" color="warning.dark">Catatan: {item.catatan_revisi}</Typography>
+                          )}
+                        </Stack>
+                        </TableCell>
+                        {(canManage || canModerate) && (
+                          <TableCell>
+                          <Stack direction="row" spacing={1}>
+                            {canManage && (
+                              <>
+                                <Button size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
+                                <Button size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
+                              </>
+                            )}
+                            {canModerate && status === 'pending' && (
+                              <>
+                                <Button size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
+                                <Button size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
+                              </>
+                            )}
                           </Stack>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
+                        )}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
               <Stack direction="row" spacing={1} sx={{ p: 2 }}>
@@ -342,7 +413,27 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           </DialogActions>
         </form>
       </Dialog>
+
+      <Dialog open={openReject} onClose={() => setOpenReject(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Catatan Penolakan</DialogTitle>
+        <form onSubmit={submitReject}>
+          <DialogContent dividers>
+            <TextField
+              label="Catatan Revisi"
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              required
+              fullWidth
+              multiline
+              minRows={3}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenReject(false)}>Batal</Button>
+            <Button type="submit" variant="contained" color="warning">Kirim</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </SidebarLayout>
   );
 }
-

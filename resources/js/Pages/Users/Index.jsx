@@ -93,101 +93,107 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
     const firstLink = users.links?.[0] || {};
     const lastLink = users.links?.[users.links.length - 1] || {};
 
+    const listView = isMobile ? (
+        <>
+            {users.data.map((u) => (
+                <Paper key={u.id} sx={{ p: 2 }}>
+                    <Stack spacing={0.5}>
+                        <Typography variant="subtitle2">{u.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">{u.email}</Typography>
+                        <Typography variant="body2">Role: {u.roles?.length ? u.roles.join(', ') : '-'}</Typography>
+                        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                            <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
+                            <Button fullWidth size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
+                        </Stack>
+                    </Stack>
+                </Paper>
+            ))}
+            <Stack direction="row" spacing={1} sx={{ p: 1 }}>
+                <Button fullWidth size="small" disabled={!firstLink.url} onClick={() => firstLink.url && router.visit(firstLink.url, { preserveState: true })}>
+                    Sebelumnya
+                </Button>
+                <Button fullWidth size="small" disabled={!lastLink.url} onClick={() => lastLink.url && router.visit(lastLink.url, { preserveState: true })}>
+                    Berikutnya
+                </Button>
+            </Stack>
+        </>
+    ) : (
+        <Paper>
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Nama</TableCell>
+                        <TableCell>Email</TableCell>
+                        <TableCell>Role</TableCell>
+                        <TableCell width={220}>Aksi</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {users.data.map((u) => (
+                        <TableRow key={u.id}>
+                            <TableCell>{u.name}</TableCell>
+                            <TableCell>{u.email}</TableCell>
+                            <TableCell>{u.roles?.length ? u.roles.join(', ') : '-'}</TableCell>
+                            <TableCell>
+                                <Stack direction="row" spacing={1}>
+                                    <Button size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
+                                    <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
+                                </Stack>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+            <Stack direction="row" spacing={1} sx={{ p: 2 }}>
+                {users.links.map((l, idx) => (
+                    <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} onClick={() => l.url && router.visit(l.url, { preserveState: true })}>
+                        {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
+                    </Button>
+                ))}
+            </Stack>
+        </Paper>
+    );
+
     return (<>
         <SidebarLayout header={<Typography variant="h6">Users</Typography>}>
             <Head title="Users" />
 
             <Container sx={{ py: 2 }}>
-                <Stack spacing={3}>
+                <Stack spacing={4}>
                     {flash?.success && (
                         <Paper sx={{ p: 2 }}>
                             <Typography color="success.main">{flash.success}</Typography>
                         </Paper>
                     )}
 
-                    <Paper sx={{ p: 2 }}>
-                        <form onSubmit={onSearch}>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                                <TextField
-                                    size="small"
-                                    label="Search"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    fullWidth
-                                />
-                                <Button type="submit" variant="outlined" sx={{ width: { xs: '100%', sm: 'auto' } }}>Cari</Button>
-                            </Stack>
-                        </form>
-                    </Paper>
-
-                    <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle1">Manajemen Pengguna</Typography>
-                        <Button variant="contained" onClick={() => setOpenCreate(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-                            Tambah User
-                        </Button>
-                    </Paper>
-
-                    {isMobile ? (
-                        <>
-                            {users.data.map((u) => (
-                                <Paper key={u.id} sx={{ p: 2 }}>
-                                    <Stack spacing={0.5}>
-                                        <Typography variant="subtitle2">{u.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">{u.email}</Typography>
-                                        <Typography variant="body2">Role: {u.roles?.length ? u.roles.join(', ') : '-'}</Typography>
-                                        <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                                            <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
-                                            <Button fullWidth size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
-                                        </Stack>
-                                    </Stack>
-                                </Paper>
-                            ))}
-                            <Stack direction="row" spacing={1} sx={{ p: 1 }}>
-                                <Button fullWidth size="small" disabled={!firstLink.url} onClick={() => firstLink.url && router.visit(firstLink.url, { preserveState: true })}>
-                                    Sebelumnya
-                                </Button>
-                                <Button fullWidth size="small" disabled={!lastLink.url} onClick={() => lastLink.url && router.visit(lastLink.url, { preserveState: true })}>
-                                    Berikutnya
-                                </Button>
-                            </Stack>
-                        </>
-                    ) : (
-                        <Paper>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Nama</TableCell>
-                                        <TableCell>Email</TableCell>
-                                        <TableCell>Role</TableCell>
-                                        <TableCell width={220}>Aksi</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {users.data.map((u) => (
-                                        <TableRow key={u.id}>
-                                            <TableCell>{u.name}</TableCell>
-                                            <TableCell>{u.email}</TableCell>
-                                            <TableCell>{u.roles?.length ? u.roles.join(', ') : '-'}</TableCell>
-                                            <TableCell>
-                                                <Stack direction="row" spacing={1}>
-                                                    <Button size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
-                                                    <Button size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
-                                                </Stack>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            {/* Simple pagination links */}
-                            <Stack direction="row" spacing={1} sx={{ p: 2 }}>
-                                {users.links.map((l, idx) => (
-                                    <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} onClick={() => l.url && router.visit(l.url, { preserveState: true })}>
-                                        {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                                    </Button>
-                                ))}
-                            </Stack>
+                    <Stack spacing={2}>
+                        <Typography variant="overline" color="text.secondary">Daftar</Typography>
+                        <Paper sx={{ p: 2 }}>
+                            <form onSubmit={onSearch}>
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                                    <TextField
+                                        size="small"
+                                        label="Search"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        fullWidth
+                                    />
+                                    <Button type="submit" variant="outlined" sx={{ width: { xs: '100%', sm: 'auto' } }}>Cari</Button>
+                                </Stack>
+                            </form>
                         </Paper>
-                    )}
+                        {listView}
+                    </Stack>
+
+                    <Stack spacing={2}>
+                        <Typography variant="overline" color="text.secondary">Pengelolaan</Typography>
+                        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="subtitle1">Manajemen Pengguna</Typography>
+                            <Button variant="contained" onClick={() => setOpenCreate(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                                Tambah User
+                            </Button>
+                        </Paper>
+                    </Stack>
                 </Stack>
             </Container>
 

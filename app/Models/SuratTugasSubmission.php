@@ -21,6 +21,10 @@ class SuratTugasSubmission extends Model
         'instruktor_1_fee',
         'instruktor_2_nama',
         'instruktor_2_fee',
+        'status',
+        'catatan_revisi',
+        'processed_by',
+        'processed_at',
     ];
 
     public function user()
@@ -32,5 +36,9 @@ class SuratTugasSubmission extends Model
     {
         return $this->belongsTo(User::class, 'pic_id');
     }
-}
 
+    public function processor()
+    {
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+}
