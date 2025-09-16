@@ -181,19 +181,19 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     </Stack>
                   </CardContent>
                   {(canManage || (canModerate && status === 'pending')) && (
-                    <CardActions>
-                      <Stack spacing={1} direction="row" sx={{ width: '100%', flexWrap: 'wrap' }}>
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Stack spacing={1} sx={{ width: '100%' }}>
                         {canManage && (
-                          <>
+                          <Stack spacing={1}>
                             <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
                             <Button fullWidth size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
-                          </>
+                          </Stack>
                         )}
                         {canModerate && status === 'pending' && (
-                          <>
+                          <Stack spacing={1}>
                             <Button fullWidth size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
                             <Button fullWidth size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
-                          </>
+                          </Stack>
                         )}
                       </Stack>
                     </CardActions>
@@ -217,8 +217,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
               </Stack>
             </Stack>
           ) : (
-            <Paper>
-              <Table size="small">
+            <Paper sx={{ width: '100%', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader sx={{ minWidth: 900 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell>Tgl Pengajuan</TableCell>
@@ -270,24 +270,24 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                           )}
                         </Stack>
                         </TableCell>
-                        {(canManage || canModerate) && (
-                          <TableCell>
-                          <Stack direction="row" spacing={1}>
+                      {(canManage || canModerate) && (
+                        <TableCell>
+                          <Stack spacing={1}>
                             {canManage && (
-                              <>
+                              <Stack direction="row" spacing={1}>
                                 <Button size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
                                 <Button size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
-                              </>
+                              </Stack>
                             )}
                             {canModerate && status === 'pending' && (
-                              <>
-                                <Button size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
-                                <Button size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
-                              </>
+                              <Stack direction="row" spacing={1}>
+                                <Button size="small" variant="contained" color="success" onClick={() => onApprove(item)} sx={{ flex: 1 }}>Terima</Button>
+                                <Button size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)} sx={{ flex: 1 }}>Tolak</Button>
+                              </Stack>
                             )}
                           </Stack>
                         </TableCell>
-                        )}
+                      )}
                       </TableRow>
                     );
                   })}

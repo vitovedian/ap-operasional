@@ -152,8 +152,8 @@ export default function InvoicesIndex({ invoices }) {
               </Stack>
             </Stack>
           ) : (
-            <Paper>
-              <Table size="small">
+            <Paper sx={{ width: '100%', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader sx={{ minWidth: 900 }}>
                 <TableHead>
                   <TableRow>
                     <TableCell>Tgl Pengajuan</TableCell>
@@ -177,13 +177,15 @@ export default function InvoicesIndex({ invoices }) {
                       <TableCell align="right">{toIDR(inv.total_invoice_ope)}</TableCell>
                       <TableCell>{inv.user?.name || '-'}</TableCell>
                       <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <Button size="small" variant="outlined" component="a" href={inv.download_url} target="_blank" rel="noopener">Unduh Bukti</Button>
+                        <Stack spacing={1}>
+                          <Button size="small" variant="outlined" component="a" href={inv.download_url} target="_blank" rel="noopener" sx={{ alignSelf: 'flex-start' }}>
+                            Unduh Bukti
+                          </Button>
                           {canManage && (
-                            <>
-                              <Button size="small" variant="outlined" onClick={() => openEditDialog(inv)}>Edit</Button>
-                              <Button size="small" color="error" variant="outlined" onClick={() => onDelete(inv)}>Hapus</Button>
-                            </>
+                            <Stack direction="row" spacing={1}>
+                              <Button size="small" variant="outlined" onClick={() => openEditDialog(inv)} sx={{ flex: 1 }}>Edit</Button>
+                              <Button size="small" color="error" variant="outlined" onClick={() => onDelete(inv)} sx={{ flex: 1 }}>Hapus</Button>
+                            </Stack>
                           )}
                         </Stack>
                       </TableCell>
