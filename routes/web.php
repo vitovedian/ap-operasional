@@ -41,9 +41,12 @@ Route::middleware(['auth', 'verified', 'role:Manager Keuangan|Admin'])->group(fu
     Route::get('/invoices/{invoice}/download', [InvoiceSubmissionController::class, 'download'])->name('invoices.download');
 });
 
-Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|Manager Operasional'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:Karyawan'])->group(function () {
     Route::get('/invoices/create', [InvoiceSubmissionController::class, 'create'])->name('invoices.create');
     Route::post('/invoices', [InvoiceSubmissionController::class, 'store'])->name('invoices.store');
+});
+
+Route::middleware(['auth', 'verified', 'role:Karyawan'])->group(function () {
     Route::get('/surat-tugas/create', [SuratTugasSubmissionController::class, 'create'])->name('surat-tugas.create');
     Route::post('/surat-tugas', [SuratTugasSubmissionController::class, 'store'])->name('surat-tugas.store');
 });

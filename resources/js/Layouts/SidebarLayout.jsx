@@ -28,8 +28,10 @@ export default function SidebarLayout({ header, children }) {
     const user = props.auth.user;
     const isAdmin = props.auth.isAdmin;
     const isFinanceManager = props.auth.isFinanceManager;
+    const isOperationalManager = props.auth.isOperationalManager;
     const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
-    const canViewSuratTugasList = props.auth.canViewSuratTugasList;
+    const canSubmitInvoice = props.auth.canSubmitInvoice;
+    const canViewSuratTugasList = isAdmin || isOperationalManager;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = () => setMobileOpen((v) => !v);
@@ -51,14 +53,16 @@ export default function SidebarLayout({ header, children }) {
                       active: isActive('invoices.index'),
                   },
               ]
-            : [
-                  {
-                      label: 'Pengajuan Invoice',
-                      icon: <RequestQuoteIcon />,
-                      href: route('invoices.create'),
-                      active: isActive('invoices.create'),
-                  },
-              ]),
+            : (canSubmitInvoice
+                  ? [
+                        {
+                            label: 'Pengajuan Invoice',
+                            icon: <RequestQuoteIcon />,
+                            href: route('invoices.create'),
+                            active: isActive('invoices.create'),
+                        },
+                    ]
+                  : [])),
         ...(canViewSuratTugasList
             ? [
                   {

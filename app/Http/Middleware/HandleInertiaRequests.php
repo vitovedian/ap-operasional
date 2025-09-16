@@ -29,14 +29,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $isAdmin = $user?->hasRole('Admin') ?? false;
+        $isFinanceManager = $user?->hasRole('Manager Keuangan') ?? false;
+        $isOperationalManager = $user?->hasRole('Manager Operasional') ?? false;
+        $isKaryawan = $user?->hasRole('Karyawan') ?? false;
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
-                'isAdmin' => fn () => $request->user()?->hasRole('Admin') ?? false,
-                'isFinanceManager' => fn () => $request->user()?->hasRole('Manager Keuangan') ?? false,
-                'canSubmitSuratTugas' => fn () => $request->user()?->hasAnyRole(['Karyawan', 'Manager Operasional']) ?? false,
-                'canViewSuratTugasList' => fn () => $request->user()?->hasAnyRole(['Admin', 'Manager Operasional']) ?? false,
+                'user' => $user,
+                'isAdmin' => fn () => $isAdmin,
+                'isFinanceManager' => fn () => $isFinanceManager,
+                'isOperationalManager' => fn () => $isOperationalManager,
+                'canSubmitSuratTugas' => fn () => $isKaryawan,
+                'canSubmitInvoice' => fn () => $isKaryawan,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
