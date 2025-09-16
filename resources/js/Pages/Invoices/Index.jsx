@@ -39,7 +39,7 @@ export default function InvoicesIndex({ invoices }) {
                   <TableCell align="right">{toIDR(inv.total_invoice_ope)}</TableCell>
                   <TableCell>{inv.user?.name || '-'}</TableCell>
                   <TableCell>
-                    <Button size="small" variant="outlined" href={inv.download_url}>Unduh Bukti</Button>
+                    <Button size="small" variant="outlined" component="a" href={inv.download_url} target="_blank" rel="noopener">Unduh Bukti</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -57,4 +57,3 @@ export default function InvoicesIndex({ invoices }) {
     </SidebarLayout>
   );
 }
-

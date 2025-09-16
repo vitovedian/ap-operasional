@@ -86,7 +86,11 @@ class InvoiceSubmissionController extends Controller
 
     public function download(InvoiceSubmission $invoice)
     {
-        $absolute = storage_path('app/'.$invoice->bukti_surat_konfirmasi);
-        return response()->download($absolute, basename($absolute));
+        $path = $invoice->bukti_surat_konfirmasi;
+        if (!\Storage::exists($path)) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        return \Storage::download($path);
     }
 }
