@@ -58,10 +58,14 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:Admin|Manager Operasional|Karyawan'])->group(function () {
     Route::get('/surat-tugas', [SuratTugasSubmissionController::class, 'index'])->name('surat-tugas.index');
+    Route::get('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'show'])->name('surat-tugas.show');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Karyawan'])->group(function () {
+    Route::put('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'update'])->name('surat-tugas.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
-    Route::put('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'update'])->name('surat-tugas.update');
     Route::delete('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'destroy'])->name('surat-tugas.destroy');
 });
 

@@ -29,7 +29,8 @@ class SuratTugasSubmissionController extends Controller
 
         $submissions = $query
             ->paginate(10)
-            ->through(function (SuratTugasSubmission $submission) {
+            ->through(function (SuratTugasSubmission $submission) use ($user) {
+                $status = $submission->status ?? 'pending';
                 return [
                     'id' => $submission->id,
                     'tanggal_pengajuan' => $submission->tanggal_pengajuan,
@@ -49,13 +50,17 @@ class SuratTugasSubmissionController extends Controller
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
                     ] : null,
-                    'status' => $submission->status ?? 'pending',
+                    'status' => $status,
                     'catatan_revisi' => $submission->catatan_revisi,
                     'processed_by' => $submission->processor ? [
                         'id' => $submission->processor->id,
                         'name' => $submission->processor->name,
                     ] : null,
                     'processed_at' => optional($submission->processed_at)->toDateTimeString(),
+                    'can_self_edit' => $user
+                        && $user->hasRole('Karyawan')
+                        && $submission->user_id === $user->id
+                        && $status === 'rejected',
                 ];
             })
             ->withQueryString();
@@ -129,6 +134,59 @@ class SuratTugasSubmissionController extends Controller
         return back()->with('success', 'Pengajuan Surat Tugas tersimpan');
     }
 
+    public function show(Request $request, SuratTugasSubmission $suratTugas): Response
+    {
+        $user = $request->user();
+
+        $isAdmin = $user?->hasRole('Admin');
+        $isOperationalManager = $user?->hasRole('Manager Operasional');
+        $isKaryawan = $user?->hasRole('Karyawan');
+
+        if (! $isAdmin && ! $isOperationalManager) {
+            if (! $isKaryawan || $suratTugas->user_id !== $user?->id) {
+                abort(403);
+            }
+        }
+
+        $suratTugas->loadMissing(['user', 'pic', 'processor']);
+
+        $data = [
+            'id' => $suratTugas->id,
+            'tanggal_pengajuan' => $suratTugas->tanggal_pengajuan,
+            'kegiatan' => $suratTugas->kegiatan,
+            'tanggal_kegiatan' => $suratTugas->tanggal_kegiatan,
+            'nama_pendampingan' => $suratTugas->nama_pendampingan,
+            'fee_pendampingan' => (int) $suratTugas->fee_pendampingan,
+            'instruktor_1_nama' => $suratTugas->instruktor_1_nama,
+            'instruktor_1_fee' => (int) $suratTugas->instruktor_1_fee,
+            'instruktor_2_nama' => $suratTugas->instruktor_2_nama,
+            'instruktor_2_fee' => (int) $suratTugas->instruktor_2_fee,
+            'status' => $suratTugas->status ?? 'pending',
+            'catatan_revisi' => $suratTugas->catatan_revisi,
+            'processed_at' => optional($suratTugas->processed_at)->toDateTimeString(),
+            'pic' => $suratTugas->pic ? [
+                'id' => $suratTugas->pic->id,
+                'name' => $suratTugas->pic->name,
+                'email' => $suratTugas->pic->email,
+            ] : null,
+            'pengaju' => $suratTugas->user ? [
+                'id' => $suratTugas->user->id,
+                'name' => $suratTugas->user->name,
+                'email' => $suratTugas->user->email,
+            ] : null,
+            'processor' => $suratTugas->processor ? [
+                'id' => $suratTugas->processor->id,
+                'name' => $suratTugas->processor->name,
+            ] : null,
+        ];
+
+        return Inertia::render('SuratTugas/Show', [
+            'submission' => $data,
+            'canModerate' => $isOperationalManager,
+            'canEdit' => $isAdmin || ($isKaryawan && $suratTugas->user_id === $user?->id && ($suratTugas->status ?? 'pending') === 'rejected'),
+        ]);
+    }
+
     public function update(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
     {
         $validated = $request->validate([
@@ -143,6 +201,21 @@ class SuratTugasSubmissionController extends Controller
             'instruktor_2_nama' => ['nullable', 'string', 'max:255'],
             'instruktor_2_fee' => ['nullable'],
         ]);
+
+        $user = $request->user();
+        $isAdmin = $user?->hasRole('Admin');
+        $isKaryawan = $user?->hasRole('Karyawan');
+
+        if (! $isAdmin) {
+            if (! $isKaryawan || $suratTugas->user_id !== $user->id) {
+                abort(403);
+            }
+
+            $currentStatus = $suratTugas->status ?? 'pending';
+            if ($currentStatus !== 'rejected') {
+                return back()->with('error', 'Hanya surat tugas yang ditolak yang dapat diperbarui.');
+            }
+        }
 
         $pic = User::find($validated['pic_id']);
         if (! $pic || ! $pic->hasRole('PIC')) {
@@ -161,6 +234,13 @@ class SuratTugasSubmissionController extends Controller
             'instruktor_2_nama' => $validated['instruktor_2_nama'] ?? null,
             'instruktor_2_fee' => (int) preg_replace('/\D/', '', (string) $request->input('instruktor_2_fee')),
         ]);
+
+        if ($isKaryawan && ! $isAdmin) {
+            $suratTugas->status = 'pending';
+            $suratTugas->catatan_revisi = null;
+            $suratTugas->processed_by = null;
+            $suratTugas->processed_at = null;
+        }
 
         $suratTugas->save();
 

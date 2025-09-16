@@ -42,6 +42,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   const { flash } = props;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const hasSelfEditable = Array.isArray(submissions?.data) && submissions.data.some((item) => item.can_self_edit);
 
   const initialForm = {
     tanggal_pengajuan: '',
@@ -180,9 +181,17 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       )}
                     </Stack>
                   </CardContent>
-                  {(canManage || (canModerate && status === 'pending')) && (
+                  {(canManage || canModerate || item.can_self_edit) && (
                     <CardActions sx={{ p: 2, pt: 0 }}>
                       <Stack spacing={1} sx={{ width: '100%' }}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          href={route('surat-tugas.show', item.id)}
+                        >
+                          Lihat Detail
+                        </Button>
                         {canManage && (
                           <Stack spacing={1}>
                             <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
@@ -193,6 +202,11 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                           <Stack spacing={1}>
                             <Button fullWidth size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
                             <Button fullWidth size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
+                          </Stack>
+                        )}
+                        {item.can_self_edit && (
+                          <Stack spacing={1}>
+                            <Button fullWidth size="small" variant="contained" onClick={() => openEditDialog(item)}>Perbarui</Button>
                           </Stack>
                         )}
                       </Stack>
@@ -231,7 +245,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <TableCell>Instruktor 2</TableCell>
                     <TableCell>Diajukan oleh</TableCell>
                     <TableCell>Status</TableCell>
-                    {(canManage || canModerate) && <TableCell>Aksi</TableCell>}
+                    {(canManage || canModerate || hasSelfEditable) && <TableCell>Aksi</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -270,9 +284,12 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                           )}
                         </Stack>
                         </TableCell>
-                      {(canManage || canModerate) && (
+                      {(canManage || canModerate || item.can_self_edit) && (
                         <TableCell>
                           <Stack spacing={1}>
+                            <Button size="small" variant="outlined" href={route('surat-tugas.show', item.id)}>
+                              Detail
+                            </Button>
                             {canManage && (
                               <Stack direction="row" spacing={1}>
                                 <Button size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
@@ -284,6 +301,9 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                                 <Button size="small" variant="contained" color="success" onClick={() => onApprove(item)} sx={{ flex: 1 }}>Terima</Button>
                                 <Button size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)} sx={{ flex: 1 }}>Tolak</Button>
                               </Stack>
+                            )}
+                            {item.can_self_edit && (
+                              <Button size="small" variant="contained" onClick={() => openEditDialog(item)}>Perbarui</Button>
                             )}
                           </Stack>
                         </TableCell>
