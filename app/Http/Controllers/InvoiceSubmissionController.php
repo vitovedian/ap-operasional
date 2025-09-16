@@ -6,8 +6,6 @@ use App\Models\InvoiceSubmission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Response as HttpResponse;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,6 +42,7 @@ class InvoiceSubmissionController extends Controller
 
         return Inertia::render('Invoices/Index', [
             'invoices' => $invoices,
+            'canManageInvoices' => Auth::user()?->hasRole('Admin') ?? false,
         ]);
     }
 
@@ -82,6 +81,54 @@ class InvoiceSubmissionController extends Controller
         ]);
 
         return back()->with('success', 'Pengajuan Invoice tersimpan');
+    }
+
+    public function update(Request $request, InvoiceSubmission $invoice): RedirectResponse
+    {
+        $validated = $request->validate([
+            'tanggal_pengajuan' => ['required', 'date'],
+            'tanggal_invoice' => ['required', 'date'],
+            'kegiatan' => ['required', 'string', 'max:255'],
+            'tagihan_invoice' => ['required'],
+            'ppn' => ['required', 'in:include,exclude,tanpa'],
+            'total_invoice_ope' => ['required'],
+            'bukti_surat_konfirmasi' => ['sometimes', 'file', 'mimes:pdf', 'max:5120'],
+        ]);
+
+        $tagihan = (int) preg_replace('/\D/', '', (string) $request->input('tagihan_invoice'));
+        $totalOpe = (int) preg_replace('/\D/', '', (string) $request->input('total_invoice_ope'));
+
+        $invoice->fill([
+            'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
+            'tanggal_invoice' => $validated['tanggal_invoice'],
+            'kegiatan' => $validated['kegiatan'],
+            'tagihan_invoice' => $tagihan,
+            'ppn' => $validated['ppn'],
+            'total_invoice_ope' => $totalOpe,
+        ]);
+
+        if ($request->hasFile('bukti_surat_konfirmasi')) {
+            if ($invoice->bukti_surat_konfirmasi && \Storage::exists($invoice->bukti_surat_konfirmasi)) {
+                \Storage::delete($invoice->bukti_surat_konfirmasi);
+            }
+
+            $invoice->bukti_surat_konfirmasi = $request->file('bukti_surat_konfirmasi')->store('invoices/konfirmasi');
+        }
+
+        $invoice->save();
+
+        return back()->with('success', 'Pengajuan Invoice diperbarui');
+    }
+
+    public function destroy(InvoiceSubmission $invoice): RedirectResponse
+    {
+        if ($invoice->bukti_surat_konfirmasi && \Storage::exists($invoice->bukti_surat_konfirmasi)) {
+            \Storage::delete($invoice->bukti_surat_konfirmasi);
+        }
+
+        $invoice->delete();
+
+        return back()->with('success', 'Pengajuan Invoice dihapus');
     }
 
     public function download(InvoiceSubmission $invoice)

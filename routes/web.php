@@ -45,4 +45,9 @@ Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|Manager Operasional'
     Route::post('/invoices', [InvoiceSubmissionController::class, 'store'])->name('invoices.store');
 });
 
+Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
+    Route::put('/invoices/{invoice}', [InvoiceSubmissionController::class, 'update'])->name('invoices.update');
+    Route::delete('/invoices/{invoice}', [InvoiceSubmissionController::class, 'destroy'])->name('invoices.destroy');
+});
+
 require __DIR__.'/auth.php';
