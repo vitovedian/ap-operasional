@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
         Role::firstOrCreate(['name' => 'Manager Operasional']);
         Role::firstOrCreate(['name' => 'Manager Keuangan']);
+        Role::firstOrCreate(['name' => 'PIC']);
 
         // Create a demo admin if not exists
         $admin = User::firstOrCreate(

@@ -12,8 +12,9 @@ import {
     TableCell,
     TableBody,
     Stack,
+    MenuItem,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Dialog from '@mui/material/Dialog';
@@ -35,45 +36,23 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
         router.get(route('users.index'), { search }, { preserveState: true, replace: true });
     };
 
-    const [form, setForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'Karyawan' });
-    const [editForm, setEditForm] = useState({ name: '', email: '', password: '', role: roles[0] || 'User' });
+    const defaultRoleSelection = roles.includes('Karyawan')
+        ? ['Karyawan']
+        : roles.length > 0
+            ? [roles[0]]
+            : [];
+
+    const [form, setForm] = useState({ name: '', email: '', password: '', roles: defaultRoleSelection });
+    const [editForm, setEditForm] = useState({ name: '', email: '', password: '', roles: [] });
 
     const submitCreate = (e) => {
         e.preventDefault();
         router.post(route('users.store'), form, {
             onSuccess: () => {
-                setForm({ name: '', email: '', password: '', role: roles[0] || 'Karyawan' });
+                setForm({ name: '', email: '', password: '', roles: defaultRoleSelection });
                 setOpenCreate(false);
             },
         });
-    };
-
-    const [editMap, setEditMap] = useState({});
-
-    const onEditChange = (id, key, value) => {
-        setEditMap((m) => ({ ...m, [id]: { ...(m[id] || {}), [key]: value } }));
-    };
-
-    const onUpdate = (user) => {
-        const current = editMap[user.id] || {};
-
-        // Merge defaults so required fields are always sent
-        const payload = {
-            name: current.name ?? user.name,
-            email: current.email ?? user.email,
-        };
-
-        // Only send password if non-empty
-        if (current.password && current.password.length > 0) {
-            payload.password = current.password;
-        }
-
-        // Only send role when explicitly chosen
-        if (current.role !== undefined && current.role !== '') {
-            payload.role = current.role;
-        }
-
-        router.put(route('users.update', user.id), payload, { preserveScroll: true });
     };
 
     const onDelete = (user) => {
@@ -88,7 +67,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
             name: u.name,
             email: u.email,
             password: '',
-            role: u.role || roles[0] || '',
+            roles: Array.isArray(u.roles) && u.roles.length ? [...u.roles] : defaultRoleSelection,
         });
         setOpenEdit(true);
     };
@@ -103,9 +82,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
         if (editForm.password && editForm.password.length > 0) {
             payload.password = editForm.password;
         }
-        if (editForm.role && editForm.role !== '') {
-            payload.role = editForm.role;
-        }
+        payload.roles = editForm.roles;
         router.put(route('users.update', editingUser.id), payload, {
             preserveScroll: true,
             onSuccess: () => setOpenEdit(false),
@@ -157,7 +134,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                                     <Stack spacing={0.5}>
                                         <Typography variant="subtitle2">{u.name}</Typography>
                                         <Typography variant="body2" color="text.secondary">{u.email}</Typography>
-                                        <Typography variant="body2">Role: {u.role || '-'}</Typography>
+                                        <Typography variant="body2">Role: {u.roles?.length ? u.roles.join(', ') : '-'}</Typography>
                                         <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                                             <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
                                             <Button fullWidth size="small" color="error" variant="outlined" disabled={u.id === currentUserId} onClick={() => onDelete(u)}>Delete</Button>
@@ -190,7 +167,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                                         <TableRow key={u.id}>
                                             <TableCell>{u.name}</TableCell>
                                             <TableCell>{u.email}</TableCell>
-                                            <TableCell>{u.role || '-'}</TableCell>
+                                            <TableCell>{u.roles?.length ? u.roles.join(', ') : '-'}</TableCell>
                                             <TableCell>
                                                 <Stack direction="row" spacing={1}>
                                                     <Button size="small" variant="outlined" onClick={() => openEditDialog(u)}>Edit</Button>
@@ -227,13 +204,16 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                                 select
                                 size="small"
                                 label="Role"
-                                value={form.role}
-                                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                                SelectProps={{ native: true }}
+                                value={form.roles}
+                                onChange={(e) => {
+                                    const value = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                                    setForm({ ...form, roles: value });
+                                }}
+                                SelectProps={{ multiple: true, renderValue: (selected) => selected.join(', ') }}
                                 fullWidth
                             >
                                 {roles.map((r) => (
-                                    <option key={r} value={r}>{r}</option>
+                                    <MenuItem key={r} value={r}>{r}</MenuItem>
                                 ))}
                             </TextField>
                         </Stack>
@@ -258,13 +238,16 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
                             select
                             size="small"
                             label="Role"
-                            value={editForm.role}
-                            onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                            SelectProps={{ native: true }}
+                            value={editForm.roles}
+                            onChange={(e) => {
+                                const value = typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value;
+                                setEditForm({ ...editForm, roles: value });
+                            }}
+                            SelectProps={{ multiple: true, renderValue: (selected) => selected.join(', ') }}
                             fullWidth
                         >
                             {roles.map((r) => (
-                                <option key={r} value={r}>{r}</option>
+                                <MenuItem key={r} value={r}>{r}</MenuItem>
                             ))}
                         </TextField>
                     </Stack>

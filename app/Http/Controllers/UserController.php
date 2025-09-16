@@ -37,7 +37,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => optional($user->roles->first())->name,
+                    'roles' => $user->roles->pluck('name')->values()->all(),
                 ];
             })
             ->withQueryString();
@@ -58,7 +58,8 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['nullable', 'string', Rule::exists('roles', 'name')],
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')],
         ]);
 
         $user = User::create([
@@ -67,10 +68,21 @@ class UserController extends Controller
             'password' => bcrypt($validated['password']),
         ]);
 
-        // Assign role (default to Karyawan if available)
-        $roleName = $validated['role'] ?? Role::query()->where('name', 'Karyawan')->value('name');
-        if ($roleName) {
-            $user->syncRoles([$roleName]);
+        $roles = collect($request->input('roles', []))
+            ->filter(fn ($role) => filled($role))
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($roles)) {
+            $defaultRole = Role::query()->where('name', 'Karyawan')->value('name');
+            if ($defaultRole) {
+                $roles = [$defaultRole];
+            }
+        }
+
+        if (! empty($roles)) {
+            $user->syncRoles($roles);
         }
 
         return back()->with('success', 'User created');
@@ -83,7 +95,8 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             // Treat empty string as "no change"; only validate if provided and not empty
             'password' => ['sometimes', 'nullable', 'string', 'min:8'],
-            'role' => ['sometimes', 'nullable', 'string', Rule::exists('roles', 'name')],
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')],
         ]);
 
         $user->name = $validated['name'];
@@ -93,15 +106,18 @@ class UserController extends Controller
         }
         $user->save();
 
-        // Update role if provided (prevent demoting self from Admin)
-        if ($request->has('role')) {
-            $newRole = $validated['role'] ?? null;
-            if ($user->id === Auth::id() && $newRole && $newRole !== 'Admin') {
-                return back()->with('error', 'Tidak dapat mengubah role Anda sendiri dari Admin.');
+        if ($request->has('roles')) {
+            $roles = collect($request->input('roles', []))
+                ->filter(fn ($role) => filled($role))
+                ->unique()
+                ->values()
+                ->all();
+
+            if ($user->id === Auth::id() && ! in_array('Admin', $roles, true)) {
+                return back()->with('error', 'Tidak dapat menghapus role Admin dari akun Anda sendiri.');
             }
-            if ($newRole) {
-                $user->syncRoles([$newRole]);
-            }
+
+            $user->syncRoles($roles);
         }
 
         return back()->with('success', 'User updated');

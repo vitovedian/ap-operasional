@@ -19,6 +19,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 
 const drawerWidth = 240;
 
@@ -27,6 +28,8 @@ export default function SidebarLayout({ header, children }) {
     const user = props.auth.user;
     const isAdmin = props.auth.isAdmin;
     const isFinanceManager = props.auth.isFinanceManager;
+    const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
+    const canViewSuratTugasList = props.auth.canViewSuratTugasList;
     const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleDrawerToggle = () => setMobileOpen((v) => !v);
@@ -56,6 +59,26 @@ export default function SidebarLayout({ header, children }) {
                       active: isActive('invoices.create'),
                   },
               ]),
+        ...(canViewSuratTugasList
+            ? [
+                  {
+                      label: 'Daftar Surat Tugas',
+                      icon: <AssignmentTurnedInIcon />,
+                      href: route('surat-tugas.index'),
+                      active: isActive('surat-tugas.index'),
+                  },
+              ]
+            : []),
+        ...(canSubmitSuratTugas
+            ? [
+                  {
+                      label: 'Pengajuan Surat Tugas',
+                      icon: <RequestQuoteIcon />,
+                      href: route('surat-tugas.create'),
+                      active: isActive('surat-tugas.create'),
+                  },
+              ]
+            : []),
         ...(isAdmin
             ? [
                   {

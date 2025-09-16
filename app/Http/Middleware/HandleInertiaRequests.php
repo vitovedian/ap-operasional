@@ -35,6 +35,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'isAdmin' => fn () => $request->user()?->hasRole('Admin') ?? false,
                 'isFinanceManager' => fn () => $request->user()?->hasRole('Manager Keuangan') ?? false,
+                'canSubmitSuratTugas' => fn () => $request->user()?->hasAnyRole(['Karyawan', 'Manager Operasional']) ?? false,
+                'canViewSuratTugasList' => fn () => $request->user()?->hasAnyRole(['Admin', 'Manager Operasional']) ?? false,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

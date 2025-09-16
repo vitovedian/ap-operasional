@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvoiceSubmissionController;
+use App\Http\Controllers\SuratTugasSubmissionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,11 +44,22 @@ Route::middleware(['auth', 'verified', 'role:Manager Keuangan|Admin'])->group(fu
 Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|Manager Operasional'])->group(function () {
     Route::get('/invoices/create', [InvoiceSubmissionController::class, 'create'])->name('invoices.create');
     Route::post('/invoices', [InvoiceSubmissionController::class, 'store'])->name('invoices.store');
+    Route::get('/surat-tugas/create', [SuratTugasSubmissionController::class, 'create'])->name('surat-tugas.create');
+    Route::post('/surat-tugas', [SuratTugasSubmissionController::class, 'store'])->name('surat-tugas.store');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::put('/invoices/{invoice}', [InvoiceSubmissionController::class, 'update'])->name('invoices.update');
     Route::delete('/invoices/{invoice}', [InvoiceSubmissionController::class, 'destroy'])->name('invoices.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'role:Manager Operasional|Admin'])->group(function () {
+    Route::get('/surat-tugas', [SuratTugasSubmissionController::class, 'index'])->name('surat-tugas.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
+    Route::put('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'update'])->name('surat-tugas.update');
+    Route::delete('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'destroy'])->name('surat-tugas.destroy');
 });
 
 require __DIR__.'/auth.php';
