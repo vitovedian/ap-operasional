@@ -7,6 +7,7 @@ import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 export default function UsersIndex({ users, filters, roles = [], currentUserId }) {
@@ -24,6 +25,24 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
   const submitSearch = (event) => {
     event.preventDefault();
     router.get(route('users.index'), { search }, { preserveState: true, replace: true });
+  };
+
+  const toggleCreateRole = (role) => {
+    setCreateForm((prev) => {
+      const rolesSet = prev.roles.includes(role)
+        ? prev.roles.filter((r) => r !== role)
+        : [...prev.roles, role];
+      return { ...prev, roles: rolesSet };
+    });
+  };
+
+  const toggleEditRole = (role) => {
+    setEditForm((prev) => {
+      const rolesSet = prev.roles.includes(role)
+        ? prev.roles.filter((r) => r !== role)
+        : [...prev.roles, role];
+      return { ...prev, roles: rolesSet };
+    });
   };
 
   const submitCreate = (event) => {
@@ -185,22 +204,12 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
             <Input type="password" value={createForm.password} onChange={(e) => setCreateForm((prev) => ({ ...prev, password: e.target.value }))} required />
           </Field>
           <Field label="Role">
-            <select
-              multiple
-              className="h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={createForm.roles}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, (option) => option.value);
-                setCreateForm((prev) => ({ ...prev, roles: selected }));
-              }}
-            >
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">Tahan Ctrl / Command untuk memilih lebih dari satu role.</p>
+            <RoleSelector
+              roles={roles}
+              selected={createForm.roles}
+              onToggle={toggleCreateRole}
+              description="Pilih satu atau beberapa role yang akan diberikan ke pengguna."
+            />
           </Field>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpenCreate(false)}>
@@ -226,21 +235,7 @@ export default function UsersIndex({ users, filters, roles = [], currentUserId }
             <Input type="password" value={editForm.password} onChange={(e) => setEditForm((prev) => ({ ...prev, password: e.target.value }))} />
           </Field>
           <Field label="Role">
-            <select
-              multiple
-              className="h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              value={editForm.roles}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, (option) => option.value);
-                setEditForm((prev) => ({ ...prev, roles: selected }));
-              }}
-            >
-              {roles.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
+            <RoleSelector roles={roles} selected={editForm.roles} onToggle={toggleEditRole} />
           </Field>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpenEdit(false)}>
@@ -272,6 +267,38 @@ function Field({ label, children }) {
   );
 }
 
+function RoleSelector({ roles = [], selected = [], onToggle, description }) {
+  if (!roles.length) {
+    return <p className="text-xs text-muted-foreground">Belum ada role yang tersedia.</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      <div className="grid gap-2 sm:grid-cols-2">
+        {roles.map((role) => {
+          const checked = selected.includes(role);
+          return (
+            <label
+              key={role}
+              className={cn(
+                'flex items-center gap-2 rounded-md border border-border/60 bg-background p-3 text-sm transition-colors',
+                checked ? 'border-primary bg-primary/5' : 'hover:bg-muted/60'
+              )}
+            >
+              <Checkbox
+                checked={checked}
+                onChange={() => onToggle(role)}
+              />
+              <span className="font-medium capitalize">{role}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Alert({ type, message }) {
   const variant = type === 'error' ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary';
   return <div className={cn('rounded-md px-4 py-3 text-sm font-medium', variant)}>{message}</div>;
@@ -293,4 +320,3 @@ function Pagination({ links, className }) {
 function sanitizeLabel(label) {
   return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');
 }
-

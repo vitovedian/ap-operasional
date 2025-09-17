@@ -51,6 +51,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   const [openReject, setOpenReject] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detail, setDetail] = useState(null);
 
   const openEditDialog = (submission) => {
     setEditing(submission);
@@ -131,6 +133,14 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     );
   };
 
+  const handleDetail = (item) => {
+    setDetail({
+      ...item,
+      processed_at: item.processed_at || '-',
+    });
+    setOpenDetail(true);
+  };
+
   return (
     <SidebarLayout header={<Typography>Daftar Surat Tugas</Typography>}>
       <Head title="Daftar Surat Tugas" />
@@ -159,8 +169,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                   </div>
                   <div className="mt-4 space-y-2">
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={route('surat-tugas.show', item.id)}>Lihat Detail</a>
+                    <Button variant="outline" className="w-full" onClick={() => handleDetail(item)}>
+                      Lihat Detail
                     </Button>
                     {canManage && (
                       <div className="grid grid-cols-2 gap-2">
@@ -200,17 +210,17 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
             <Table className="min-w-[1000px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tgl Pengajuan</TableHead>
-                  <TableHead>Tgl Kegiatan</TableHead>
-                  <TableHead>Kegiatan</TableHead>
-                  <TableHead>PIC</TableHead>
-                  <TableHead>Pendamping</TableHead>
-                  <TableHead className="text-right">Fee Pendamping (Rp)</TableHead>
-                  <TableHead>Instruktor 1</TableHead>
-                  <TableHead>Instruktor 2</TableHead>
-                  <TableHead>Diajukan oleh</TableHead>
-                  <TableHead>Status</TableHead>
-                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="w-56 text-right">Aksi</TableHead>}
+                  <TableHead className="text-center">Tgl Pengajuan</TableHead>
+                  <TableHead className="text-center">Tgl Kegiatan</TableHead>
+                  <TableHead className="text-center">Kegiatan</TableHead>
+                  <TableHead className="text-center">PIC</TableHead>
+                  <TableHead className="text-center">Pendamping</TableHead>
+                  <TableHead className="text-center">Fee Pendamping (Rp)</TableHead>
+                  <TableHead className="text-center">Instruktor 1</TableHead>
+                  <TableHead className="text-center">Instruktor 2</TableHead>
+                  <TableHead className="text-center">Diajukan oleh</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="w-56 text-center">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,7 +233,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       <TableCell>{item.kegiatan}</TableCell>
                       <TableCell>{item.pic?.name || '-'}</TableCell>
                       <TableCell>{item.nama_pendampingan}</TableCell>
-                      <TableCell className="text-right">{toIDR(item.fee_pendampingan)}</TableCell>
+                      <TableCell className="text-center">{toIDR(item.fee_pendampingan)}</TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div>{item.instruktor_1_nama}</div>
@@ -252,8 +262,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       {(canManage || canModerate || item.can_self_edit) && (
                         <TableCell>
                           <div className="flex flex-col items-stretch gap-2 text-right">
-                            <Button variant="outline" size="sm" className="justify-center" asChild>
-                              <a href={route('surat-tugas.show', item.id)}>Detail</a>
+                            <Button variant="outline" size="sm" className="justify-center" onClick={() => handleDetail(item)}>
+                              Detail
                             </Button>
                             {canManage && (
                               <div className="flex gap-2">
@@ -381,15 +391,74 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           </DialogFooter>
         </form>
       </Dialog>
+
+      <Dialog
+        open={openDetail}
+        onOpenChange={setOpenDetail}
+        panelClassName="w-full max-w-xl space-y-4 overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl"
+      >
+        <DialogHeader>
+          <DialogTitle>Detail Surat Tugas</DialogTitle>
+        </DialogHeader>
+        {detail && (
+          <div className="space-y-4">
+            <DetailGrid title="Informasi Pengajuan">
+              <Detail label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} valueClass="font-medium" />
+              <Detail label="Tanggal Kegiatan" value={detail.tanggal_kegiatan} valueClass="font-medium" />
+              <Detail label="Kegiatan" value={detail.kegiatan} valueClass="font-medium" />
+              <Detail label="Nama Pendampingan" value={detail.nama_pendampingan} valueClass="font-medium" />
+              <Detail label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} valueClass="font-medium" />
+              <Detail
+                label="Instruktor 1"
+                value={`${detail.instruktor_1_nama} (Rp ${toIDR(detail.instruktor_1_fee)})`}
+                valueClass="font-medium"
+              />
+              <Detail
+                label="Instruktor 2"
+                value={detail.instruktor_2_nama ? `${detail.instruktor_2_nama} (Rp ${toIDR(detail.instruktor_2_fee)})` : '-'}
+                valueClass="font-medium"
+              />
+            </DetailGrid>
+
+            <DetailGrid title="Status & Catatan">
+              <Detail label="Status" value={detail.status} valueClass={statusColor(detail.status)} />
+              <Detail label="Catatan Revisi" value={detail.catatan_revisi || '-'} />
+              <Detail label="Diproses oleh" value={detail.processed_by?.name || '-'} />
+              <Detail label="Diproses pada" value={detail.processed_at || '-'} />
+            </DetailGrid>
+
+            <DetailGrid title="PIC & Pengaju">
+              <Detail label="PIC" value={detail.pic?.name || '-'} />
+              <Detail label="Email PIC" value={detail.pic?.email || '-'} />
+              <Detail label="Pengaju" value={detail.pengaju?.name || '-'} />
+              <Detail label="Email Pengaju" value={detail.pengaju?.email || '-'} />
+            </DetailGrid>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
+            Tutup
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </SidebarLayout>
   );
 }
 
-function Detail({ label, value, valueClass }) {
+function Detail({ label, value, valueClass = '' }) {
   return (
     <div className="flex justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className={cn('font-medium', valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+function DetailGrid({ title, children }) {
+  return (
+    <div className="space-y-2">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
+      <div className="grid gap-2">{children}</div>
     </div>
   );
 }

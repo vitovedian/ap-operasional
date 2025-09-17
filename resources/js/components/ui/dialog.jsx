@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { Dialog as HeadlessDialog, Transition } from '@headlessui/react';
 import { cn } from '@/lib/utils';
 
-function Dialog({ open, onOpenChange, children }) {
+function Dialog({ open, onOpenChange, children, panelClassName }) {
   return (
     <Transition show={open} as={Fragment}>
       <HeadlessDialog as="div" className="relative z-50" onClose={onOpenChange}>
@@ -29,7 +29,7 @@ function Dialog({ open, onOpenChange, children }) {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <HeadlessDialog.Panel className="w-full max-w-lg rounded-xl border border-border bg-background p-6 shadow-lg">
+              <HeadlessDialog.Panel className={cn('w-full max-w-lg rounded-xl border border-border bg-background p-6 shadow-lg', panelClassName)}>
                 {children}
               </HeadlessDialog.Panel>
             </Transition.Child>

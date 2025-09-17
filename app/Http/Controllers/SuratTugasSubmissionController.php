@@ -39,6 +39,7 @@ class SuratTugasSubmissionController extends Controller
                     'pic' => $submission->pic ? [
                         'id' => $submission->pic->id,
                         'name' => $submission->pic->name,
+                        'email' => $submission->pic->email,
                     ] : null,
                     'nama_pendampingan' => $submission->nama_pendampingan,
                     'fee_pendampingan' => (int) $submission->fee_pendampingan,
@@ -49,6 +50,7 @@ class SuratTugasSubmissionController extends Controller
                     'pengaju' => $submission->user ? [
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
+                        'email' => $submission->user->email,
                     ] : null,
                     'status' => $status,
                     'catatan_revisi' => $submission->catatan_revisi,
