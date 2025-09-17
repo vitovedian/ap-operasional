@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Container, Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Card, CardContent, CardActions, Divider, useMediaQuery } from '@mui/material';
-import { useState } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 function toIDR(n) {
   const num = Number(n || 0);
@@ -13,8 +18,6 @@ export default function InvoicesIndex({ invoices }) {
   const { props } = usePage();
   const { flash } = props;
   const canManage = Boolean(props?.canManageInvoices);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const initialForm = {
     tanggal_pengajuan: '',
@@ -24,12 +27,6 @@ export default function InvoicesIndex({ invoices }) {
     ppn: 'tanpa',
     total_invoice_ope: '',
     bukti_surat_konfirmasi: null,
-  };
-
-  const toIDRString = (value) => {
-    const digits = String(value ?? '').replace(/\D/g, '');
-    if (!digits) return '';
-    return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
   const [openEdit, setOpenEdit] = useState(false);
@@ -50,9 +47,10 @@ export default function InvoicesIndex({ invoices }) {
     setOpenEdit(true);
   };
 
-  const onEditFileChange = (e) => {
-    const file = e.target.files?.[0] || null;
-    setForm((prev) => ({ ...prev, bukti_surat_konfirmasi: file }));
+  const toIDRString = (value) => {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    if (!digits) return '';
+    return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
   const submitUpdate = (e) => {
@@ -88,203 +86,246 @@ export default function InvoicesIndex({ invoices }) {
     }
   };
 
+  const onFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setForm((prev) => ({ ...prev, bukti_surat_konfirmasi: file }));
+  };
+
   return (
-    <SidebarLayout header={<Typography variant="h6">Daftar Invoice</Typography>}>
+    <SidebarLayout header={<Typography>Daftar Invoice</Typography>}>
       <Head title="Daftar Invoice" />
-      <Container sx={{ py: 2 }}>
-        <Stack spacing={2}>
-          {flash?.success && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="success.main">{flash.success}</Typography>
-            </Paper>
-          )}
-          {flash?.error && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="error.main">{flash.error}</Typography>
-            </Paper>
-          )}
+      <div className="space-y-4">
+        {flash?.success && (
+          <Alert type="success" message={flash.success} />
+        )}
+        {flash?.error && (
+          <Alert type="error" message={flash.error} />
+        )}
 
-          {isMobile ? (
-            <Stack spacing={2}>
-              {invoices.data.map((inv) => (
-                <Card key={inv.id} variant="outlined">
-                  <CardContent>
-                    <Stack spacing={0.75}>
-                      <Typography variant="subtitle2">{inv.kegiatan}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Tgl Pengajuan: {inv.tanggal_pengajuan}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Tgl Invoice: {inv.tanggal_invoice}
-                      </Typography>
-                      <Divider flexItem sx={{ my: 0.5 }} />
-                      <Typography variant="body2">Tagihan: Rp {toIDR(inv.tagihan_invoice)}</Typography>
-                      <Typography variant="body2">Total OPE: Rp {toIDR(inv.total_invoice_ope)}</Typography>
-                      <Typography variant="body2">PPN: {inv.ppn}</Typography>
-                      <Typography variant="body2">Pengaju: {inv.user?.name || '-'}</Typography>
-                    </Stack>
-                  </CardContent>
-                  <CardActions>
-                    <Stack spacing={1} direction="column" sx={{ width: '100%' }}>
-                      <Button size="small" variant="outlined" component="a" href={inv.download_url} target="_blank" rel="noopener">
-                        Unduh Bukti
+        <Card className="block lg:hidden">
+          <CardHeader>
+            <CardTitle>Daftar Invoice</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {invoices.data.map((inv) => (
+              <div key={inv.id} className="rounded-lg border border-border bg-background p-4">
+                <div className="space-y-1 text-sm">
+                  <Detail label="Tanggal Pengajuan" value={inv.tanggal_pengajuan} />
+                  <Detail label="Tanggal Invoice" value={inv.tanggal_invoice} />
+                  <Detail label="Kegiatan" value={inv.kegiatan} />
+                  <Detail label="Tagihan" value={`Rp ${toIDR(inv.tagihan_invoice)}`} />
+                  <Detail label="Total OPE" value={`Rp ${toIDR(inv.total_invoice_ope)}`} />
+                  <Detail label="PPN" value={inv.ppn} />
+                  <Detail label="Pengaju" value={inv.user?.name || '-'} />
+                </div>
+                <div className="mt-4 space-y-2">
+                  <Button variant="outline" className="w-full" asChild>
+                    <a href={inv.download_url} target="_blank" rel="noopener">
+                      Unduh Bukti
+                    </a>
+                  </Button>
+                  {canManage && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="secondary" onClick={() => openEditDialog(inv)}>
+                        Edit
                       </Button>
-                      {canManage && (
-                        <Stack direction="row" spacing={1}>
-                          <Button size="small" variant="outlined" fullWidth onClick={() => openEditDialog(inv)}>
-                            Edit
-                          </Button>
-                          <Button size="small" color="error" variant="outlined" fullWidth onClick={() => onDelete(inv)}>
-                            Hapus
-                          </Button>
-                        </Stack>
-                      )}
-                    </Stack>
-                  </CardActions>
-                </Card>
-              ))}
-              <Stack direction="row" spacing={1}>
-                {invoices.links.map((l, idx) => (
-                  <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} href={l.url || '#'} sx={{ flex: 1 }}>
-                    {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                  </Button>
-                ))}
-              </Stack>
-            </Stack>
-          ) : (
-            <Paper sx={{ width: '100%', overflowX: 'auto' }}>
-              <Table size="small" stickyHeader sx={{ minWidth: 900 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Tgl Pengajuan</TableCell>
-                    <TableCell>Tgl Invoice</TableCell>
-                    <TableCell>Kegiatan</TableCell>
-                    <TableCell align="right">Tagihan (Rp)</TableCell>
-                    <TableCell>PPN</TableCell>
-                    <TableCell align="right">Total OPE (Rp)</TableCell>
-                    <TableCell>Diajukan oleh</TableCell>
-                    <TableCell>Aksi</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {invoices.data.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell>{inv.tanggal_pengajuan}</TableCell>
-                      <TableCell>{inv.tanggal_invoice}</TableCell>
-                      <TableCell>{inv.kegiatan}</TableCell>
-                      <TableCell align="right">{toIDR(inv.tagihan_invoice)}</TableCell>
-                      <TableCell>{inv.ppn}</TableCell>
-                      <TableCell align="right">{toIDR(inv.total_invoice_ope)}</TableCell>
-                      <TableCell>{inv.user?.name || '-'}</TableCell>
-                      <TableCell>
-                        <Stack spacing={1}>
-                          <Button size="small" variant="outlined" component="a" href={inv.download_url} target="_blank" rel="noopener" sx={{ alignSelf: 'flex-start' }}>
-                            Unduh Bukti
-                          </Button>
-                          {canManage && (
-                            <Stack direction="row" spacing={1}>
-                              <Button size="small" variant="outlined" onClick={() => openEditDialog(inv)} sx={{ flex: 1 }}>Edit</Button>
-                              <Button size="small" color="error" variant="outlined" onClick={() => onDelete(inv)} sx={{ flex: 1 }}>Hapus</Button>
-                            </Stack>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Stack direction="row" spacing={1} sx={{ p: 2 }}>
-                {invoices.links.map((l, idx) => (
-                  <Button key={idx} size="small" variant={l.active ? 'contained' : 'text'} disabled={!l.url} href={l.url || '#'}>
-                    {l.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                  </Button>
-                ))}
-              </Stack>
-            </Paper>
-          )}
-        </Stack>
-      </Container>
+                      <Button variant="destructive" onClick={() => onDelete(inv)}>
+                        Hapus
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            <Pagination links={invoices.links} className="pt-2" />
+          </CardContent>
+        </Card>
 
-      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Invoice</DialogTitle>
+        <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
+          <div className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tgl Pengajuan</TableHead>
+                  <TableHead>Tgl Invoice</TableHead>
+                  <TableHead>Kegiatan</TableHead>
+                  <TableHead className="text-right">Tagihan (Rp)</TableHead>
+                  <TableHead>PPN</TableHead>
+                  <TableHead className="text-right">Total OPE (Rp)</TableHead>
+                  <TableHead>Pengaju</TableHead>
+                  <TableHead className="w-48 text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.data.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell>{inv.tanggal_pengajuan}</TableCell>
+                    <TableCell>{inv.tanggal_invoice}</TableCell>
+                    <TableCell>{inv.kegiatan}</TableCell>
+                    <TableCell className="text-right">{toIDR(inv.tagihan_invoice)}</TableCell>
+                    <TableCell>{inv.ppn}</TableCell>
+                    <TableCell className="text-right">{toIDR(inv.total_invoice_ope)}</TableCell>
+                    <TableCell>{inv.user?.name || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
+                        <Button variant="outline" className="sm:flex-1" asChild>
+                          <a href={inv.download_url} target="_blank" rel="noopener">
+                            Unduh
+                          </a>
+                        </Button>
+                        {canManage && (
+                          <div className="flex flex-1 gap-2">
+                            <Button variant="secondary" className="flex-1" onClick={() => openEditDialog(inv)}>
+                              Edit
+                            </Button>
+                            <Button variant="destructive" className="flex-1" onClick={() => onDelete(inv)}>
+                              Hapus
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="border-t bg-muted/40 py-3">
+            <Pagination links={invoices.links} />
+          </div>
+        </div>
+      </div>
+
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
         <form onSubmit={submitUpdate}>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Tanggal Pengajuan"
+          <DialogHeader>
+            <DialogTitle>Edit Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Tanggal Pengajuan">
+                <Input
                   type="date"
                   value={form.tanggal_pengajuan}
                   onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
                   required
-                  fullWidth
                 />
-                <TextField
-                  label="Tanggal Invoice"
+              </Field>
+              <Field label="Tanggal Invoice">
+                <Input
                   type="date"
                   value={form.tanggal_invoice}
                   onChange={(e) => setForm((prev) => ({ ...prev, tanggal_invoice: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
                   required
-                  fullWidth
                 />
-              </Stack>
-
-              <TextField
-                label="Kegiatan"
+              </Field>
+            </div>
+            <Field label="Kegiatan">
+              <Input
                 value={form.kegiatan}
                 onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))}
                 required
-                fullWidth
               />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Tagihan Invoice (Rp)"
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Tagihan Invoice (Rp)">
+                <Input
                   value={toIDRString(form.tagihan_invoice)}
                   onChange={(e) => setForm((prev) => ({ ...prev, tagihan_invoice: e.target.value }))}
                   inputMode="numeric"
                   required
-                  fullWidth
                 />
-                <TextField
-                  select
-                  label="PPN"
+              </Field>
+              <Field label="PPN">
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={form.ppn}
                   onChange={(e) => setForm((prev) => ({ ...prev, ppn: e.target.value }))}
-                  fullWidth
                 >
-                  <MenuItem value="include">include ppn</MenuItem>
-                  <MenuItem value="exclude">exclude ppn</MenuItem>
-                  <MenuItem value="tanpa">tanpa ppn</MenuItem>
-                </TextField>
-              </Stack>
-
-              <TextField
-                label="Total Invoice OPE (Rp)"
+                  <option value="include">include ppn</option>
+                  <option value="exclude">exclude ppn</option>
+                  <option value="tanpa">tanpa ppn</option>
+                </select>
+              </Field>
+            </div>
+            <Field label="Total Invoice OPE (Rp)">
+              <Input
                 value={toIDRString(form.total_invoice_ope)}
                 onChange={(e) => setForm((prev) => ({ ...prev, total_invoice_ope: e.target.value }))}
                 inputMode="numeric"
                 required
-                fullWidth
               />
-
-              <Button variant="outlined" component="label">
-                {form.bukti_surat_konfirmasi ? 'Ganti File (PDF)' : 'Unggah File Baru (PDF)'}
-                <input hidden type="file" accept="application/pdf" onChange={onEditFileChange} />
-              </Button>
+            </Field>
+            <Field label="Bukti Surat Konfirmasi (PDF)">
+              <Input type="file" accept="application/pdf" onChange={onFileChange} />
               {form.bukti_surat_konfirmasi && (
-                <Typography variant="caption">File: {form.bukti_surat_konfirmasi.name}</Typography>
+                <p className="text-xs text-muted-foreground">{form.bukti_surat_konfirmasi.name}</p>
               )}
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button type="submit" variant="contained">Simpan</Button>
-          </DialogActions>
+            </Field>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button type="button" variant="ghost" onClick={() => setOpenEdit(false)}>
+              Batal
+            </Button>
+            <Button type="submit">Simpan</Button>
+          </DialogFooter>
         </form>
       </Dialog>
     </SidebarLayout>
   );
+}
+
+function Alert({ type, message }) {
+  const variant = type === 'error' ? 'bg-destructive/20 text-destructive' : 'bg-primary/10 text-primary';
+  return (
+    <div className={cn('flex items-center justify-between rounded-md px-4 py-3 text-sm', variant)}>
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function Pagination({ links, className }) {
+  if (!links?.length) return null;
+  return (
+    <div className={cn('flex flex-wrap items-center gap-2 px-4', className)}>
+      {links.map((link, idx) => (
+        <Button
+          key={idx}
+          variant={link.active ? 'default' : 'outline'}
+          size="sm"
+          disabled={!link.url}
+          asChild
+        >
+          <a href={link.url || '#'} dangerouslySetInnerHTML={{ __html: sanitizeLabel(link.label) }} />
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function sanitizeLabel(label) {
+  return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');
+}
+
+function Detail({ label, value }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function Typography({ as = 'div', className, children }) {
+  const Comp = as;
+  return <Comp className={cn('text-lg font-semibold', className)}>{children}</Comp>;
 }

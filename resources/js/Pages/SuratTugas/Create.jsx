@@ -1,16 +1,20 @@
+import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Container, Paper, Typography, Stack, TextField, Button, MenuItem } from '@mui/material';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
-export default function SuratTugasCreate({ picOptions = [] }) {
+export default function CreateSuratTugas() {
   const { props } = usePage();
-  const { flash } = props;
+  const { flash, picOptions = [] } = props;
 
   const [form, setForm] = useState({
     tanggal_pengajuan: '',
-    kegiatan: '',
     tanggal_kegiatan: '',
+    kegiatan: '',
     pic_id: picOptions[0]?.id || '',
     nama_pendampingan: '',
     fee_pendampingan: '',
@@ -26,28 +30,29 @@ export default function SuratTugasCreate({ picOptions = [] }) {
     return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const bind = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
 
-    const payload = new FormData();
-    payload.append('tanggal_pengajuan', form.tanggal_pengajuan);
-    payload.append('kegiatan', form.kegiatan);
-    payload.append('tanggal_kegiatan', form.tanggal_kegiatan);
-    payload.append('pic_id', String(form.pic_id));
-    payload.append('nama_pendampingan', form.nama_pendampingan);
-    payload.append('fee_pendampingan', String(form.fee_pendampingan));
-    payload.append('instruktor_1_nama', form.instruktor_1_nama);
-    payload.append('instruktor_1_fee', String(form.instruktor_1_fee));
-    payload.append('instruktor_2_nama', form.instruktor_2_nama);
-    payload.append('instruktor_2_fee', String(form.instruktor_2_fee));
-
-    router.post(route('surat-tugas.store'), payload, {
-      forceFormData: true,
+  const submit = (event) => {
+    event.preventDefault();
+    router.post(route('surat-tugas.store'), {
+      tanggal_pengajuan: form.tanggal_pengajuan,
+      tanggal_kegiatan: form.tanggal_kegiatan,
+      kegiatan: form.kegiatan,
+      pic_id: form.pic_id,
+      nama_pendampingan: form.nama_pendampingan,
+      fee_pendampingan: form.fee_pendampingan,
+      instruktor_1_nama: form.instruktor_1_nama,
+      instruktor_1_fee: form.instruktor_1_fee,
+      instruktor_2_nama: form.instruktor_2_nama,
+      instruktor_2_fee: form.instruktor_2_fee,
+    }, {
       onSuccess: () => {
         setForm({
           tanggal_pengajuan: '',
-          kegiatan: '',
           tanggal_kegiatan: '',
+          kegiatan: '',
           pic_id: picOptions[0]?.id || '',
           nama_pendampingan: '',
           fee_pendampingan: '',
@@ -61,130 +66,98 @@ export default function SuratTugasCreate({ picOptions = [] }) {
   };
 
   return (
-    <SidebarLayout header={<Typography variant="h6">Pengajuan Surat Tugas</Typography>}>
+    <SidebarLayout header={<Typography>Pengajuan Surat Tugas</Typography>}>
       <Head title="Pengajuan Surat Tugas" />
+      <div className="mx-auto max-w-3xl space-y-4">
+        {flash?.success && <Alert type="success" message={flash.success} />}
+        {flash?.error && <Alert type="error" message={flash.error} />}
 
-      <Container sx={{ py: 2 }}>
-        <Stack spacing={2}>
-          {flash?.success && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="success.main">{flash.success}</Typography>
-            </Paper>
-          )}
-          {flash?.error && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="error.main">{flash.error}</Typography>
-            </Paper>
-          )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Form Surat Tugas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-6" onSubmit={submit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Tanggal Pengajuan">
+                  <Input type="date" value={form.tanggal_pengajuan} onChange={bind('tanggal_pengajuan')} required />
+                </Field>
+                <Field label="Tanggal Kegiatan">
+                  <Input type="date" value={form.tanggal_kegiatan} onChange={bind('tanggal_kegiatan')} required />
+                </Field>
+              </div>
 
-          <Paper sx={{ p: 2 }}>
-            <form onSubmit={onSubmit}>
-              <Stack spacing={2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    label="Tanggal Pengajuan"
-                    type="date"
-                    value={form.tanggal_pengajuan}
-                    onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))}
-                    InputLabelProps={{ shrink: true }}
-                    required
-                    fullWidth
-                  />
-                  <TextField
-                    label="Tanggal Kegiatan"
-                    type="date"
-                    value={form.tanggal_kegiatan}
-                    onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kegiatan: e.target.value }))}
-                    InputLabelProps={{ shrink: true }}
-                    required
-                    fullWidth
-                  />
-                </Stack>
+              <Field label="Kegiatan">
+                <Input value={form.kegiatan} onChange={bind('kegiatan')} required />
+              </Field>
 
-                <TextField
-                  label="Kegiatan"
-                  value={form.kegiatan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))}
-                  required
-                  fullWidth
-                />
-
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    select
-                    label="Nama PIC"
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="PIC">
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     value={form.pic_id}
-                    onChange={(e) => setForm((prev) => ({ ...prev, pic_id: e.target.value }))}
-                    fullWidth
+                    onChange={bind('pic_id')}
                     required
                   >
                     {picOptions.map((pic) => (
-                      <MenuItem key={pic.id} value={pic.id}>
+                      <option key={pic.id} value={pic.id}>
                         {pic.name}
-                      </MenuItem>
+                      </option>
                     ))}
-                  </TextField>
-                  <TextField
-                    label="Nama Pendampingan"
-                    value={form.nama_pendampingan}
-                    onChange={(e) => setForm((prev) => ({ ...prev, nama_pendampingan: e.target.value }))}
-                    required
-                    fullWidth
-                  />
-                </Stack>
+                  </select>
+                </Field>
+                <Field label="Nama Pendampingan">
+                  <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} required />
+                </Field>
+              </div>
 
-                <TextField
-                  label="Fee Pendampingan (Rp)"
-                  value={toIDRString(form.fee_pendampingan)}
-                  onChange={(e) => setForm((prev) => ({ ...prev, fee_pendampingan: e.target.value }))}
-                  inputMode="numeric"
-                  required
-                  fullWidth
-                />
+              <Field label="Fee Pendampingan (Rp)">
+                <Input value={toIDRString(form.fee_pendampingan)} onChange={bind('fee_pendampingan')} inputMode="numeric" required />
+              </Field>
 
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    label="Instruktor 1"
-                    value={form.instruktor_1_nama}
-                    onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_nama: e.target.value }))}
-                    required
-                    fullWidth
-                  />
-                  <TextField
-                    label="Fee Instruktor 1 (Rp)"
-                    value={toIDRString(form.instruktor_1_fee)}
-                    onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_fee: e.target.value }))}
-                    inputMode="numeric"
-                    required
-                    fullWidth
-                  />
-                </Stack>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Instruktor 1">
+                  <Input value={form.instruktor_1_nama} onChange={bind('instruktor_1_nama')} required />
+                </Field>
+                <Field label="Fee Instruktor 1 (Rp)">
+                  <Input value={toIDRString(form.instruktor_1_fee)} onChange={bind('instruktor_1_fee')} inputMode="numeric" required />
+                </Field>
+              </div>
 
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    label="Instruktor 2 (opsional)"
-                    value={form.instruktor_2_nama}
-                    onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_nama: e.target.value }))}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Fee Instruktor 2 (Rp)"
-                    value={toIDRString(form.instruktor_2_fee)}
-                    onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_fee: e.target.value }))}
-                    inputMode="numeric"
-                    fullWidth
-                  />
-                </Stack>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Instruktor 2 (opsional)">
+                  <Input value={form.instruktor_2_nama} onChange={bind('instruktor_2_nama')} />
+                </Field>
+                <Field label="Fee Instruktor 2 (Rp)">
+                  <Input value={toIDRString(form.instruktor_2_fee)} onChange={bind('instruktor_2_fee')} inputMode="numeric" />
+                </Field>
+              </div>
 
-                <Button type="submit" variant="contained" size="large" sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}>
-                  Ajukan
-                </Button>
-              </Stack>
+              <div className="flex justify-end">
+                <Button type="submit">Ajukan</Button>
+              </div>
             </form>
-          </Paper>
-        </Stack>
-      </Container>
+          </CardContent>
+        </Card>
+      </div>
     </SidebarLayout>
   );
 }
 
+function Field({ label, children }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function Alert({ type, message }) {
+  const variant = type === 'error' ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary';
+  return <div className={cn('rounded-md px-4 py-3 text-sm font-medium', variant)}>{message}</div>;
+}
+
+function Typography({ children }) {
+  return <h1 className="text-xl font-semibold text-foreground">{children}</h1>;
+}

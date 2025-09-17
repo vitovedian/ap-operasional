@@ -1,196 +1,180 @@
 import { useState } from 'react';
-import { usePage, router, Link } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Divider from '@mui/material/Divider';
-import Button from '@mui/material/Button';
-import MenuIcon from '@mui/icons-material/Menu';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleIcon from '@mui/icons-material/People';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import LogoutIcon from '@mui/icons-material/Logout';
-import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
-import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import { usePage, Link, router } from '@inertiajs/react';
+import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
 export default function SidebarLayout({ header, children }) {
-    const { props } = usePage();
-    const user = props.auth.user;
-    const isAdmin = props.auth.isAdmin;
-    const isFinanceManager = props.auth.isFinanceManager;
-    const isOperationalManager = props.auth.isOperationalManager;
-    const isKaryawan = props.auth.isKaryawan;
-    const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
-    const canSubmitInvoice = props.auth.canSubmitInvoice;
-    const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
-    const [mobileOpen, setMobileOpen] = useState(false);
+  const { props } = usePage();
+  const user = props.auth.user;
+  const isAdmin = props.auth.isAdmin;
+  const isFinanceManager = props.auth.isFinanceManager;
+  const isOperationalManager = props.auth.isOperationalManager;
+  const isKaryawan = props.auth.isKaryawan;
+  const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
+  const canSubmitInvoice = props.auth.canSubmitInvoice;
+  const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
 
-    const handleDrawerToggle = () => setMobileOpen((v) => !v);
-    const isActive = (namePattern) => route().current(namePattern);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
 
-    const dataNavItems = [
-        {
-            label: 'Dashboard',
-            icon: <DashboardIcon />,
-            href: route('dashboard'),
-            active: isActive('dashboard'),
-        },
-        ...(isFinanceManager || isAdmin
-            ? [
-                  {
-                      label: 'Daftar Invoice',
-                      icon: <RequestQuoteIcon />,
-                      href: route('invoices.index'),
-                      active: isActive('invoices.index'),
-                  },
-              ]
-            : []),
-        ...(canViewSuratTugasList
-            ? [
-                  {
-                      label: 'Daftar Surat Tugas',
-                      icon: <AssignmentTurnedInIcon />,
-                      href: route('surat-tugas.index'),
-                      active: isActive('surat-tugas.index'),
-                  },
-              ]
-            : []),
-        ...(isAdmin
-            ? [
-                  {
-                      label: 'Users',
-                      icon: <PeopleIcon />,
-                      href: route('users.index'),
-                      active: isActive('users.*'),
-                  },
-              ]
-            : []),
-    ];
+  const isActive = (namePattern) => route().current(namePattern);
 
-    const submissionNavItems = [
-        ...(canSubmitInvoice
-            ? [
-                  {
-                      label: 'Pengajuan Invoice',
-                      icon: <RequestQuoteIcon />,
-                      href: route('invoices.create'),
-                      active: isActive('invoices.create'),
-                  },
-              ]
-            : []),
-        ...(canSubmitSuratTugas
-            ? [
-                  {
-                      label: 'Pengajuan Surat Tugas',
-                      icon: <RequestQuoteIcon />,
-                      href: route('surat-tugas.create'),
-                      active: isActive('surat-tugas.create'),
-                  },
-              ]
-            : []),
-    ];
+  const dataNavItems = [
+    {
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      href: route('dashboard'),
+      active: isActive('dashboard'),
+    },
+    ...(isFinanceManager || isAdmin
+      ? [
+          {
+            label: 'Daftar Invoice',
+            icon: FileText,
+            href: route('invoices.index'),
+            active: isActive('invoices.index'),
+          },
+        ]
+      : []),
+    ...(canViewSuratTugasList
+      ? [
+          {
+            label: 'Daftar Surat Tugas',
+            icon: ScrollText,
+            href: route('surat-tugas.index'),
+            active: isActive('surat-tugas.index'),
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            label: 'Users',
+            icon: Users,
+            href: route('users.index'),
+            active: isActive('users.*'),
+          },
+        ]
+      : []),
+  ];
 
-    const onLogout = () => router.post(route('logout'));
+  const submissionNavItems = [
+    ...(canSubmitInvoice
+      ? [
+          {
+            label: 'Pengajuan Invoice',
+            icon: FileEdit,
+            href: route('invoices.create'),
+            active: isActive('invoices.create'),
+          },
+        ]
+      : []),
+    ...(canSubmitSuratTugas
+      ? [
+          {
+            label: 'Pengajuan Surat Tugas',
+            icon: FileEdit,
+            href: route('surat-tugas.create'),
+            active: isActive('surat-tugas.create'),
+          },
+        ]
+      : []),
+  ];
 
-    const drawer = (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Box sx={{ p: 2 }}>
-                <Typography variant="h6" noWrap component={Link} href={route('dashboard')} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Admin Panel
-                </Typography>
-            </Box>
-            <Divider />
-            <List sx={{ flex: 1 }}>
-                {dataNavItems.map((item) => (
-                    <ListItem key={item.label} disablePadding>
-                        <ListItemButton selected={item.active} onClick={() => router.visit(item.href)}>
-                            <ListItemIcon>{item.icon}</ListItemIcon>
-                            <ListItemText primary={item.label} />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
+  const onLogout = () => router.post(route('logout'));
 
-                {submissionNavItems.length > 0 && (
-                    <>
-                        <Divider sx={{ my: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                                Pengajuan
-                            </Typography>
-                        </Divider>
-                        {submissionNavItems.map((item) => (
-                            <ListItem key={item.label} disablePadding>
-                                <ListItemButton selected={item.active} onClick={() => router.visit(item.href)}>
-                                    <ListItemIcon>{item.icon}</ListItemIcon>
-                                    <ListItemText primary={item.label} />
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-                    </>
-                )}
-            </List>
-            <Divider />
-            <Box sx={{ p: 2 }}>
-                <Button startIcon={<AccountCircleIcon />} component={Link} href={route('profile.edit')} sx={{ mr: 1 }}>
-                    Profile
-                </Button>
-                <Button startIcon={<LogoutIcon />} onClick={onLogout} color="error">
-                    Logout
-                </Button>
-            </Box>
-        </Box>
-    );
+  const drawerContent = (
+    <div className="flex h-full flex-col border-r bg-card">
+      <div className="flex h-14 items-center border-b px-4">
+        <Link href={route('dashboard')} className="text-base font-semibold">
+          Admin Panel
+        </Link>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-2 py-4">
+        <NavSection title="Navigasi" items={dataNavItems} closeDrawer={() => setMobileOpen(false)} />
+        {submissionNavItems.length > 0 && (
+          <NavSection title="Pengajuan" items={submissionNavItems} closeDrawer={() => setMobileOpen(false)} />
+        )}
+      </nav>
+      <div className="border-t p-4">
+        <div className="flex items-center justify-between gap-2">
+          <Link href={route('profile.edit')} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <UserCircle className="mr-2 h-4 w-4" />
+            {user?.name || 'Profile'}
+          </Link>
+          <Button variant="ghost" size="sm" onClick={onLogout}>
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
-    return (
-        <Box sx={{ display: 'flex' }}>
-            <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-                <Toolbar>
-                    <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2, display: { sm: 'none' } }}>
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                        {header || 'Dashboard'}
-                    </Typography>
-                    <Typography variant="body2" color="inherit">
-                        {user?.name}
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+  return (
+    <div className="flex min-h-screen bg-muted/20 text-foreground">
+      {/* Sidebar Desktop */}
+      <aside className="hidden w-[260px] shrink-0 lg:block">{drawerContent}</aside>
 
-            {/* Sidebar */}
-            <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }} aria-label="sidebar">
-                <Drawer
-                    variant="temporary"
-                    open={mobileOpen}
-                    onClose={handleDrawerToggle}
-                    ModalProps={{ keepMounted: true }}
-                    sx={{ display: { xs: 'block', sm: 'none' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
-                >
-                    {drawer}
-                </Drawer>
-                <Drawer
-                    variant="permanent"
-                    sx={{ display: { xs: 'none', sm: 'block' }, '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
-                    open
-                >
-                    {drawer}
-                </Drawer>
-            </Box>
+      {/* Mobile sidebar */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 flex lg:hidden">
+          <div className="fixed inset-0 bg-black/40" onClick={handleDrawerToggle} />
+          <aside className="relative ml-auto h-full w-[260px] bg-card shadow-lg">{drawerContent}</aside>
+        </div>
+      )}
 
-            {/* Content */}
-            <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
-                <Toolbar />
-                {children}
-            </Box>
-        </Box>
-    );
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="flex h-14 items-center gap-3 px-4">
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={handleDrawerToggle}>
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div className="flex flex-1 items-center justify-between">
+              <Typography as="h1" className="text-base font-semibold">
+                {header || 'Dashboard'}
+              </Typography>
+              <span className="hidden text-sm font-medium text-muted-foreground lg:block">{user?.name}</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
+      </div>
+    </div>
+  );
+}
+
+function NavSection({ title, items, closeDrawer }) {
+  if (!items.length) return null;
+
+  return (
+    <div className="mb-6">
+      <p className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+      <ul className="mt-2 space-y-1">
+        {items.map(({ label, icon: Icon, href, active }) => (
+          <li key={label}>
+            <Link
+              href={href}
+              onClick={closeDrawer}
+              className={cn(
+                'flex items-center rounded-md px-2.5 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground',
+                active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
+              )}
+            >
+              {Icon && <Icon className="mr-2 h-4 w-4" />}
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Typography({ as = 'p', className, children }) {
+  const Comp = as;
+  return <Comp className={cn('leading-tight', className)}>{children}</Comp>;
 }

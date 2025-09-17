@@ -1,30 +1,14 @@
+import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import {
-  Container,
-  Paper,
-  Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Stack,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  MenuItem,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  useMediaQuery,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 function toIDR(n) {
   const num = Number(n || 0);
@@ -32,16 +16,14 @@ function toIDR(n) {
 }
 
 function statusColor(status) {
-  if (status === 'approved') return 'success.main';
-  if (status === 'rejected') return 'error.main';
-  return 'warning.main';
+  if (status === 'approved') return 'text-green-600';
+  if (status === 'rejected') return 'text-red-600';
+  return 'text-amber-600';
 }
 
 export default function SuratTugasIndex({ submissions, picOptions = [], canManage = false, canModerate = false }) {
   const { props } = usePage();
   const { flash } = props;
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const hasSelfEditable = Array.isArray(submissions?.data) && submissions.data.some((item) => item.can_self_edit);
 
   const initialForm = {
@@ -91,25 +73,29 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     e.preventDefault();
     if (!editing) return;
 
-    router.put(route('surat-tugas.update', editing.id), {
-      tanggal_pengajuan: form.tanggal_pengajuan,
-      kegiatan: form.kegiatan,
-      tanggal_kegiatan: form.tanggal_kegiatan,
-      pic_id: form.pic_id,
-      nama_pendampingan: form.nama_pendampingan,
-      fee_pendampingan: form.fee_pendampingan,
-      instruktor_1_nama: form.instruktor_1_nama,
-      instruktor_1_fee: form.instruktor_1_fee,
-      instruktor_2_nama: form.instruktor_2_nama,
-      instruktor_2_fee: form.instruktor_2_fee,
-    }, {
-      preserveScroll: true,
-      onSuccess: () => {
-        setOpenEdit(false);
-        setEditing(null);
-        setForm(initialForm);
+    router.put(
+      route('surat-tugas.update', editing.id),
+      {
+        tanggal_pengajuan: form.tanggal_pengajuan,
+        kegiatan: form.kegiatan,
+        tanggal_kegiatan: form.tanggal_kegiatan,
+        pic_id: form.pic_id,
+        nama_pendampingan: form.nama_pendampingan,
+        fee_pendampingan: form.fee_pendampingan,
+        instruktor_1_nama: form.instruktor_1_nama,
+        instruktor_1_fee: form.instruktor_1_fee,
+        instruktor_2_nama: form.instruktor_2_nama,
+        instruktor_2_fee: form.instruktor_2_fee,
       },
-    });
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenEdit(false);
+          setEditing(null);
+          setForm(initialForm);
+        },
+      }
+    );
   };
 
   const onDelete = (submission) => {
@@ -128,332 +114,317 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     setOpenReject(true);
   };
 
-  const submitReject = (e) => {
-    e.preventDefault();
+  const submitReject = (event) => {
+    event.preventDefault();
     if (!rejecting) return;
-    router.post(route('surat-tugas.reject', rejecting.id), { catatan_revisi: rejectNote }, {
-      preserveScroll: true,
-      onSuccess: () => {
-        setOpenReject(false);
-        setRejecting(null);
-        setRejectNote('');
-      },
-    });
+    router.post(
+      route('surat-tugas.reject', rejecting.id),
+      { catatan_revisi: rejectNote },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenReject(false);
+          setRejecting(null);
+          setRejectNote('');
+        },
+      }
+    );
   };
 
   return (
-    <SidebarLayout header={<Typography variant="h6">Daftar Surat Tugas</Typography>}>
+    <SidebarLayout header={<Typography>Daftar Surat Tugas</Typography>}>
       <Head title="Daftar Surat Tugas" />
-      <Container sx={{ py: 2 }}>
-        <Stack spacing={2}>
-          {flash?.success && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="success.main">{flash.success}</Typography>
-            </Paper>
-          )}
-          {flash?.error && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="error.main">{flash.error}</Typography>
-            </Paper>
-          )}
+      <div className="space-y-4">
+        {flash?.success && <Alert type="success" message={flash.success} />}
+        {flash?.error && <Alert type="error" message={flash.error} />}
 
-          {isMobile ? (
-            <Stack spacing={2}>
-              {submissions.data.map((item) => {
-                const status = item.status || 'pending';
-                return (
-                  <Card key={item.id} variant="outlined">
-                  <CardContent>
-                    <Stack spacing={0.75}>
-                      <Typography variant="subtitle2">{item.kegiatan}</Typography>
-                      <Typography variant="body2" color="text.secondary">Tgl Pengajuan: {item.tanggal_pengajuan}</Typography>
-                      <Typography variant="body2" color="text.secondary">Tgl Kegiatan: {item.tanggal_kegiatan}</Typography>
-                      <Typography variant="body2" color={statusColor(status)}>Status: {status}</Typography>
-                      <Divider flexItem sx={{ my: 0.5 }} />
-                      <Typography variant="body2">PIC: {item.pic?.name || '-'}</Typography>
-                      <Typography variant="body2">Pendampingan: {item.nama_pendampingan}</Typography>
-                      <Typography variant="body2">Fee Pendampingan: Rp {toIDR(item.fee_pendampingan)}</Typography>
-                      <Typography variant="body2">Instruktor 1: {item.instruktor_1_nama} (Rp {toIDR(item.instruktor_1_fee)})</Typography>
-                      <Typography variant="body2">Instruktor 2: {item.instruktor_2_nama || '-'}{item.instruktor_2_nama ? ` (Rp ${toIDR(item.instruktor_2_fee)})` : ''}</Typography>
-                      <Typography variant="body2" color="text.secondary">Diajukan oleh: {item.pengaju?.name || '-'}</Typography>
-                      {item.catatan_revisi && (
-                        <Typography variant="body2" color="warning.dark">Catatan: {item.catatan_revisi}</Typography>
-                      )}
-                    </Stack>
-                  </CardContent>
-                  {(canManage || canModerate || item.can_self_edit) && (
-                    <CardActions sx={{ p: 2, pt: 0 }}>
-                      <Stack spacing={1} sx={{ width: '100%' }}>
-                        <Button
-                          fullWidth
-                          size="small"
-                          variant="outlined"
-                          href={route('surat-tugas.show', item.id)}
-                        >
-                          Lihat Detail
+        <Card className="block lg:hidden">
+          <CardHeader>
+            <CardTitle>Daftar Surat Tugas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {submissions.data.map((item) => {
+              const status = item.status || 'pending';
+              return (
+                <div key={item.id} className="rounded-lg border border-border bg-background p-4">
+                  <div className="space-y-1 text-sm">
+                    <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
+                    <Detail label="Tanggal Kegiatan" value={item.tanggal_kegiatan} />
+                    <Detail label="Kegiatan" value={item.kegiatan} />
+                    <Detail label="Pendampingan" value={item.nama_pendampingan} />
+                    <Detail label="Fee Pendampingan" value={`Rp ${toIDR(item.fee_pendampingan)}`} />
+                    <Detail label="Instruktor 1" value={`${item.instruktor_1_nama} (Rp ${toIDR(item.instruktor_1_fee)})`} />
+                    <Detail label="Instruktor 2" value={item.instruktor_2_nama ? `${item.instruktor_2_nama} (Rp ${toIDR(item.instruktor_2_fee)})` : '-'} />
+                    <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
+                    {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href={route('surat-tugas.show', item.id)}>Lihat Detail</a>
+                    </Button>
+                    {canManage && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="secondary" onClick={() => openEditDialog(item)}>
+                          Edit
                         </Button>
-                        {canManage && (
-                          <Stack spacing={1}>
-                            <Button fullWidth size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
-                            <Button fullWidth size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
-                          </Stack>
-                        )}
-                        {canModerate && status === 'pending' && (
-                          <Stack spacing={1}>
-                            <Button fullWidth size="small" variant="contained" color="success" onClick={() => onApprove(item)}>Terima</Button>
-                            <Button fullWidth size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)}>Tolak</Button>
-                          </Stack>
-                        )}
-                        {item.can_self_edit && (
-                          <Stack spacing={1}>
-                            <Button fullWidth size="small" variant="contained" onClick={() => openEditDialog(item)}>Perbarui</Button>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </CardActions>
-                  )}
-                  </Card>
-                );
-              })}
-              <Stack direction="row" spacing={1}>
-                {submissions.links.map((link, idx) => (
-                  <Button
-                    key={idx}
-                    size="small"
-                    variant={link.active ? 'contained' : 'text'}
-                    disabled={!link.url}
-                    href={link.url || '#'}
-                    sx={{ flex: 1 }}
-                  >
-                    {link.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                  </Button>
-                ))}
-              </Stack>
-            </Stack>
-          ) : (
-            <Paper sx={{ width: '100%', overflowX: 'auto' }}>
-              <Table size="small" stickyHeader sx={{ minWidth: 900 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Tgl Pengajuan</TableCell>
-                    <TableCell>Kegiatan</TableCell>
-                    <TableCell>Tgl Kegiatan</TableCell>
-                    <TableCell>PIC</TableCell>
-                    <TableCell>Pendamping</TableCell>
-                    <TableCell>Fee Pendamping (Rp)</TableCell>
-                    <TableCell>Instruktor 1</TableCell>
-                    <TableCell>Instruktor 2</TableCell>
-                    <TableCell>Diajukan oleh</TableCell>
-                    <TableCell>Status</TableCell>
-                    {(canManage || canModerate || hasSelfEditable) && <TableCell>Aksi</TableCell>}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {submissions.data.map((item) => {
-                    const status = item.status || 'pending';
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.tanggal_pengajuan}</TableCell>
-                      <TableCell>{item.kegiatan}</TableCell>
+                        <Button variant="destructive" onClick={() => onDelete(item)}>
+                          Hapus
+                        </Button>
+                      </div>
+                    )}
+                    {canModerate && status === 'pending' && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button variant="default" onClick={() => onApprove(item)}>
+                          Terima
+                        </Button>
+                        <Button variant="outline" onClick={() => openRejectDialog(item)}>
+                          Tolak
+                        </Button>
+                      </div>
+                    )}
+                    {item.can_self_edit && (
+                      <Button className="w-full" onClick={() => openEditDialog(item)}>
+                        Perbarui
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <Pagination links={submissions.links} className="pt-2" />
+          </CardContent>
+        </Card>
+
+        <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[1000px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tgl Pengajuan</TableHead>
+                  <TableHead>Tgl Kegiatan</TableHead>
+                  <TableHead>Kegiatan</TableHead>
+                  <TableHead>PIC</TableHead>
+                  <TableHead>Pendamping</TableHead>
+                  <TableHead className="text-right">Fee Pendamping (Rp)</TableHead>
+                  <TableHead>Instruktor 1</TableHead>
+                  <TableHead>Instruktor 2</TableHead>
+                  <TableHead>Diajukan oleh</TableHead>
+                  <TableHead>Status</TableHead>
+                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="w-56 text-right">Aksi</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {submissions.data.map((item) => {
+                  const status = item.status || 'pending';
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.tanggal_pengajuan}</TableCell>
                       <TableCell>{item.tanggal_kegiatan}</TableCell>
+                      <TableCell>{item.kegiatan}</TableCell>
                       <TableCell>{item.pic?.name || '-'}</TableCell>
                       <TableCell>{item.nama_pendampingan}</TableCell>
-                      <TableCell>{toIDR(item.fee_pendampingan)}</TableCell>
-                        <TableCell>
-                        <Stack spacing={0.25}>
-                          <Typography variant="body2">{item.instruktor_1_nama}</Typography>
-                          <Typography variant="caption">{toIDR(item.instruktor_1_fee)}</Typography>
-                        </Stack>
+                      <TableCell className="text-right">{toIDR(item.fee_pendampingan)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div>{item.instruktor_1_nama}</div>
+                          <div className="text-xs text-muted-foreground">Rp {toIDR(item.instruktor_1_fee)}</div>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {item.instruktor_2_nama ? (
-                          <Stack spacing={0.25}>
-                            <Typography variant="body2">{item.instruktor_2_nama}</Typography>
-                            <Typography variant="caption">{toIDR(item.instruktor_2_fee)}</Typography>
-                          </Stack>
+                          <div className="text-sm">
+                            <div>{item.instruktor_2_nama}</div>
+                            <div className="text-xs text-muted-foreground">Rp {toIDR(item.instruktor_2_fee)}</div>
+                          </div>
                         ) : (
                           '-'
                         )}
                       </TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
                       <TableCell>
-                        <Stack spacing={0.5}>
-                          <Typography variant="body2" color={statusColor(status)}>{status}</Typography>
+                        <div className="text-sm">
+                          <div className={cn('font-medium', statusColor(status))}>{status}</div>
                           {item.catatan_revisi && (
-                            <Typography variant="caption" color="warning.dark">Catatan: {item.catatan_revisi}</Typography>
+                            <div className="text-xs text-muted-foreground">Catatan: {item.catatan_revisi}</div>
                           )}
-                        </Stack>
-                        </TableCell>
+                        </div>
+                      </TableCell>
                       {(canManage || canModerate || item.can_self_edit) && (
                         <TableCell>
-                          <Stack spacing={1}>
-                            <Button size="small" variant="outlined" href={route('surat-tugas.show', item.id)}>
-                              Detail
+                          <div className="flex flex-col items-stretch gap-2 text-right">
+                            <Button variant="outline" size="sm" className="justify-center" asChild>
+                              <a href={route('surat-tugas.show', item.id)}>Detail</a>
                             </Button>
                             {canManage && (
-                              <Stack direction="row" spacing={1}>
-                                <Button size="small" variant="outlined" onClick={() => openEditDialog(item)}>Edit</Button>
-                                <Button size="small" color="error" variant="outlined" onClick={() => onDelete(item)}>Hapus</Button>
-                              </Stack>
+                              <div className="flex gap-2">
+                                <Button variant="secondary" size="sm" className="flex-1" onClick={() => openEditDialog(item)}>
+                                  Edit
+                                </Button>
+                                <Button variant="destructive" size="sm" className="flex-1" onClick={() => onDelete(item)}>
+                                  Hapus
+                                </Button>
+                              </div>
                             )}
                             {canModerate && status === 'pending' && (
-                              <Stack direction="row" spacing={1}>
-                                <Button size="small" variant="contained" color="success" onClick={() => onApprove(item)} sx={{ flex: 1 }}>Terima</Button>
-                                <Button size="small" color="warning" variant="outlined" onClick={() => openRejectDialog(item)} sx={{ flex: 1 }}>Tolak</Button>
-                              </Stack>
+                              <div className="flex gap-2">
+                                <Button variant="default" size="sm" className="flex-1" onClick={() => onApprove(item)}>
+                                  Terima
+                                </Button>
+                                <Button variant="outline" size="sm" className="flex-1" onClick={() => openRejectDialog(item)}>
+                                  Tolak
+                                </Button>
+                              </div>
                             )}
                             {item.can_self_edit && (
-                              <Button size="small" variant="contained" onClick={() => openEditDialog(item)}>Perbarui</Button>
+                              <Button size="sm" className="w-full" onClick={() => openEditDialog(item)}>
+                                Perbarui
+                              </Button>
                             )}
-                          </Stack>
+                          </div>
                         </TableCell>
                       )}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              <Stack direction="row" spacing={1} sx={{ p: 2 }}>
-                {submissions.links.map((link, idx) => (
-                  <Button key={idx} size="small" variant={link.active ? 'contained' : 'text'} disabled={!link.url} href={link.url || '#'}>
-                    {link.label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '')}
-                  </Button>
-                ))}
-              </Stack>
-            </Paper>
-          )}
-        </Stack>
-      </Container>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="border-t bg-muted/40 py-3">
+            <Pagination links={submissions.links} />
+          </div>
+        </div>
+      </div>
 
-      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Surat Tugas</DialogTitle>
-        <form onSubmit={submitUpdate}>
-          <DialogContent dividers>
-            <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Tanggal Pengajuan"
-                  type="date"
-                  value={form.tanggal_pengajuan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label="Tanggal Kegiatan"
-                  type="date"
-                  value={form.tanggal_kegiatan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kegiatan: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                  fullWidth
-                />
-              </Stack>
-
-              <TextField
-                label="Kegiatan"
-                value={form.kegiatan}
-                onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))}
-                required
-                fullWidth
-              />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  select
-                  label="PIC"
+      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+        <form onSubmit={submitUpdate} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Edit Surat Tugas</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Tanggal Pengajuan">
+                <Input type="date" value={form.tanggal_pengajuan} onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))} required />
+              </Field>
+              <Field label="Tanggal Kegiatan">
+                <Input type="date" value={form.tanggal_kegiatan} onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kegiatan: e.target.value }))} required />
+              </Field>
+            </div>
+            <Field label="Kegiatan">
+              <Input value={form.kegiatan} onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))} required />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="PIC">
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={form.pic_id}
                   onChange={(e) => setForm((prev) => ({ ...prev, pic_id: e.target.value }))}
                   required
-                  fullWidth
                 >
                   {picOptions.map((pic) => (
-                    <MenuItem key={pic.id} value={pic.id}>
+                    <option key={pic.id} value={pic.id}>
                       {pic.name}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-                <TextField
-                  label="Nama Pendampingan"
-                  value={form.nama_pendampingan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, nama_pendampingan: e.target.value }))}
-                  required
-                  fullWidth
-                />
-              </Stack>
-
-              <TextField
-                label="Fee Pendampingan (Rp)"
-                value={toIDRString(form.fee_pendampingan)}
-                onChange={(e) => setForm((prev) => ({ ...prev, fee_pendampingan: e.target.value }))}
-                inputMode="numeric"
-                required
-                fullWidth
-              />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Instruktor 1"
-                  value={form.instruktor_1_nama}
-                  onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_nama: e.target.value }))}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label="Fee Instruktor 1 (Rp)"
-                  value={toIDRString(form.instruktor_1_fee)}
-                  onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_fee: e.target.value }))}
-                  inputMode="numeric"
-                  required
-                  fullWidth
-                />
-              </Stack>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField
-                  label="Instruktor 2 (opsional)"
-                  value={form.instruktor_2_nama}
-                  onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_nama: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label="Fee Instruktor 2 (Rp)"
-                  value={toIDRString(form.instruktor_2_fee)}
-                  onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_fee: e.target.value }))}
-                  inputMode="numeric"
-                  fullWidth
-                />
-              </Stack>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenEdit(false)}>Batal</Button>
-            <Button type="submit" variant="contained">Simpan</Button>
-          </DialogActions>
+                </select>
+              </Field>
+              <Field label="Nama Pendampingan">
+                <Input value={form.nama_pendampingan} onChange={(e) => setForm((prev) => ({ ...prev, nama_pendampingan: e.target.value }))} required />
+              </Field>
+            </div>
+            <Field label="Fee Pendampingan (Rp)">
+              <Input value={toIDRString(form.fee_pendampingan)} onChange={(e) => setForm((prev) => ({ ...prev, fee_pendampingan: e.target.value }))} inputMode="numeric" required />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Instruktor 1">
+                <Input value={form.instruktor_1_nama} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_nama: e.target.value }))} required />
+              </Field>
+              <Field label="Fee Instruktor 1 (Rp)">
+                <Input value={toIDRString(form.instruktor_1_fee)} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_fee: e.target.value }))} inputMode="numeric" required />
+              </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Instruktor 2 (opsional)">
+                <Input value={form.instruktor_2_nama} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_nama: e.target.value }))} />
+              </Field>
+              <Field label="Fee Instruktor 2 (Rp)">
+                <Input value={toIDRString(form.instruktor_2_fee)} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_fee: e.target.value }))} inputMode="numeric" />
+              </Field>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpenEdit(false)}>
+              Batal
+            </Button>
+            <Button type="submit">Simpan</Button>
+          </DialogFooter>
         </form>
       </Dialog>
 
-      <Dialog open={openReject} onClose={() => setOpenReject(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Catatan Penolakan</DialogTitle>
-        <form onSubmit={submitReject}>
-          <DialogContent dividers>
-            <TextField
-              label="Catatan Revisi"
-              value={rejectNote}
-              onChange={(e) => setRejectNote(e.target.value)}
-              required
-              fullWidth
-              multiline
-              minRows={3}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenReject(false)}>Batal</Button>
-            <Button type="submit" variant="contained" color="warning">Kirim</Button>
-          </DialogActions>
+      <Dialog open={openReject} onOpenChange={setOpenReject}>
+        <form onSubmit={submitReject} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Catatan Penolakan</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            value={rejectNote}
+            onChange={(e) => setRejectNote(e.target.value)}
+            required
+            placeholder="Tuliskan catatan yang perlu diperbaiki"
+          />
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpenReject(false)}>
+              Batal
+            </Button>
+            <Button type="submit" variant="destructive">
+              Kirim Catatan
+            </Button>
+          </DialogFooter>
         </form>
       </Dialog>
     </SidebarLayout>
   );
+}
+
+function Detail({ label, value, valueClass }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn('font-medium', valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function Alert({ type, message }) {
+  const variant = type === 'error' ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary';
+  return <div className={cn('rounded-md px-4 py-3 text-sm font-medium', variant)}>{message}</div>;
+}
+
+function Pagination({ links, className }) {
+  if (!links?.length) return null;
+  return (
+    <div className={cn('flex flex-wrap items-center gap-2 px-4', className)}>
+      {links.map((link, idx) => (
+        <Button key={idx} variant={link.active ? 'default' : 'outline'} size="sm" disabled={!link.url} asChild>
+          <a href={link.url || '#'} dangerouslySetInnerHTML={{ __html: sanitizeLabel(link.label) }} />
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function sanitizeLabel(label) {
+  return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');
+}
+
+function Typography({ children }) {
+  return <h1 className="text-xl font-semibold text-foreground">{children}</h1>;
 }

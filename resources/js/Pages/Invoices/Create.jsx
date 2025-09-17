@@ -1,15 +1,11 @@
+import { useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import {
-  Container,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Stack,
-  MenuItem,
-} from '@mui/material';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 export default function CreateInvoice() {
   const { props } = usePage();
@@ -25,9 +21,13 @@ export default function CreateInvoice() {
     bukti_surat_konfirmasi: null,
   });
 
-  const onFileChange = (e) => {
-    const file = e.target.files?.[0] || null;
-    setForm((f) => ({ ...f, bukti_surat_konfirmasi: file }));
+  const handleInput = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const handleFile = (event) => {
+    const file = event.target.files?.[0] || null;
+    setForm((prev) => ({ ...prev, bukti_surat_konfirmasi: file }));
   };
 
   const toIDRString = (value) => {
@@ -36,8 +36,12 @@ export default function CreateInvoice() {
     return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const handleNumericInput = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const submit = (event) => {
+    event.preventDefault();
 
     const fd = new FormData();
     fd.append('tanggal_pengajuan', form.tanggal_pengajuan);
@@ -67,101 +71,88 @@ export default function CreateInvoice() {
   };
 
   return (
-    <SidebarLayout header={<Typography variant="h6">Pengajuan Invoice</Typography>}>
+    <SidebarLayout header={<Typography>Pengajuan Invoice</Typography>}>
       <Head title="Pengajuan Invoice" />
+      <div className="mx-auto max-w-3xl space-y-4">
+        {flash?.success && <Alert type="success" message={flash.success} />}
+        {flash?.error && <Alert type="error" message={flash.error} />}
 
-      <Container sx={{ py: 2 }}>
-        <Stack spacing={2}>
-          {flash?.success && (
-            <Paper sx={{ p: 2 }}>
-              <Typography color="success.main">{flash.success}</Typography>
-            </Paper>
-          )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Form Pengajuan Invoice</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-6" onSubmit={submit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Tanggal Pengajuan">
+                  <Input type="date" value={form.tanggal_pengajuan} onChange={handleInput('tanggal_pengajuan')} required />
+                </Field>
+                <Field label="Tanggal Invoice">
+                  <Input type="date" value={form.tanggal_invoice} onChange={handleInput('tanggal_invoice')} required />
+                </Field>
+              </div>
 
-          <Paper sx={{ p: 2 }}>
-            <form onSubmit={onSubmit}>
-              <Stack spacing={2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    label="Tanggal Pengajuan"
-                    type="date"
-                    value={form.tanggal_pengajuan}
-                    onChange={(e) => setForm({ ...form, tanggal_pengajuan: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
-                    required
-                  />
-                  <TextField
-                    label="Tanggal Invoice"
-                    type="date"
-                    value={form.tanggal_invoice}
-                    onChange={(e) => setForm({ ...form, tanggal_invoice: e.target.value })}
-                    InputLabelProps={{ shrink: true }}
-                    fullWidth
-                    required
-                  />
-                </Stack>
+              <Field label="Kegiatan">
+                <Input value={form.kegiatan} onChange={handleInput('kegiatan')} required />
+              </Field>
 
-                <TextField
-                  label="Kegiatan"
-                  value={form.kegiatan}
-                  onChange={(e) => setForm({ ...form, kegiatan: e.target.value })}
-                  fullWidth
-                  required
-                />
-
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <TextField
-                    label="Tagihan Invoice (Rp)"
-                    value={toIDRString(form.tagihan_invoice)}
-                    onChange={(e) => setForm({ ...form, tagihan_invoice: e.target.value })}
-                    placeholder="cth: 1.000.000"
-                    fullWidth
-                    inputMode="numeric"
-                    required
-                  />
-                  <TextField
-                    select
-                    label="PPN"
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Tagihan Invoice (Rp)">
+                  <Input value={toIDRString(form.tagihan_invoice)} onChange={handleNumericInput('tagihan_invoice')} inputMode="numeric" required />
+                </Field>
+                <Field label="PPN">
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     value={form.ppn}
-                    onChange={(e) => setForm({ ...form, ppn: e.target.value })}
-                    fullWidth
+                    onChange={handleInput('ppn')}
                   >
-                    <MenuItem value="include">include ppn</MenuItem>
-                    <MenuItem value="exclude">exclude ppn</MenuItem>
-                    <MenuItem value="tanpa">tanpa ppn</MenuItem>
-                  </TextField>
-                </Stack>
+                    <option value="include">include ppn</option>
+                    <option value="exclude">exclude ppn</option>
+                    <option value="tanpa">tanpa ppn</option>
+                  </select>
+                </Field>
+              </div>
 
-                <TextField
-                  label="Total Invoice OPE (Rp)"
-                  value={toIDRString(form.total_invoice_ope)}
-                  onChange={(e) => setForm({ ...form, total_invoice_ope: e.target.value })}
-                  placeholder="cth: 500.000"
-                  fullWidth
-                  inputMode="numeric"
-                  required
-                />
+              <Field label="Total Invoice OPE (Rp)">
+                <Input value={toIDRString(form.total_invoice_ope)} onChange={handleNumericInput('total_invoice_ope')} inputMode="numeric" required />
+              </Field>
 
-                <Button variant="outlined" component="label">
-                  Unggah Bukti Surat Konfirmasi (PDF)
-                  <input hidden type="file" accept="application/pdf" onChange={onFileChange} />
-                </Button>
+              <Field label="Unggah Bukti Surat Konfirmasi (PDF)">
+                <Input type="file" accept="application/pdf" onChange={handleFile} />
                 {form.bukti_surat_konfirmasi && (
-                  <Typography variant="caption">
-                    File: {form.bukti_surat_konfirmasi.name}
-                  </Typography>
+                  <p className="text-xs text-muted-foreground">File: {form.bukti_surat_konfirmasi.name}</p>
                 )}
+              </Field>
 
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                  <Button type="submit" variant="contained">Ajukan</Button>
-                </Stack>
-              </Stack>
+              <div className="flex justify-end">
+                <Button type="submit">Ajukan</Button>
+              </div>
             </form>
-          </Paper>
-        </Stack>
-      </Container>
+          </CardContent>
+        </Card>
+      </div>
     </SidebarLayout>
   );
 }
 
+function Field({ label, children }) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function Alert({ type, message }) {
+  const variant = type === 'error' ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary';
+  return (
+    <div className={cn('rounded-md px-4 py-3 text-sm font-medium', variant)}>
+      {message}
+    </div>
+  );
+}
+
+function Typography({ children }) {
+  return <h1 className="text-xl font-semibold text-foreground">{children}</h1>;
+}

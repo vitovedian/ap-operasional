@@ -1,99 +1,106 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
-import { Container, Paper, Typography, Stack, Divider, Button } from '@mui/material';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-function formatIDR(n) {
-  return new Intl.NumberFormat('id-ID').format(Number(n || 0));
-}
+const formatIDR = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
 
 export default function SuratTugasShow({ submission, canModerate = false, canEdit = false }) {
-  if (!submission) {
-    return null;
-  }
-
-  const processedAt = submission.processed_at
-    ? new Date(submission.processed_at).toLocaleString('id-ID')
-    : '-';
+  if (!submission) return null;
 
   return (
-    <SidebarLayout header={<Typography variant="h6">Detail Surat Tugas</Typography>}>
-      <Head title="Detail Surat Tugas" />
+    <SidebarLayout header={<Typography>Detail Surat Tugas</Typography>}>
+      <Head title={`Surat Tugas #${submission.id}`} />
+      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informasi Kegiatan</CardTitle>
+              <CardDescription>Detail utama surat tugas ini.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <Detail label="Tanggal Pengajuan" value={submission.tanggal_pengajuan} />
+              <Detail label="Tanggal Kegiatan" value={submission.tanggal_kegiatan} />
+              <Detail label="Kegiatan" value={submission.kegiatan} full />
+              <Detail label="Nama Pendampingan" value={submission.nama_pendampingan} full />
+              <Detail label="Fee Pendampingan" value={`Rp ${formatIDR(submission.fee_pendampingan)}`} />
+              <Detail label="Instruktor 1" value={`${submission.instruktor_1_nama} (Rp ${formatIDR(submission.instruktor_1_fee)})`} />
+              <Detail
+                label="Instruktor 2"
+                value={submission.instruktor_2_nama ? `${submission.instruktor_2_nama} (Rp ${formatIDR(submission.instruktor_2_fee)})` : '-'}
+                full
+              />
+            </CardContent>
+          </Card>
 
-      <Container sx={{ py: 3 }}>
-        <Stack spacing={3}>
-          <Paper sx={{ p: 3 }}>
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle1">Informasi Pengajuan</Typography>
-              <Divider />
-              <DetailRow label="Tanggal Pengajuan" value={submission.tanggal_pengajuan} />
-              <DetailRow label="Kegiatan" value={submission.kegiatan} />
-              <DetailRow label="Tanggal Kegiatan" value={submission.tanggal_kegiatan} />
-              <DetailRow label="Pendampingan" value={submission.nama_pendampingan} />
-              <DetailRow label="Fee Pendampingan" value={`Rp ${formatIDR(submission.fee_pendampingan)}`} />
-              <DetailRow label="Instruktor 1" value={`${submission.instruktor_1_nama} (Rp ${formatIDR(submission.instruktor_1_fee)})`} />
-              <DetailRow label="Instruktor 2" value={submission.instruktor_2_nama ? `${submission.instruktor_2_nama} (Rp ${formatIDR(submission.instruktor_2_fee)})` : '-'} />
-            </Stack>
-          </Paper>
+          <Card>
+            <CardHeader>
+              <CardTitle>Status dan Persetujuan</CardTitle>
+              <CardDescription>Riwayat status dan catatan dari Manager Operasional.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Detail label="Status" value={submission.status} valueClass={statusColor(submission.status)} />
+              <Detail label="Catatan Revisi" value={submission.catatan_revisi || '-'} full />
+              <Detail label="Diproses oleh" value={submission.processor?.name || '-'} />
+              <Detail label="Diproses pada" value={submission.processed_at ? new Date(submission.processed_at).toLocaleString('id-ID') : '-'} />
+            </CardContent>
+          </Card>
+        </div>
 
-          <Paper sx={{ p: 3 }}>
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle1">Status &amp; Approval</Typography>
-              <Divider />
-              <DetailRow label="Status" value={submission.status} valueColor={statusColor(submission.status)} />
-              <DetailRow label="Catatan Revisi" value={submission.catatan_revisi || '-'} />
-              <DetailRow label="Diperiksa oleh" value={submission.processor?.name || '-'} />
-              <DetailRow label="Diproses pada" value={processedAt} />
-            </Stack>
-          </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Stack spacing={1.5}>
-              <Typography variant="subtitle1">Informasi PIC &amp; Pengaju</Typography>
-              <Divider />
-              <DetailRow label="PIC" value={submission.pic?.name || '-'} />
-              <DetailRow label="Email PIC" value={submission.pic?.email || '-'} />
-              <DetailRow label="Pengaju" value={submission.pengaju?.name || '-'} />
-              <DetailRow label="Email Pengaju" value={submission.pengaju?.email || '-'} />
-            </Stack>
-          </Paper>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>PIC & Pengaju</CardTitle>
+              <CardDescription>Informasi kontak terkait.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <Detail label="PIC" value={submission.pic?.name || '-'} full />
+              <Detail label="Email PIC" value={submission.pic?.email || '-'} full />
+              <Detail label="Pengaju" value={submission.pengaju?.name || '-'} full />
+              <Detail label="Email Pengaju" value={submission.pengaju?.email || '-'} full />
+            </CardContent>
+          </Card>
 
           {(canModerate || canEdit) && (
-            <Paper sx={{ p: 3 }}>
-              <Stack spacing={1.5}>
-                <Typography variant="subtitle1">Tindakan</Typography>
-                <Divider />
-                <Typography variant="body2" color="text.secondary">
-                  Tindakan lanjutan dapat dilakukan dari halaman daftar surat tugas.
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <Button variant="outlined" href={route('surat-tugas.index')}>
-                    Kembali ke Daftar
-                  </Button>
-                </Stack>
-              </Stack>
-            </Paper>
+            <Card>
+              <CardHeader>
+                <CardTitle>Tindakan</CardTitle>
+                <CardDescription>Kelola surat tugas ini dari halaman daftar.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button asChild className="w-full" variant="outline">
+                  <Link href={route('surat-tugas.index')}>Kembali ke Daftar</Link>
+                </Button>
+                {canEdit && (
+                  <p className="text-xs text-muted-foreground">
+                    Anda dapat memperbarui surat tugas ini langsung dari daftar jika statusnya ditolak.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </Stack>
-      </Container>
+        </div>
+      </div>
     </SidebarLayout>
   );
 }
 
-function DetailRow({ label, value, valueColor }) {
+function Detail({ label, value, valueClass, full = false }) {
   return (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.5}>
-      <Typography variant="body2" color="text.secondary" sx={{ width: { sm: 200 } }}>
-        {label}
-      </Typography>
-      <Typography variant="body2" color={valueColor || 'text.primary'}>
-        {value}
-      </Typography>
-    </Stack>
+    <div className={cn('flex flex-col space-y-1', full ? 'sm:col-span-2' : undefined)}>
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn('text-sm font-medium text-foreground', valueClass)}>{value}</span>
+    </div>
   );
 }
 
 function statusColor(status) {
-  if (status === 'approved') return 'success.main';
-  if (status === 'rejected') return 'error.main';
-  return 'warning.main';
+  if (status === 'approved') return 'text-green-600';
+  if (status === 'rejected') return 'text-red-600';
+  return 'text-amber-600';
+}
+
+function Typography({ children }) {
+  return <h1 className="text-xl font-semibold text-foreground">{children}</h1>;
 }
