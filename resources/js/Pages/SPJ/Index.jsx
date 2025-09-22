@@ -137,7 +137,7 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
   return (
     <SidebarLayout header={<Typography>Daftar Pengajuan SPJ</Typography>}>
       <Head title="Daftar Pengajuan SPJ" />
-      <div className="space-y-4">
+      <div className="space-y-3">
         {flash?.success && <Alert type="success" message={flash.success} />}
         {flash?.error && <Alert type="error" message={flash.error} />}
 
@@ -145,9 +145,9 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
           <CardHeader>
             <CardTitle>Pengajuan SPJ</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {submissions.data.map((item) => (
-              <div key={item.id} className="rounded-lg border border-border bg-background p-4">
+              <div key={item.id} className="rounded-lg border border-border bg-background p-3">
                 <div className="space-y-1 text-sm">
                   <Detail label="Nama Kegiatan" value={item.nama_kegiatan} />
                   <Detail label="Tanggal" value={item.tanggal_kegiatan} />
@@ -158,7 +158,7 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                   <Detail label="Status" value={item.status} valueClass={statusColor(item.status)} />
                   {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                 </div>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1.5">
                   {canApprove && item.status === 'pending' && (
                     <div className="grid grid-cols-2 gap-2">
                       <Button onClick={() => onApprove(item)}>Setujui</Button>
@@ -180,13 +180,13 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                 </div>
               </div>
             ))}
-            <Pagination links={submissions.links} className="pt-2" />
+            <Pagination links={submissions.links} className="pt-1" />
           </CardContent>
         </Card>
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[1100px]">
+            <Table className="min-w-[960px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama Kegiatan</TableHead>
@@ -198,7 +198,7 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                   <TableHead>Status</TableHead>
                   <TableHead>Pengaju</TableHead>
                   <TableHead>Diproses Oleh</TableHead>
-                  {(canManage || canApprove) && <TableHead className="w-56 text-center">Aksi</TableHead>}
+                  {(canManage || canApprove) && <TableHead className="w-40 text-center">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -433,4 +433,3 @@ function Typography({ children }) {
 function titleCase(value = '') {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
-

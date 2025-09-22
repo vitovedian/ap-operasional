@@ -68,7 +68,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
   return (
     <SidebarLayout header={<Typography>Daftar Pengajuan Nomor Surat</Typography>}>
       <Head title="Daftar Pengajuan Nomor Surat" />
-      <div className="space-y-4">
+      <div className="space-y-3">
         {flash?.success && <Alert type="success" message={flash.success} />}
         {flash?.error && <Alert type="error" message={flash.error} />}
 
@@ -76,9 +76,9 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
           <CardHeader>
             <CardTitle>Pengajuan Nomor Surat</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {submissions.data.map((item) => (
-              <div key={item.id} className="rounded-lg border border-border bg-background p-4">
+              <div key={item.id} className="rounded-lg border border-border bg-background p-3">
                 <div className="space-y-1 text-sm">
                   <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
                   <Detail label="Tujuan Surat" value={item.tujuan_surat} />
@@ -87,7 +87,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                   <Detail label="Pengaju" value={item.user?.name || '-'} />
                 </div>
                 {canManage && (
-                  <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid grid-cols-2 gap-1.5">
                     <Button variant="secondary" onClick={() => openEditDialog(item)}>
                       Edit
                     </Button>
@@ -98,13 +98,13 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                 )}
               </div>
             ))}
-            <Pagination links={submissions.links} className="pt-2" />
+            <Pagination links={submissions.links} className="pt-1" />
           </CardContent>
         </Card>
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[760px] text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tanggal Pengajuan</TableHead>
@@ -125,7 +125,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                     <TableCell className="text-center">{item.user?.name || '-'}</TableCell>
                     {canManage && (
                       <TableCell>
-                        <div className="flex justify-center gap-2">
+                        <div className="flex justify-center gap-1.5">
                           <Button variant="secondary" size="sm" onClick={() => openEditDialog(item)}>
                             Edit
                           </Button>
@@ -148,7 +148,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
 
       {canManage && (
         <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-          <form onSubmit={submitUpdate} className="space-y-4">
+          <form onSubmit={submitUpdate} className="space-y-3">
             <DialogHeader>
               <DialogTitle>Edit Pengajuan</DialogTitle>
             </DialogHeader>
@@ -199,9 +199,9 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
 
 function Detail({ label, value }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div className="text-center text-sm">
+      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="block font-medium">{value}</span>
     </div>
   );
 }

@@ -94,7 +94,7 @@ export default function InvoicesIndex({ invoices }) {
   return (
     <SidebarLayout header={<Typography>Daftar Invoice</Typography>}>
       <Head title="Daftar Invoice" />
-      <div className="space-y-4">
+      <div className="space-y-3">
         {flash?.success && (
           <Alert type="success" message={flash.success} />
         )}
@@ -106,9 +106,9 @@ export default function InvoicesIndex({ invoices }) {
           <CardHeader>
             <CardTitle>Daftar Invoice</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {invoices.data.map((inv) => (
-              <div key={inv.id} className="rounded-lg border border-border bg-background p-4">
+              <div key={inv.id} className="rounded-lg border border-border bg-background p-3">
                 <div className="space-y-1 text-sm">
                   <Detail label="Tanggal Pengajuan" value={inv.tanggal_pengajuan} />
                   <Detail label="Tanggal Invoice" value={inv.tanggal_invoice} />
@@ -118,7 +118,7 @@ export default function InvoicesIndex({ invoices }) {
                   <Detail label="PPN" value={inv.ppn} />
                   <Detail label="Pengaju" value={inv.user?.name || '-'} />
                 </div>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-1.5">
                   <Button variant="outline" className="w-full" asChild>
                     <a href={inv.download_url} target="_blank" rel="noopener">
                       Unduh Bukti
@@ -137,13 +137,13 @@ export default function InvoicesIndex({ invoices }) {
                 </div>
               </div>
             ))}
-            <Pagination links={invoices.links} className="pt-2" />
+            <Pagination links={invoices.links} className="pt-1" />
           </CardContent>
         </Card>
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-hidden">
-            <Table>
+            <Table className="min-w-[960px] text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead>Tgl Pengajuan</TableHead>
@@ -153,7 +153,7 @@ export default function InvoicesIndex({ invoices }) {
                   <TableHead>PPN</TableHead>
                   <TableHead className="text-center">Total OPE (Rp)</TableHead>
                   <TableHead>Pengaju</TableHead>
-                  <TableHead className="w-48 text-center">Aksi</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -161,7 +161,7 @@ export default function InvoicesIndex({ invoices }) {
                   <TableRow key={inv.id}>
                     <TableCell>{inv.tanggal_pengajuan}</TableCell>
                     <TableCell>{inv.tanggal_invoice}</TableCell>
-                    <TableCell>{inv.kegiatan}</TableCell>
+                    <TableCell className="text-center">{inv.kegiatan}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.tagihan_invoice)}</TableCell>
                     <TableCell>{inv.ppn}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.total_invoice_ope)}</TableCell>
@@ -174,11 +174,11 @@ export default function InvoicesIndex({ invoices }) {
                           </a>
                         </Button>
                         {canManage && (
-                          <div className="flex flex-1 gap-2">
-                            <Button variant="secondary" className="flex-1" onClick={() => openEditDialog(inv)}>
+                          <div className="flex flex-1 gap-1.5">
+                            <Button variant="secondary" size="sm" className="flex-1" onClick={() => openEditDialog(inv)}>
                               Edit
                             </Button>
-                            <Button variant="destructive" className="flex-1" onClick={() => onDelete(inv)}>
+                            <Button variant="destructive" size="sm" className="flex-1" onClick={() => onDelete(inv)}>
                               Hapus
                             </Button>
                           </div>
@@ -201,7 +201,7 @@ export default function InvoicesIndex({ invoices }) {
           <DialogHeader>
             <DialogTitle>Edit Invoice</DialogTitle>
           </DialogHeader>
-          <div className="mt-4 space-y-4">
+          <div className="mt-3 space-y-3">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Tanggal Pengajuan">
                 <Input
@@ -309,9 +309,9 @@ function sanitizeLabel(label) {
 
 function Detail({ label, value }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div className="text-center text-sm">
+      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="block font-medium">{value}</span>
     </div>
   );
 }

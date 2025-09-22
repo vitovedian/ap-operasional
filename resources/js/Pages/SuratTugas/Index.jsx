@@ -144,7 +144,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   return (
     <SidebarLayout header={<Typography>Daftar Surat Tugas</Typography>}>
       <Head title="Daftar Surat Tugas" />
-      <div className="space-y-4">
+      <div className="space-y-3">
         {flash?.success && <Alert type="success" message={flash.success} />}
         {flash?.error && <Alert type="error" message={flash.error} />}
 
@@ -152,11 +152,11 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           <CardHeader>
             <CardTitle>Daftar Surat Tugas</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {submissions.data.map((item) => {
               const status = item.status || 'pending';
               return (
-                <div key={item.id} className="rounded-lg border border-border bg-background p-4">
+                <div key={item.id} className="rounded-lg border border-border bg-background p-3">
                   <div className="space-y-1 text-sm">
                     <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
                     <Detail label="Tanggal Kegiatan" value={item.tanggal_kegiatan} />
@@ -173,7 +173,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       Lihat Detail
                     </Button>
                     {canManage && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <Button variant="secondary" onClick={() => openEditDialog(item)}>
                           Edit
                         </Button>
@@ -183,7 +183,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       </div>
                     )}
                     {canModerate && status === 'pending' && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <Button variant="default" onClick={() => onApprove(item)}>
                           Terima
                         </Button>
@@ -201,13 +201,13 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                 </div>
               );
             })}
-            <Pagination links={submissions.links} className="pt-2" />
+            <Pagination links={submissions.links} className="pt-1" />
           </CardContent>
         </Card>
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[1000px]">
+            <Table className="min-w-[960px] text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tgl Pengajuan</TableHead>
@@ -220,7 +220,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                   <TableHead className="text-center">Instruktor 2</TableHead>
                   <TableHead className="text-center">Diajukan oleh</TableHead>
                   <TableHead className="text-center">Status</TableHead>
-                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="w-56 text-center">Aksi</TableHead>}
+                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="text-center">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -447,9 +447,9 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
 
 function Detail({ label, value, valueClass = '' }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn('font-medium', valueClass)}>{value}</span>
+    <div className="text-center text-sm">
+      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn('block font-medium', valueClass)}>{value}</span>
     </div>
   );
 }
