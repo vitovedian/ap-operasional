@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +16,8 @@ export default function SidebarLayout({ header, children }) {
   const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
   const canSubmitInvoice = props.auth.canSubmitInvoice;
   const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
+  const canViewNomorSuratList = props.auth.canViewNomorSuratList;
+  const canSubmitNomorSurat = props.auth.canSubmitNomorSurat;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -49,6 +51,16 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
+    ...(canViewNomorSuratList
+      ? [
+          {
+            label: 'Daftar Nomor Surat',
+            icon: FileSignature,
+            href: route('nomor-surat.index'),
+            active: isActive('nomor-surat.index'),
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
@@ -79,6 +91,16 @@ export default function SidebarLayout({ header, children }) {
             icon: FileEdit,
             href: route('surat-tugas.create'),
             active: isActive('surat-tugas.create'),
+          },
+        ]
+      : []),
+    ...(canSubmitNomorSurat
+      ? [
+          {
+            label: 'Pengajuan Nomor Surat',
+            icon: FileEdit,
+            href: route('nomor-surat.create'),
+            active: isActive('nomor-surat.create'),
           },
         ]
       : []),

@@ -148,12 +148,12 @@ export default function InvoicesIndex({ invoices }) {
                 <TableRow>
                   <TableHead>Tgl Pengajuan</TableHead>
                   <TableHead>Tgl Invoice</TableHead>
-                  <TableHead>Kegiatan</TableHead>
-                  <TableHead className="text-right">Tagihan (Rp)</TableHead>
+                  <TableHead className="text-center">Kegiatan</TableHead>
+                  <TableHead className="text-center">Tagihan (Rp)</TableHead>
                   <TableHead>PPN</TableHead>
-                  <TableHead className="text-right">Total OPE (Rp)</TableHead>
+                  <TableHead className="text-center">Total OPE (Rp)</TableHead>
                   <TableHead>Pengaju</TableHead>
-                  <TableHead className="w-48 text-right">Aksi</TableHead>
+                  <TableHead className="w-48 text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -162,9 +162,9 @@ export default function InvoicesIndex({ invoices }) {
                     <TableCell>{inv.tanggal_pengajuan}</TableCell>
                     <TableCell>{inv.tanggal_invoice}</TableCell>
                     <TableCell>{inv.kegiatan}</TableCell>
-                    <TableCell className="text-right">{toIDR(inv.tagihan_invoice)}</TableCell>
+                    <TableCell className="text-center">{toIDR(inv.tagihan_invoice)}</TableCell>
                     <TableCell>{inv.ppn}</TableCell>
-                    <TableCell className="text-right">{toIDR(inv.total_invoice_ope)}</TableCell>
+                    <TableCell className="text-center">{toIDR(inv.total_invoice_ope)}</TableCell>
                     <TableCell>{inv.user?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">

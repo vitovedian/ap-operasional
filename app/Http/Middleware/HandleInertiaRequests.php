@@ -45,6 +45,8 @@ class HandleInertiaRequests extends Middleware
                 'isKaryawan' => fn () => $isKaryawan,
                 'canSubmitSuratTugas' => fn () => $isKaryawan,
                 'canSubmitInvoice' => fn () => $isKaryawan,
+                'canSubmitNomorSurat' => fn () => $isKaryawan,
+                'canViewNomorSuratList' => fn () => $isAdmin || $isOperationalManager,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

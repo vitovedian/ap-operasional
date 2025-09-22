@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvoiceSubmissionController;
+use App\Http\Controllers\NomorSuratSubmissionController;
 use App\Http\Controllers\SuratTugasSubmissionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,15 @@ Route::middleware(['auth', 'verified', 'role:Karyawan'])->group(function () {
     Route::post('/surat-tugas', [SuratTugasSubmissionController::class, 'store'])->name('surat-tugas.store');
 });
 
+Route::middleware(['auth', 'verified', 'role:Manager Operasional|Admin'])->group(function () {
+    Route::get('/nomor-surat', [NomorSuratSubmissionController::class, 'index'])->name('nomor-surat.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:Karyawan'])->group(function () {
+    Route::get('/nomor-surat/create', [NomorSuratSubmissionController::class, 'create'])->name('nomor-surat.create');
+    Route::post('/nomor-surat', [NomorSuratSubmissionController::class, 'store'])->name('nomor-surat.store');
+});
+
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::put('/invoices/{invoice}', [InvoiceSubmissionController::class, 'update'])->name('invoices.update');
     Route::delete('/invoices/{invoice}', [InvoiceSubmissionController::class, 'destroy'])->name('invoices.destroy');
@@ -72,6 +82,11 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
 Route::middleware(['auth', 'verified', 'role:Manager Operasional'])->group(function () {
     Route::post('/surat-tugas/{suratTugas}/approve', [SuratTugasSubmissionController::class, 'approve'])->name('surat-tugas.approve');
     Route::post('/surat-tugas/{suratTugas}/reject', [SuratTugasSubmissionController::class, 'reject'])->name('surat-tugas.reject');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
+    Route::put('/nomor-surat/{nomorSurat}', [NomorSuratSubmissionController::class, 'update'])->name('nomor-surat.update');
+    Route::delete('/nomor-surat/{nomorSurat}', [NomorSuratSubmissionController::class, 'destroy'])->name('nomor-surat.destroy');
 });
 
 require __DIR__.'/auth.php';
