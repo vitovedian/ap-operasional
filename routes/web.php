@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvoiceSubmissionController;
 use App\Http\Controllers\NomorSuratSubmissionController;
+use App\Http\Controllers\SpjSubmissionController;
 use App\Http\Controllers\SuratTugasSubmissionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,15 @@ Route::middleware(['auth', 'verified', 'role:Karyawan'])->group(function () {
     Route::post('/nomor-surat', [NomorSuratSubmissionController::class, 'store'])->name('nomor-surat.store');
 });
 
+Route::middleware(['auth', 'verified', 'role:Manager Keuangan|Admin'])->group(function () {
+    Route::get('/spj', [SpjSubmissionController::class, 'index'])->name('spj.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:PIC'])->group(function () {
+    Route::get('/spj/create', [SpjSubmissionController::class, 'create'])->name('spj.create');
+    Route::post('/spj', [SpjSubmissionController::class, 'store'])->name('spj.store');
+});
+
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::put('/invoices/{invoice}', [InvoiceSubmissionController::class, 'update'])->name('invoices.update');
     Route::delete('/invoices/{invoice}', [InvoiceSubmissionController::class, 'destroy'])->name('invoices.destroy');
@@ -87,6 +97,16 @@ Route::middleware(['auth', 'verified', 'role:Manager Operasional'])->group(funct
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::put('/nomor-surat/{nomorSurat}', [NomorSuratSubmissionController::class, 'update'])->name('nomor-surat.update');
     Route::delete('/nomor-surat/{nomorSurat}', [NomorSuratSubmissionController::class, 'destroy'])->name('nomor-surat.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
+    Route::put('/spj/{spj}', [SpjSubmissionController::class, 'update'])->name('spj.update');
+    Route::delete('/spj/{spj}', [SpjSubmissionController::class, 'destroy'])->name('spj.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'role:Manager Keuangan'])->group(function () {
+    Route::post('/spj/{spj}/approve', [SpjSubmissionController::class, 'approve'])->name('spj.approve');
+    Route::post('/spj/{spj}/reject', [SpjSubmissionController::class, 'reject'])->name('spj.reject');
 });
 
 require __DIR__.'/auth.php';

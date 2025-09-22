@@ -34,6 +34,7 @@ class HandleInertiaRequests extends Middleware
         $isFinanceManager = $user?->hasRole('Manager Keuangan') ?? false;
         $isOperationalManager = $user?->hasRole('Manager Operasional') ?? false;
         $isKaryawan = $user?->hasRole('Karyawan') ?? false;
+        $isPic = $user?->hasRole('PIC') ?? false;
 
         return [
             ...parent::share($request),
@@ -43,9 +44,7 @@ class HandleInertiaRequests extends Middleware
                 'isFinanceManager' => fn () => $isFinanceManager,
                 'isOperationalManager' => fn () => $isOperationalManager,
                 'isKaryawan' => fn () => $isKaryawan,
-                'canSubmitSuratTugas' => fn () => $isKaryawan,
-                'canSubmitInvoice' => fn () => $isKaryawan,
-                'canSubmitNomorSurat' => fn () => $isKaryawan,
+                'isPic' => fn () => $isPic,
                 'canViewNomorSuratList' => fn () => $isAdmin || $isOperationalManager,
             ],
             'flash' => [

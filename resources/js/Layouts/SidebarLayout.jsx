@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -13,11 +13,11 @@ export default function SidebarLayout({ header, children }) {
   const isFinanceManager = props.auth.isFinanceManager;
   const isOperationalManager = props.auth.isOperationalManager;
   const isKaryawan = props.auth.isKaryawan;
-  const canSubmitSuratTugas = props.auth.canSubmitSuratTugas;
-  const canSubmitInvoice = props.auth.canSubmitInvoice;
+  const isPic = props.auth.isPic;
   const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
   const canViewNomorSuratList = props.auth.canViewNomorSuratList;
-  const canSubmitNomorSurat = props.auth.canSubmitNomorSurat;
+  const canSubmitKaryawan = Boolean(isKaryawan);
+  const canSubmitPic = Boolean(isPic);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -61,6 +61,16 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
+    ...(isFinanceManager || isAdmin
+      ? [
+          {
+            label: 'Daftar SPJ',
+            icon: Receipt,
+            href: route('spj.index'),
+            active: isActive('spj.index'),
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
@@ -74,7 +84,7 @@ export default function SidebarLayout({ header, children }) {
   ];
 
   const submissionNavItems = [
-    ...(canSubmitInvoice
+    ...(canSubmitKaryawan
       ? [
           {
             label: 'Pengajuan Invoice',
@@ -84,7 +94,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitSuratTugas
+    ...(canSubmitKaryawan
       ? [
           {
             label: 'Pengajuan Surat Tugas',
@@ -94,13 +104,23 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitNomorSurat
+    ...(canSubmitKaryawan
       ? [
           {
             label: 'Pengajuan Nomor Surat',
             icon: FileEdit,
             href: route('nomor-surat.create'),
             active: isActive('nomor-surat.create'),
+          },
+        ]
+      : []),
+    ...(canSubmitPic
+      ? [
+          {
+            label: 'Pengajuan SPJ',
+            icon: FileEdit,
+            href: route('spj.create'),
+            active: isActive('spj.create'),
           },
         ]
       : []),
