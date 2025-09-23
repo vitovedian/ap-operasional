@@ -84,10 +84,6 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
         pic_id: form.pic_id,
         nama_pendampingan: form.nama_pendampingan,
         fee_pendampingan: form.fee_pendampingan,
-        instruktor_1_nama: form.instruktor_1_nama,
-        instruktor_1_fee: form.instruktor_1_fee,
-        instruktor_2_nama: form.instruktor_2_nama,
-        instruktor_2_fee: form.instruktor_2_fee,
       },
       {
         preserveScroll: true,
@@ -134,9 +130,23 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   };
 
   const handleDetail = (item) => {
+    const instruktors = Array.isArray(item.instruktors)
+      ? item.instruktors.map((instr) => ({
+          nama: instr.nama,
+          fee: Number(instr.fee || 0),
+        }))
+      : [
+          { nama: item.instruktor_1_nama, fee: Number(item.instruktor_1_fee || 0) },
+          { nama: item.instruktor_2_nama, fee: Number(item.instruktor_2_fee || 0) },
+        ].filter((instr) => instr.nama);
+
     setDetail({
       ...item,
       processed_at: item.processed_at || '-',
+      fee_pendampingan: Number(item.fee_pendampingan || 0),
+      total_fee_instruktur: Number(item.total_fee_instruktur || 0),
+      total_fee: Number(item.total_fee || 0),
+      instruktors,
     });
     setOpenDetail(true);
   };
@@ -163,8 +173,13 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <Detail label="Kegiatan" value={item.kegiatan} />
                     <Detail label="Pendampingan" value={item.nama_pendampingan} />
                     <Detail label="Fee Pendampingan" value={`Rp ${toIDR(item.fee_pendampingan)}`} />
-                    <Detail label="Instruktor 1" value={`${item.instruktor_1_nama} (Rp ${toIDR(item.instruktor_1_fee)})`} />
-                    <Detail label="Instruktor 2" value={item.instruktor_2_nama ? `${item.instruktor_2_nama} (Rp ${toIDR(item.instruktor_2_fee)})` : '-'} />
+                    <Detail
+                      label="Instruktor"
+                      value={Array.isArray(item.instruktors) && item.instruktors.length
+                        ? item.instruktors.map((instr) => `${instr.nama} (Rp ${toIDR(instr.fee)})`).join(', ')
+                        : '-'}
+                    />
+                    <Detail label="Total Fee" value={`Rp ${toIDR(item.total_fee)}`} />
                     <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                   </div>
@@ -216,8 +231,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                   <TableHead className="text-center">PIC</TableHead>
                   <TableHead className="text-center">Pendamping</TableHead>
                   <TableHead className="text-center">Fee Pendamping (Rp)</TableHead>
-                  <TableHead className="text-center">Instruktor 1</TableHead>
-                  <TableHead className="text-center">Instruktor 2</TableHead>
+                  <TableHead className="text-center">Instruktor (Nama & Fee)</TableHead>
+                  <TableHead className="text-center">Total Fee (Rp)</TableHead>
                   <TableHead className="text-center">Diajukan oleh</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   {(canManage || canModerate || hasSelfEditable) && <TableHead className="text-center">Aksi</TableHead>}
@@ -235,21 +250,20 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       <TableCell>{item.nama_pendampingan}</TableCell>
                       <TableCell className="text-center">{toIDR(item.fee_pendampingan)}</TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div>{item.instruktor_1_nama}</div>
-                          <div className="text-xs text-muted-foreground">Rp {toIDR(item.instruktor_1_fee)}</div>
+                        <div className="space-y-1">
+                          {Array.isArray(item.instruktors) && item.instruktors.length ? (
+                            item.instruktors.map((instr, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span>{instr.nama}</span>
+                                <span className="font-medium">Rp {toIDR(instr.fee)}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {item.instruktor_2_nama ? (
-                          <div className="text-sm">
-                            <div>{item.instruktor_2_nama}</div>
-                            <div className="text-xs text-muted-foreground">Rp {toIDR(item.instruktor_2_fee)}</div>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
+                      <TableCell className="text-center">{toIDR(item.total_fee)}</TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
                       <TableCell>
                         <div className="text-sm">
@@ -412,16 +426,26 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                 <DetailRow label="Kegiatan" value={detail.kegiatan} emphasise />
                 <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan} emphasise />
                 <DetailRow label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} emphasise />
-                <DetailRow
-                  label="Instruktor 1"
-                  value={`${detail.instruktor_1_nama} (Rp ${toIDR(detail.instruktor_1_fee)})`}
-                  emphasise
-                />
-                <DetailRow
-                  label="Instruktor 2"
-                  value={detail.instruktor_2_nama ? `${detail.instruktor_2_nama} (Rp ${toIDR(detail.instruktor_2_fee)})` : '-'}
-                  emphasise
-                />
+                <div className="space-y-2">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Daftar Instruktor</span>
+                  <div className="space-y-1">
+                    {detail.instruktors?.length ? (
+                      detail.instruktors.map((instr, idx) => (
+                        <div
+                          key={`${instr.nama}-${idx}`}
+                          className="flex items-center justify-between rounded-md border border-border bg-background px-2 py-1 text-xs md:text-sm"
+                        >
+                          <span>{instr.nama}</span>
+                          <span className="font-semibold">Rp {toIDR(instr.fee)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Tidak ada instruktur</span>
+                    )}
+                  </div>
+                </div>
+                <DetailRow label="Total Fee Instruktor" value={`Rp ${toIDR(detail.total_fee_instruktur)}`} emphasise />
+                <DetailRow label="Total Fee" value={`Rp ${toIDR(detail.total_fee)}`} emphasise />
               </div>
             </section>
 

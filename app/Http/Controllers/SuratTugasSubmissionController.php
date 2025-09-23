@@ -36,6 +36,9 @@ class SuratTugasSubmissionController extends Controller
             ->paginate(10)
             ->through(function (SuratTugasSubmission $submission) use ($user) {
                 $status = $submission->status ?? 'pending';
+                $totalInstruktur = ((int) $submission->instruktor_1_fee) + ((int) $submission->instruktor_2_fee);
+                $feePendampingan = (int) $submission->fee_pendampingan;
+                $totalKeseluruhan = $feePendampingan + $totalInstruktur;
                 return [
                     'id' => $submission->id,
                     'tanggal_pengajuan' => $submission->tanggal_pengajuan,
@@ -47,11 +50,17 @@ class SuratTugasSubmissionController extends Controller
                         'email' => $submission->pic->email,
                     ] : null,
                     'nama_pendampingan' => $submission->nama_pendampingan,
-                    'fee_pendampingan' => (int) $submission->fee_pendampingan,
+                    'fee_pendampingan' => $feePendampingan,
                     'instruktor_1_nama' => $submission->instruktor_1_nama,
                     'instruktor_1_fee' => (int) $submission->instruktor_1_fee,
                     'instruktor_2_nama' => $submission->instruktor_2_nama,
                     'instruktor_2_fee' => (int) $submission->instruktor_2_fee,
+                    'total_fee_instruktur' => $totalInstruktur,
+                    'total_fee' => $totalKeseluruhan,
+                    'instruktors' => collect([
+                        ['nama' => $submission->instruktor_1_nama, 'fee' => (int) $submission->instruktor_1_fee],
+                        ['nama' => $submission->instruktor_2_nama, 'fee' => (int) $submission->instruktor_2_fee],
+                    ])->filter(fn ($instruktor) => filled($instruktor['nama']))->values(),
                     'pengaju' => $submission->user ? [
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
@@ -108,7 +117,7 @@ class SuratTugasSubmissionController extends Controller
             'tanggal_kegiatan' => ['required', 'date'],
             'pic_id' => ['required', 'exists:users,id'],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
-            'fee_pendampingan' => ['required'],
+            'fee_pendampingan' => ['nullable'],
             'instruktor_1_nama' => ['required', 'string', 'max:255'],
             'instruktor_1_fee' => ['required'],
             'instruktor_2_nama' => ['nullable', 'string', 'max:255'],
@@ -208,7 +217,7 @@ class SuratTugasSubmissionController extends Controller
             'tanggal_kegiatan' => ['required', 'date'],
             'pic_id' => ['required', 'exists:users,id'],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
-            'fee_pendampingan' => ['required'],
+            'fee_pendampingan' => ['nullable'],
             'instruktor_1_nama' => ['required', 'string', 'max:255'],
             'instruktor_1_fee' => ['required'],
             'instruktor_2_nama' => ['nullable', 'string', 'max:255'],

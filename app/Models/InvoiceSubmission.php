@@ -17,6 +17,7 @@ class InvoiceSubmission extends Model
         'tagihan_invoice',
         'ppn',
         'total_invoice_ope',
+        'total_tagihan',
         'bukti_surat_konfirmasi',
     ];
 

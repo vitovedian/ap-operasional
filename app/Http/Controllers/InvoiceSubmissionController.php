@@ -35,6 +35,7 @@ class InvoiceSubmissionController extends Controller
                     'tagihan_invoice' => (int) $inv->tagihan_invoice,
                     'ppn' => $inv->ppn,
                     'total_invoice_ope' => (int) $inv->total_invoice_ope,
+                    'total_tagihan' => (int) $inv->total_tagihan,
                     'user' => [
                         'id' => $inv->user?->id,
                         'name' => $inv->user?->name,
@@ -71,6 +72,9 @@ class InvoiceSubmissionController extends Controller
         // Normalize currency inputs (store in Rupiah as integer)
         $tagihan = (int) preg_replace('/\D/', '', (string) $request->input('tagihan_invoice'));
         $totalOpe = (int) preg_replace('/\D/', '', (string) $request->input('total_invoice_ope'));
+        $ppnRate = strcasecmp($validated['ppn'], 'include') === 0 ? 0.11 : 0;
+        $ppnAmount = (int) round($tagihan * $ppnRate);
+        $totalTagihan = $tagihan + $ppnAmount + $totalOpe;
 
         $path = $request->file('bukti_surat_konfirmasi')->store('invoices/konfirmasi');
 
@@ -82,6 +86,7 @@ class InvoiceSubmissionController extends Controller
             'tagihan_invoice' => $tagihan,
             'ppn' => $validated['ppn'],
             'total_invoice_ope' => $totalOpe,
+            'total_tagihan' => $totalTagihan,
             'bukti_surat_konfirmasi' => $path,
         ]);
 
@@ -102,6 +107,9 @@ class InvoiceSubmissionController extends Controller
 
         $tagihan = (int) preg_replace('/\D/', '', (string) $request->input('tagihan_invoice'));
         $totalOpe = (int) preg_replace('/\D/', '', (string) $request->input('total_invoice_ope'));
+        $ppnRate = strcasecmp($validated['ppn'], 'include') === 0 ? 0.11 : 0;
+        $ppnAmount = (int) round($tagihan * $ppnRate);
+        $totalTagihan = $tagihan + $ppnAmount + $totalOpe;
 
         $invoice->fill([
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
@@ -110,6 +118,7 @@ class InvoiceSubmissionController extends Controller
             'tagihan_invoice' => $tagihan,
             'ppn' => $validated['ppn'],
             'total_invoice_ope' => $totalOpe,
+            'total_tagihan' => $totalTagihan,
         ]);
 
         if ($request->hasFile('bukti_surat_konfirmasi')) {

@@ -53,6 +53,16 @@ export default function InvoicesIndex({ invoices }) {
     return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
+  const parseCurrency = (value) => {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    return digits ? Number(digits) : 0;
+  };
+
+  const formTagihan = parseCurrency(form.tagihan_invoice);
+  const formOpe = parseCurrency(form.total_invoice_ope);
+  const includePpn = form.ppn === 'include';
+  const formTotalTagihan = formTagihan + (includePpn ? Math.round(formTagihan * 0.11) : 0) + formOpe;
+
   const submitUpdate = (e) => {
     e.preventDefault();
     if (!editingInvoice) return;
@@ -115,6 +125,7 @@ export default function InvoicesIndex({ invoices }) {
                   <Detail label="Kegiatan" value={inv.kegiatan} />
                   <Detail label="Tagihan" value={`Rp ${toIDR(inv.tagihan_invoice)}`} />
                   <Detail label="Total OPE" value={`Rp ${toIDR(inv.total_invoice_ope)}`} />
+                  <Detail label="Total Tagihan" value={`Rp ${toIDR(inv.total_tagihan)}`} />
                   <Detail label="PPN" value={inv.ppn} />
                   <Detail label="Pengaju" value={inv.user?.name || '-'} />
                 </div>
@@ -152,6 +163,7 @@ export default function InvoicesIndex({ invoices }) {
                   <TableHead className="text-center">Tagihan (Rp)</TableHead>
                   <TableHead>PPN</TableHead>
                   <TableHead className="text-center">Total OPE (Rp)</TableHead>
+                  <TableHead className="text-center">Total Tagihan (Rp)</TableHead>
                   <TableHead>Pengaju</TableHead>
                   <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
@@ -165,6 +177,7 @@ export default function InvoicesIndex({ invoices }) {
                     <TableCell className="text-center">{toIDR(inv.tagihan_invoice)}</TableCell>
                     <TableCell>{inv.ppn}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.total_invoice_ope)}</TableCell>
+                    <TableCell className="text-center">{toIDR(inv.total_tagihan)}</TableCell>
                     <TableCell>{inv.user?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
@@ -255,6 +268,14 @@ export default function InvoicesIndex({ invoices }) {
                 inputMode="numeric"
                 required
               />
+            </Field>
+            <Field label="Total Tagihan (Rp)">
+              <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                <span>Rp {toIDR(formTotalTagihan)}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                11% dari tagihan ditambahkan hanya ketika PPN "include".
+              </p>
             </Field>
             <Field label="Bukti Surat Konfirmasi (PDF)">
               <Input type="file" accept="application/pdf" onChange={onFileChange} />

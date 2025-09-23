@@ -18,11 +18,11 @@ export default function CreateSuratTugas() {
     pic_id: picOptions[0]?.id || '',
     nama_pendampingan: '',
     fee_pendampingan: '',
-    instruktor_1_nama: '',
-    instruktor_1_fee: '',
-    instruktor_2_nama: '',
-    instruktor_2_fee: '',
   });
+
+  const [instructors, setInstructors] = useState([
+    { nama: '', fee: '' },
+  ]);
 
   const toIDRString = (value) => {
     const digits = String(value ?? '').replace(/\D/g, '');
@@ -34,8 +34,38 @@ export default function CreateSuratTugas() {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
+  const bindNumeric = (key) => (event) => {
+    const digits = event.target.value.replace(/\D/g, '');
+    setForm((prev) => ({ ...prev, [key]: digits }));
+  };
+
+  const addInstructor = () => {
+    if (instructors.length >= 2) return;
+    setInstructors((prev) => [...prev, { nama: '', fee: '' }]);
+  };
+
+  const updateInstructor = (index, key) => (event) => {
+    const rawValue = event.target.value;
+    const value = key === 'fee' ? rawValue.replace(/\D/g, '') : rawValue;
+    setInstructors((prev) => prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item)));
+  };
+
+  const removeInstructor = (index) => {
+    if (instructors.length === 1) {
+      setInstructors([{ nama: '', fee: '' }]);
+      return;
+    }
+
+    setInstructors((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const totalFeePendampingan = parseInt(form.fee_pendampingan?.replace(/\D/g, '') || '0', 10);
+  const totalFeeInstruktur = instructors.reduce((acc, item) => acc + parseInt(item.fee || '0', 10), 0);
+  const totalFee = totalFeePendampingan + totalFeeInstruktur;
+
   const submit = (event) => {
     event.preventDefault();
+    const [first = { nama: '', fee: '' }, second = { nama: '', fee: '' }] = instructors;
     router.post(route('surat-tugas.store'), {
       tanggal_pengajuan: form.tanggal_pengajuan,
       tanggal_kegiatan: form.tanggal_kegiatan,
@@ -43,10 +73,10 @@ export default function CreateSuratTugas() {
       pic_id: form.pic_id,
       nama_pendampingan: form.nama_pendampingan,
       fee_pendampingan: form.fee_pendampingan,
-      instruktor_1_nama: form.instruktor_1_nama,
-      instruktor_1_fee: form.instruktor_1_fee,
-      instruktor_2_nama: form.instruktor_2_nama,
-      instruktor_2_fee: form.instruktor_2_fee,
+      instruktor_1_nama: first.nama,
+      instruktor_1_fee: first.fee,
+      instruktor_2_nama: second.nama,
+      instruktor_2_fee: second.fee,
     }, {
       onSuccess: () => {
         setForm({
@@ -56,11 +86,8 @@ export default function CreateSuratTugas() {
           pic_id: picOptions[0]?.id || '',
           nama_pendampingan: '',
           fee_pendampingan: '',
-          instruktor_1_nama: '',
-          instruktor_1_fee: '',
-          instruktor_2_nama: '',
-          instruktor_2_fee: '',
         });
+        setInstructors([{ nama: '', fee: '' }]);
       },
     });
   };
@@ -112,25 +139,47 @@ export default function CreateSuratTugas() {
               </div>
 
               <Field label="Fee Pendampingan (Rp)">
-                <Input value={toIDRString(form.fee_pendampingan)} onChange={bind('fee_pendampingan')} inputMode="numeric" required />
+                <Input value={toIDRString(form.fee_pendampingan)} onChange={bindNumeric('fee_pendampingan')} inputMode="numeric" placeholder="Opsional" />
               </Field>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Instruktor 1">
-                  <Input value={form.instruktor_1_nama} onChange={bind('instruktor_1_nama')} required />
-                </Field>
-                <Field label="Fee Instruktor 1 (Rp)">
-                  <Input value={toIDRString(form.instruktor_1_fee)} onChange={bind('instruktor_1_fee')} inputMode="numeric" required />
-                </Field>
-              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-foreground">Instruktor</h2>
+                  <Button type="button" size="sm" variant="outline" onClick={addInstructor} disabled={instructors.length >= 2}>
+                    Tambah Instruktor
+                  </Button>
+                </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Instruktor 2 (opsional)">
-                  <Input value={form.instruktor_2_nama} onChange={bind('instruktor_2_nama')} />
-                </Field>
-                <Field label="Fee Instruktor 2 (Rp)">
-                  <Input value={toIDRString(form.instruktor_2_fee)} onChange={bind('instruktor_2_fee')} inputMode="numeric" />
-                </Field>
+                <div className="space-y-3">
+                  {instructors.map((instruktur, idx) => (
+                    <div key={idx} className="grid gap-3 sm:grid-cols-[2fr,2fr,auto]">
+                      <Field label={`Nama Instruktor ${idx + 1}`}>
+                        <Input value={instruktur.nama} onChange={updateInstructor(idx, 'nama')} required={idx === 0} placeholder="Nama instruktur" />
+                      </Field>
+                      <Field label={`Fee Instruktor ${idx + 1} (Rp)`}>
+                        <Input
+                          value={toIDRString(instruktur.fee)}
+                          onChange={updateInstructor(idx, 'fee')}
+                          inputMode="numeric"
+                          required={idx === 0}
+                        />
+                      </Field>
+                      <div className="flex items-end pb-2">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeInstructor(idx)}>
+                          Hapus
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Total Fee (Rp)</Label>
+                  <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                    Rp {toIDRString(totalFee)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Jumlahkan fee pendampingan dan semua fee instruktur.</p>
+                </div>
               </div>
 
               <div className="flex justify-end">

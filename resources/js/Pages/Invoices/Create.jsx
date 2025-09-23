@@ -17,9 +17,10 @@ export default function CreateInvoice() {
     kegiatan: '',
     tagihan_invoice: '',
     ppn: 'tanpa',
-    total_invoice_ope: '',
     bukti_surat_konfirmasi: null,
   });
+
+  const [opeItems, setOpeItems] = useState([{ deskripsi: '', nominal: '' }]);
 
   const handleInput = (key) => (event) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
@@ -36,8 +37,38 @@ export default function CreateInvoice() {
     return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
+  const parseCurrency = (value) => {
+    const digits = String(value ?? '').replace(/\D/g, '');
+    return digits ? Number(digits) : 0;
+  };
+
+  const tagihanValue = parseCurrency(form.tagihan_invoice);
+  const includePpn = form.ppn === 'include';
+  const totalOpeValue = opeItems.reduce((sum, item) => sum + parseCurrency(item.nominal), 0);
+  const totalTagihan = tagihanValue + (includePpn ? Math.round(tagihanValue * 0.11) : 0) + totalOpeValue;
+
   const handleNumericInput = (key) => (event) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const addOpeItem = () => {
+    if (opeItems.length >= 3) return;
+    setOpeItems((prev) => [...prev, { deskripsi: '', nominal: '' }]);
+  };
+
+  const updateOpeItem = (index, key) => (event) => {
+    const rawValue = event.target.value;
+    const value = key === 'nominal' ? rawValue.replace(/\D/g, '') : rawValue;
+    setOpeItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item)));
+  };
+
+  const removeOpeItem = (index) => {
+    if (opeItems.length === 1) {
+      setOpeItems([{ deskripsi: '', nominal: '' }]);
+      return;
+    }
+
+    setOpeItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const submit = (event) => {
@@ -49,7 +80,7 @@ export default function CreateInvoice() {
     fd.append('kegiatan', form.kegiatan);
     fd.append('tagihan_invoice', String(form.tagihan_invoice));
     fd.append('ppn', form.ppn);
-    fd.append('total_invoice_ope', String(form.total_invoice_ope));
+    fd.append('total_invoice_ope', String(totalOpeValue));
     if (form.bukti_surat_konfirmasi) {
       fd.append('bukti_surat_konfirmasi', form.bukti_surat_konfirmasi);
     }
@@ -63,9 +94,9 @@ export default function CreateInvoice() {
           kegiatan: '',
           tagihan_invoice: '',
           ppn: 'tanpa',
-          total_invoice_ope: '',
           bukti_surat_konfirmasi: null,
         });
+        setOpeItems([{ deskripsi: '', nominal: '' }]);
       },
     });
   };
@@ -113,8 +144,56 @@ export default function CreateInvoice() {
                 </Field>
               </div>
 
-              <Field label="Total Invoice OPE (Rp)">
-                <Input value={toIDRString(form.total_invoice_ope)} onChange={handleNumericInput('total_invoice_ope')} inputMode="numeric" required />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold text-foreground">Rincian Invoice OPE</h2>
+                  <Button type="button" size="sm" variant="outline" onClick={addOpeItem} disabled={opeItems.length >= 3}>
+                    Tambah Baris
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {opeItems.map((item, idx) => (
+                    <div key={idx} className="grid gap-3 sm:grid-cols-[2fr,2fr,auto]">
+                      <Field label={`Deskripsi OPE ${idx + 1}`}>
+                        <Input
+                          value={item.deskripsi}
+                          onChange={updateOpeItem(idx, 'deskripsi')}
+                          placeholder="Contoh: Transportasi"
+                        />
+                      </Field>
+                      <Field label={`Nominal OPE ${idx + 1} (Rp)`}>
+                        <Input
+                          value={toIDRString(item.nominal)}
+                          onChange={updateOpeItem(idx, 'nominal')}
+                          inputMode="numeric"
+                        />
+                      </Field>
+                      <div className="flex items-end pb-2">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeOpeItem(idx)}>
+                          Hapus
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-muted-foreground">Total Invoice OPE (Rp)</Label>
+                  <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                    Rp {toIDRString(totalOpeValue)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Total ini otomatis menjumlahkan seluruh nominal OPE.</p>
+                </div>
+              </div>
+
+              <Field label="Total Tagihan (Rp)">
+                <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                  <span>Rp {toIDRString(totalTagihan)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total tagihan menambahkan 11% dari tagihan hanya bila opsi PPN adalah "include".
+                </p>
               </Field>
 
               <Field label="Upload Bukti Confirmation Letter (dalam format PDF)">
