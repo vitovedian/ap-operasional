@@ -19,9 +19,11 @@ class NomorSuratSubmissionController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $submissions = NomorSuratSubmission::query()
             ->with('user')
+            ->when(! $canViewAll, fn ($query) => $query->where('user_id', $user?->id))
             ->orderByDesc('id')
             ->paginate(10)
             ->through(function (NomorSuratSubmission $submission) {
@@ -43,6 +45,7 @@ class NomorSuratSubmissionController extends Controller
         return Inertia::render('NomorSurat/Index', [
             'submissions' => $submissions,
             'canManage' => $user?->hasRole('Admin') ?? false,
+            'canViewAll' => $canViewAll,
         ]);
     }
 
@@ -92,4 +95,3 @@ class NomorSuratSubmissionController extends Controller
         return back()->with('success', 'Pengajuan nomor surat dihapus');
     }
 }
-

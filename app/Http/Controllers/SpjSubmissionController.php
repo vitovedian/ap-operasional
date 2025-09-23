@@ -20,13 +20,14 @@ class SpjSubmissionController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $query = SpjSubmission::query()
             ->with(['user', 'pic', 'processor'])
             ->orderByDesc('id');
 
-        if ($user && $user->hasRole('PIC') && ! $user->hasRole('Admin') && ! $user->hasRole('Manager Keuangan')) {
-            $query->where('user_id', $user->id);
+        if (! $canViewAll) {
+            $query->where('user_id', $user?->id);
         }
 
         $submissions = $query
@@ -77,7 +78,8 @@ class SpjSubmissionController extends Controller
         return Inertia::render('SPJ/Index', [
             'submissions' => $submissions,
             'canManage' => $user?->hasRole('Admin') ?? false,
-            'canApprove' => $user?->hasRole('Manager Keuangan') ?? false,
+            'canApprove' => $user?->hasRole('Manager') ?? false,
+            'canViewAll' => $canViewAll,
             'picOptions' => $picOptions,
         ]);
     }

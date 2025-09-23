@@ -23,9 +23,14 @@ class SuratTugasSubmissionController extends Controller
         $query = SuratTugasSubmission::query()
             ->with(['user', 'pic', 'processor'])
             ->orderByDesc('id')
-            ->when($user && $user->hasRole('Karyawan') && ! $user->hasRole('Admin') && ! $user->hasRole('Manager Operasional'), function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            });
+            ->when(
+                $user
+                && $user->hasAnyRole(['Karyawan', 'PIC'])
+                && ! $user->hasAnyRole(['Admin', 'Manager', 'Supervisor']),
+                function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                }
+            );
 
         $submissions = $query
             ->paginate(10)
@@ -60,7 +65,7 @@ class SuratTugasSubmissionController extends Controller
                     ] : null,
                     'processed_at' => optional($submission->processed_at)->toDateTimeString(),
                     'can_self_edit' => $user
-                        && $user->hasRole('Karyawan')
+                        && $user->hasAnyRole(['Karyawan', 'PIC'])
                         && $submission->user_id === $user->id
                         && $status === 'rejected',
                 ];
@@ -77,7 +82,8 @@ class SuratTugasSubmissionController extends Controller
             'submissions' => $submissions,
             'picOptions' => $picOptions,
             'canManage' => $user?->hasRole('Admin') ?? false,
-            'canModerate' => $user?->hasRole('Manager Operasional') ?? false,
+            'canModerate' => $user?->hasRole('Manager') ?? false,
+            'canViewAll' => $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false,
         ]);
     }
 
@@ -141,11 +147,13 @@ class SuratTugasSubmissionController extends Controller
         $user = $request->user();
 
         $isAdmin = $user?->hasRole('Admin');
-        $isOperationalManager = $user?->hasRole('Manager Operasional');
+        $isManager = $user?->hasRole('Manager');
+        $isSupervisor = $user?->hasRole('Supervisor');
         $isKaryawan = $user?->hasRole('Karyawan');
+        $isPic = $user?->hasRole('PIC');
 
-        if (! $isAdmin && ! $isOperationalManager) {
-            if (! $isKaryawan || $suratTugas->user_id !== $user?->id) {
+        if (! $isAdmin && ! $isManager && ! $isSupervisor) {
+            if (! ($isKaryawan || $isPic) || $suratTugas->user_id !== $user?->id) {
                 abort(403);
             }
         }
@@ -184,8 +192,11 @@ class SuratTugasSubmissionController extends Controller
 
         return Inertia::render('SuratTugas/Show', [
             'submission' => $data,
-            'canModerate' => $isOperationalManager,
-            'canEdit' => $isAdmin || ($isKaryawan && $suratTugas->user_id === $user?->id && ($suratTugas->status ?? 'pending') === 'rejected'),
+            'canModerate' => $isManager,
+            'canEdit' => $isAdmin
+                || ((($isKaryawan || $isPic)
+                    && $suratTugas->user_id === $user?->id
+                    && ($suratTugas->status ?? 'pending') === 'rejected')),
         ]);
     }
 
@@ -207,9 +218,10 @@ class SuratTugasSubmissionController extends Controller
         $user = $request->user();
         $isAdmin = $user?->hasRole('Admin');
         $isKaryawan = $user?->hasRole('Karyawan');
+        $isPic = $user?->hasRole('PIC');
 
         if (! $isAdmin) {
-            if (! $isKaryawan || $suratTugas->user_id !== $user->id) {
+            if (! ($isKaryawan || $isPic) || $suratTugas->user_id !== $user->id) {
                 abort(403);
             }
 
@@ -237,7 +249,7 @@ class SuratTugasSubmissionController extends Controller
             'instruktor_2_fee' => (int) preg_replace('/\D/', '', (string) $request->input('instruktor_2_fee')),
         ]);
 
-        if ($isKaryawan && ! $isAdmin) {
+        if (($isKaryawan || $isPic) && ! $isAdmin) {
             $suratTugas->status = 'pending';
             $suratTugas->catatan_revisi = null;
             $suratTugas->processed_by = null;

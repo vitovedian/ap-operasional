@@ -9,15 +9,17 @@ const drawerWidth = 260;
 export default function SidebarLayout({ header, children }) {
   const { props } = usePage();
   const user = props.auth.user;
-  const isAdmin = props.auth.isAdmin;
-  const isFinanceManager = props.auth.isFinanceManager;
-  const isOperationalManager = props.auth.isOperationalManager;
-  const isKaryawan = props.auth.isKaryawan;
-  const isPic = props.auth.isPic;
-  const canViewSuratTugasList = isAdmin || isOperationalManager || isKaryawan;
-  const canViewNomorSuratList = props.auth.canViewNomorSuratList;
-  const canSubmitKaryawan = Boolean(isKaryawan);
-  const canSubmitPic = Boolean(isPic);
+  const isAdmin = Boolean(props.auth.isAdmin);
+  const isManager = Boolean(props.auth.isManager);
+  const isSupervisor = Boolean(props.auth.isSupervisor);
+  const isKaryawan = Boolean(props.auth.isKaryawan);
+  const isPic = Boolean(props.auth.isPic);
+  const canSubmitForms = Boolean(props.auth.canSubmitForms);
+
+  const canViewInvoicesList = isAdmin || isManager || isSupervisor || isKaryawan || isPic;
+  const canViewSuratTugasList = canViewInvoicesList;
+  const canViewNomorSuratList = canViewInvoicesList;
+  const canViewSpjList = canViewInvoicesList;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -31,7 +33,7 @@ export default function SidebarLayout({ header, children }) {
       href: route('dashboard'),
       active: isActive('dashboard'),
     },
-    ...(isFinanceManager || isAdmin
+    ...(canViewInvoicesList
       ? [
           {
             label: 'Daftar Invoice',
@@ -61,7 +63,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(isFinanceManager || isAdmin
+    ...(canViewSpjList
       ? [
           {
             label: 'Daftar SPJ',
@@ -84,7 +86,7 @@ export default function SidebarLayout({ header, children }) {
   ];
 
   const submissionNavItems = [
-    ...(canSubmitKaryawan
+    ...(canSubmitForms
       ? [
           {
             label: 'Pengajuan Invoice',
@@ -94,7 +96,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitKaryawan
+    ...(canSubmitForms
       ? [
           {
             label: 'Pengajuan Surat Tugas',
@@ -104,7 +106,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitKaryawan
+    ...(canSubmitForms
       ? [
           {
             label: 'Pengajuan Nomor Surat',
@@ -114,7 +116,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitPic
+    ...(canSubmitForms
       ? [
           {
             label: 'Pengajuan SPJ',

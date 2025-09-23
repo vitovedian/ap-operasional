@@ -15,38 +15,55 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Ensure base roles
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
+        // Ensure required roles exist and drop legacy roles that are no longer used
+        $roles = collect(['Karyawan', 'PIC', 'Supervisor', 'Manager', 'Admin']);
+        $roles->each(fn (string $name) => Role::firstOrCreate(['name' => $name]));
 
-        // Rename legacy role 'User' to 'Karyawan' if exists
-        $legacyUser = Role::where('name', 'User')->first();
-        if ($legacyUser) {
-            $legacyUser->name = 'Karyawan';
-            $legacyUser->save();
-        }
+        Role::query()
+            ->whereNotIn('name', $roles->all())
+            ->delete();
 
-        $karyawanRole = Role::firstOrCreate(['name' => 'Karyawan']);
-        Role::firstOrCreate(['name' => 'Manager Operasional']);
-        Role::firstOrCreate(['name' => 'Manager Keuangan']);
-        Role::firstOrCreate(['name' => 'PIC']);
-
-        // Create a demo admin if not exists
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@example.com'],
+        $defaultUsers = [
             [
                 'name' => 'Administrator',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
-        );
+                'email' => 'admin@example.com',
+                'role' => 'Admin',
+            ],
+            [
+                'name' => 'Supervisor Operasional',
+                'email' => 'supervisor@example.com',
+                'role' => 'Supervisor',
+            ],
+            [
+                'name' => 'Manager Keuangan',
+                'email' => 'manager@example.com',
+                'role' => 'Manager',
+            ],
+            [
+                'name' => 'PIC Utama',
+                'email' => 'pic@example.com',
+                'role' => 'PIC',
+            ],
+            [
+                'name' => 'Karyawan Operasional',
+                'email' => 'karyawan@example.com',
+                'role' => 'Karyawan',
+            ],
+        ];
 
-        // Ensure verified for existing admin
-        if (is_null($admin->email_verified_at)) {
-            $admin->forceFill(['email_verified_at' => now()])->save();
-        }
+        foreach ($defaultUsers as $seedData) {
+            $user = User::updateOrCreate(
+                ['email' => $seedData['email']],
+                [
+                    'name' => $seedData['name'],
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
 
-        if (! $admin->hasRole('Admin')) {
-            $admin->assignRole($adminRole);
+            if (! $user->hasRole($seedData['role'])) {
+                $user->syncRoles([$seedData['role']]);
+            }
         }
     }
 }

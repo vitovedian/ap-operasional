@@ -31,8 +31,8 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $isAdmin = $user?->hasRole('Admin') ?? false;
-        $isFinanceManager = $user?->hasRole('Manager Keuangan') ?? false;
-        $isOperationalManager = $user?->hasRole('Manager Operasional') ?? false;
+        $isManager = $user?->hasRole('Manager') ?? false;
+        $isSupervisor = $user?->hasRole('Supervisor') ?? false;
         $isKaryawan = $user?->hasRole('Karyawan') ?? false;
         $isPic = $user?->hasRole('PIC') ?? false;
 
@@ -41,11 +41,13 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'isAdmin' => fn () => $isAdmin,
-                'isFinanceManager' => fn () => $isFinanceManager,
-                'isOperationalManager' => fn () => $isOperationalManager,
+                'isManager' => fn () => $isManager,
+                'isSupervisor' => fn () => $isSupervisor,
                 'isKaryawan' => fn () => $isKaryawan,
                 'isPic' => fn () => $isPic,
-                'canViewNomorSuratList' => fn () => $isAdmin || $isOperationalManager,
+                'canViewAllLists' => fn () => $isAdmin || $isManager || $isSupervisor,
+                'canApproveSuratTugas' => fn () => $isManager,
+                'canSubmitForms' => fn () => $isAdmin || $isKaryawan || $isPic,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

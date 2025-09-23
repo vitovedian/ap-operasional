@@ -16,10 +16,14 @@ class InvoiceSubmissionController extends Controller
         $this->middleware(['auth', 'verified']);
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $user = $request->user();
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
+
         $invoices = InvoiceSubmission::query()
             ->with('user')
+            ->when(! $canViewAll, fn ($query) => $query->where('user_id', $user?->id))
             ->orderByDesc('id')
             ->paginate(10)
             ->through(function (InvoiceSubmission $inv) {
@@ -42,7 +46,8 @@ class InvoiceSubmissionController extends Controller
 
         return Inertia::render('Invoices/Index', [
             'invoices' => $invoices,
-            'canManageInvoices' => Auth::user()?->hasRole('Admin') ?? false,
+            'canManageInvoices' => $user?->hasRole('Admin') ?? false,
+            'canViewAllInvoices' => $canViewAll,
         ]);
     }
 
@@ -131,8 +136,15 @@ class InvoiceSubmissionController extends Controller
         return back()->with('success', 'Pengajuan Invoice dihapus');
     }
 
-    public function download(InvoiceSubmission $invoice)
+    public function download(Request $request, InvoiceSubmission $invoice)
     {
+        $user = $request->user();
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
+
+        if (! $canViewAll && $invoice->user_id !== $user?->id) {
+            abort(403);
+        }
+
         $path = $invoice->bukti_surat_konfirmasi;
         if (!\Storage::exists($path)) {
             abort(404, 'File tidak ditemukan');

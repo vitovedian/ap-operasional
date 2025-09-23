@@ -117,7 +117,7 @@ export default function CreateInvoice() {
                 <Input value={toIDRString(form.total_invoice_ope)} onChange={handleNumericInput('total_invoice_ope')} inputMode="numeric" required />
               </Field>
 
-              <Field label="Unggah Bukti Surat Konfirmasi (PDF)">
+              <Field label="Upload Bukti Confirmation Letter (dalam format PDF)">
                 <Input type="file" accept="application/pdf" onChange={handleFile} />
                 {form.bukti_surat_konfirmasi && (
                   <p className="text-xs text-muted-foreground">File: {form.bukti_surat_konfirmasi.name}</p>

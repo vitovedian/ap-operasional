@@ -37,7 +37,7 @@ export default function SuratTugasShow({ submission, canModerate = false, canEdi
           <Card>
             <CardHeader>
               <CardTitle>Status dan Persetujuan</CardTitle>
-              <CardDescription>Riwayat status dan catatan dari Manager Operasional.</CardDescription>
+              <CardDescription>Riwayat status dan catatan dari Manager.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Detail label="Status" value={submission.status} valueClass={statusColor(submission.status)} />
