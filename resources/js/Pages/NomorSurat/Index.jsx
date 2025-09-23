@@ -104,7 +104,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[760px] text-sm">
+            <Table className="min-w-[680px] text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tanggal Pengajuan</TableHead>
@@ -123,18 +123,18 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                     <TableCell className="text-center">{item.nama_klien}</TableCell>
                     <TableCell className="text-center">{item.catatan}</TableCell>
                     <TableCell className="text-center">{item.user?.name || '-'}</TableCell>
-                    {canManage && (
-                      <TableCell>
-                        <div className="flex justify-center gap-1.5">
-                          <Button variant="secondary" size="sm" onClick={() => openEditDialog(item)}>
-                            Edit
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => onDelete(item)}>
-                            Hapus
-                          </Button>
-                        </div>
-                      </TableCell>
-                    )}
+                  {canManage && (
+                    <TableCell>
+                      <div className="flex justify-center gap-1.5">
+                        <Button variant="secondary" size="sm" onClick={() => openEditDialog(item)}>
+                          Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => onDelete(item)}>
+                          Hapus
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                   </TableRow>
                 ))}
               </TableBody>

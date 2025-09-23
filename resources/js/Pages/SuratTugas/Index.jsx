@@ -168,10 +168,10 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <Button variant="outline" className="w-full" onClick={() => handleDetail(item)}>
-                      Lihat Detail
-                    </Button>
+                    <div className="mt-3 space-y-1.5">
+                      <Button variant="outline" className="w-full" onClick={() => handleDetail(item)}>
+                        Lihat Detail
+                      </Button>
                     {canManage && (
                       <div className="grid grid-cols-2 gap-1.5">
                         <Button variant="secondary" onClick={() => openEditDialog(item)}>
@@ -207,7 +207,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[960px] text-sm">
+            <Table className="min-w-[920px] text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tgl Pengajuan</TableHead>
@@ -401,38 +401,51 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           <DialogTitle>Detail Surat Tugas</DialogTitle>
         </DialogHeader>
         {detail && (
-          <div className="space-y-4">
-            <DetailGrid title="Informasi Pengajuan">
-              <Detail label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} valueClass="font-medium" />
-              <Detail label="Tanggal Kegiatan" value={detail.tanggal_kegiatan} valueClass="font-medium" />
-              <Detail label="Kegiatan" value={detail.kegiatan} valueClass="font-medium" />
-              <Detail label="Nama Pendampingan" value={detail.nama_pendampingan} valueClass="font-medium" />
-              <Detail label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} valueClass="font-medium" />
-              <Detail
-                label="Instruktor 1"
-                value={`${detail.instruktor_1_nama} (Rp ${toIDR(detail.instruktor_1_fee)})`}
-                valueClass="font-medium"
-              />
-              <Detail
-                label="Instruktor 2"
-                value={detail.instruktor_2_nama ? `${detail.instruktor_2_nama} (Rp ${toIDR(detail.instruktor_2_fee)})` : '-'}
-                valueClass="font-medium"
-              />
-            </DetailGrid>
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Informasi Pengajuan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} emphasise />
+                <DetailRow label="Tanggal Kegiatan" value={detail.tanggal_kegiatan} emphasise />
+                <DetailRow label="Kegiatan" value={detail.kegiatan} emphasise />
+                <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan} emphasise />
+                <DetailRow label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} emphasise />
+                <DetailRow
+                  label="Instruktor 1"
+                  value={`${detail.instruktor_1_nama} (Rp ${toIDR(detail.instruktor_1_fee)})`}
+                  emphasise
+                />
+                <DetailRow
+                  label="Instruktor 2"
+                  value={detail.instruktor_2_nama ? `${detail.instruktor_2_nama} (Rp ${toIDR(detail.instruktor_2_fee)})` : '-'}
+                  emphasise
+                />
+              </div>
+            </section>
 
-            <DetailGrid title="Status & Catatan">
-              <Detail label="Status" value={detail.status} valueClass={statusColor(detail.status)} />
-              <Detail label="Catatan Revisi" value={detail.catatan_revisi || '-'} />
-              <Detail label="Diproses oleh" value={detail.processed_by?.name || '-'} />
-              <Detail label="Diproses pada" value={detail.processed_at || '-'} />
-            </DetailGrid>
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Status & Catatan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Status" value={detail.status} valueClass={statusColor(detail.status)} emphasise />
+                <DetailRow label="Catatan Revisi" value={detail.catatan_revisi || '-'} />
+                <DetailRow label="Diproses oleh" value={detail.processed_by?.name || '-'} />
+                <DetailRow label="Diproses pada" value={detail.processed_at || '-'} />
+              </div>
+            </section>
 
-            <DetailGrid title="PIC & Pengaju">
-              <Detail label="PIC" value={detail.pic?.name || '-'} />
-              <Detail label="Email PIC" value={detail.pic?.email || '-'} />
-              <Detail label="Pengaju" value={detail.pengaju?.name || '-'} />
-              <Detail label="Email Pengaju" value={detail.pengaju?.email || '-'} />
-            </DetailGrid>
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PIC & Pengaju</h3>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <DetailRow label="PIC" value={detail.pic?.name || '-'} />
+                <DetailRow label="Email PIC" value={detail.pic?.email || '-'} />
+                <DetailRow label="Pengaju" value={detail.pengaju?.name || '-'} />
+                <DetailRow label="Email Pengaju" value={detail.pengaju?.email || '-'} />
+              </div>
+            </section>
           </div>
         )}
         <DialogFooter>
@@ -454,11 +467,11 @@ function Detail({ label, value, valueClass = '' }) {
   );
 }
 
-function DetailGrid({ title, children }) {
+function DetailRow({ label, value, valueClass = '', emphasise = false }) {
   return (
-    <div className="space-y-2">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>
-      <div className="grid gap-2">{children}</div>
+    <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn(emphasise ? 'font-semibold text-foreground' : 'text-foreground', valueClass)}>{value}</span>
     </div>
   );
 }
