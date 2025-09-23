@@ -31,6 +31,7 @@ export default function CreateSpj() {
     nama_pendampingan: '',
     jenis_kegiatan: 'offline',
   });
+  const [serahTerimaFile, setSerahTerimaFile] = useState(null);
 
   useEffect(() => {
     if (!form.pic_id && picOptions.length > 0) {
@@ -44,19 +45,21 @@ export default function CreateSpj() {
 
   const submit = (event) => {
     event.preventDefault();
-    router.post(
-      route('spj.store'),
-      {
-        nama_kegiatan: form.nama_kegiatan,
-        tanggal_kegiatan: form.tanggal_kegiatan,
-        durasi_nilai: form.durasi_nilai,
-        durasi_satuan: form.durasi_satuan,
-        pic_id: form.pic_id,
-        nama_pendampingan: form.nama_pendampingan,
-        jenis_kegiatan: form.jenis_kegiatan,
-      },
-      {
-        onSuccess: () => {
+    const fd = new FormData();
+    fd.append('nama_kegiatan', form.nama_kegiatan);
+    fd.append('tanggal_kegiatan', form.tanggal_kegiatan);
+    fd.append('durasi_nilai', form.durasi_nilai);
+    fd.append('durasi_satuan', form.durasi_satuan);
+    fd.append('pic_id', form.pic_id);
+    fd.append('nama_pendampingan', form.nama_pendampingan);
+    fd.append('jenis_kegiatan', form.jenis_kegiatan);
+    if (serahTerimaFile) {
+      fd.append('form_serah_terima', serahTerimaFile);
+    }
+
+    router.post(route('spj.store'), fd, {
+      forceFormData: true,
+      onSuccess: () => {
         setForm({
           nama_kegiatan: '',
           tanggal_kegiatan: '',
@@ -66,9 +69,9 @@ export default function CreateSpj() {
           nama_pendampingan: '',
           jenis_kegiatan: 'offline',
         });
-        },
-      }
-    );
+        setSerahTerimaFile(null);
+      },
+    });
   };
 
   return (
@@ -148,6 +151,18 @@ export default function CreateSpj() {
                     </option>
                   ))}
                 </select>
+              </Field>
+
+              <Field label="Upload Form Serah Terima Dokumen (format PDF)">
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(event) => setSerahTerimaFile(event.target.files?.[0] || null)}
+                  required
+                />
+                {serahTerimaFile && (
+                  <p className="text-xs text-muted-foreground">{serahTerimaFile.name}</p>
+                )}
               </Field>
 
               <div className="flex justify-end">

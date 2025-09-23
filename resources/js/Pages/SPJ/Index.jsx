@@ -45,6 +45,8 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(initialForm);
+  const [formSerahTerimaFile, setFormSerahTerimaFile] = useState(null);
+  const [existingFormSerahTerima, setExistingFormSerahTerima] = useState({ url: null, name: null });
   const [openReject, setOpenReject] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
@@ -77,6 +79,11 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
       nama_pendampingan: submission.nama_pendampingan || '',
       jenis_kegiatan: submission.jenis_kegiatan || 'offline',
     });
+    setExistingFormSerahTerima({
+      url: submission.form_serah_terima_url || null,
+      name: submission.form_serah_terima_name || null,
+    });
+    setFormSerahTerimaFile(null);
     setOpenEdit(true);
   };
 
@@ -84,20 +91,30 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
     event.preventDefault();
     if (!editing) return;
 
-    router.put(
-      route('spj.update', editing.id),
-      {
-        ...form,
+    const fd = new FormData();
+    fd.append('_method', 'put');
+    fd.append('nama_kegiatan', form.nama_kegiatan);
+    fd.append('tanggal_kegiatan', form.tanggal_kegiatan);
+    fd.append('durasi_nilai', form.durasi_nilai);
+    fd.append('durasi_satuan', form.durasi_satuan);
+    fd.append('pic_id', form.pic_id);
+    fd.append('nama_pendampingan', form.nama_pendampingan);
+    fd.append('jenis_kegiatan', form.jenis_kegiatan);
+    if (formSerahTerimaFile) {
+      fd.append('form_serah_terima', formSerahTerimaFile);
+    }
+
+    router.post(route('spj.update', editing.id), fd, {
+      forceFormData: true,
+      preserveScroll: true,
+      onSuccess: () => {
+        setOpenEdit(false);
+        setEditing(null);
+        setForm(initialForm);
+        setFormSerahTerimaFile(null);
+        setExistingFormSerahTerima({ url: null, name: null });
       },
-      {
-        preserveScroll: true,
-        onSuccess: () => {
-          setOpenEdit(false);
-          setEditing(null);
-          setForm(initialForm);
-        },
-      }
-    );
+    });
   };
 
   const onDelete = (submission) => {
@@ -347,6 +364,25 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                   </option>
                 ))}
               </select>
+            </Field>
+            <Field label="Upload Form Serah Terima Dokumen (PDF)">
+              <Input
+                type="file"
+                accept="application/pdf"
+                onChange={(event) => setFormSerahTerimaFile(event.target.files?.[0] || null)}
+              />
+              {formSerahTerimaFile ? (
+                <p className="text-xs text-muted-foreground">{formSerahTerimaFile.name}</p>
+              ) : existingFormSerahTerima.url ? (
+                <a
+                  href={existingFormSerahTerima.url}
+                  target="_blank"
+                  rel="noopener"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {existingFormSerahTerima.name || 'Lihat dokumen saat ini'}
+                </a>
+              ) : null}
             </Field>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpenEdit(false)}>

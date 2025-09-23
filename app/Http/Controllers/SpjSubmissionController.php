@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +44,12 @@ class SpjSubmissionController extends Controller
                     'jenis_kegiatan' => $submission->jenis_kegiatan,
                     'status' => $submission->status,
                     'catatan_revisi' => $submission->catatan_revisi,
+                    'form_serah_terima_url' => $submission->form_serah_terima_path
+                        ? Storage::url($submission->form_serah_terima_path)
+                        : null,
+                    'form_serah_terima_name' => $submission->form_serah_terima_path
+                        ? basename($submission->form_serah_terima_path)
+                        : null,
                     'pic' => $submission->pic ? [
                         'id' => $submission->pic->id,
                         'name' => $submission->pic->name,
@@ -111,6 +118,7 @@ class SpjSubmissionController extends Controller
             'pic_id' => ['required', 'exists:users,id'],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
             'jenis_kegiatan' => ['required', 'in:offline,online'],
+            'form_serah_terima' => ['required', 'file', 'mimes:pdf', 'max:5120'],
         ]);
 
         $pic = User::find($validated['pic_id']);
@@ -121,6 +129,8 @@ class SpjSubmissionController extends Controller
         $durasiSatuan = strtolower($validated['durasi_satuan']);
         $jenisKegiatan = strtolower($validated['jenis_kegiatan']);
 
+        $path = $request->file('form_serah_terima')->store('spj/serah-terima');
+
         SpjSubmission::create([
             'user_id' => Auth::id(),
             'pic_id' => $validated['pic_id'],
@@ -130,6 +140,7 @@ class SpjSubmissionController extends Controller
             'durasi_satuan' => $durasiSatuan,
             'nama_pendampingan' => $validated['nama_pendampingan'],
             'jenis_kegiatan' => $jenisKegiatan,
+            'form_serah_terima_path' => $path,
             'status' => 'pending',
         ]);
 
@@ -146,6 +157,7 @@ class SpjSubmissionController extends Controller
             'pic_id' => ['required', 'exists:users,id'],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
             'jenis_kegiatan' => ['required', 'in:offline,online'],
+            'form_serah_terima' => ['sometimes', 'file', 'mimes:pdf', 'max:5120'],
         ]);
 
         $pic = User::find($validated['pic_id']);
@@ -164,7 +176,17 @@ class SpjSubmissionController extends Controller
             'durasi_satuan' => $durasiSatuan,
             'nama_pendampingan' => $validated['nama_pendampingan'],
             'jenis_kegiatan' => $jenisKegiatan,
-        ])->save();
+        ]);
+
+        if ($request->hasFile('form_serah_terima')) {
+            if ($spj->form_serah_terima_path && Storage::exists($spj->form_serah_terima_path)) {
+                Storage::delete($spj->form_serah_terima_path);
+            }
+
+            $spj->form_serah_terima_path = $request->file('form_serah_terima')->store('spj/serah-terima');
+        }
+
+        $spj->save();
 
         return back()->with('success', 'Pengajuan SPJ diperbarui');
     }

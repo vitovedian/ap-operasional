@@ -18,6 +18,7 @@ class SpjSubmission extends Model
         'durasi_satuan',
         'nama_pendampingan',
         'jenis_kegiatan',
+        'form_serah_terima_path',
         'status',
         'catatan_revisi',
         'processed_by',
@@ -44,4 +45,3 @@ class SpjSubmission extends Model
         return $this->belongsTo(User::class, 'processed_by');
     }
 }
-
