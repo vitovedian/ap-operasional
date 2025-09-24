@@ -201,7 +201,7 @@ export default function InvoicesIndex({ invoices }) {
             <Table className="min-w-[960px] text-sm">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tgl Pengajuan</TableHead>
+                  <TableHead className="text-center">Tgl Pengajuan</TableHead>
                   <TableHead>Tgl Invoice</TableHead>
                   <TableHead className="text-center">Kegiatan</TableHead>
                   <TableHead className="text-center">Tagihan (Rp)</TableHead>

@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\InvoiceSubmission;
 use App\Models\SuratTugasSubmission;
+use App\Models\SpjSubmission;
+use App\Models\NomorSuratSubmission;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -169,6 +171,101 @@ class DatabaseSeeder extends Seeder
                     'instruktor_2_nama' => $instruktor2['nama'],
                     'instruktor_2_fee' => $instruktor2['fee'],
                     'status' => 'pending',
+                ]
+            );
+        }
+
+        $spjSeeds = [
+            [
+                'user_email' => 'karyawan@example.com',
+                'pic_email' => 'pic@example.com',
+                'nama_kegiatan' => 'Monitoring Implementasi Sistem',
+                'tanggal_kegiatan' => now()->addDays(10)->toDateString(),
+                'durasi_nilai' => 3,
+                'durasi_satuan' => 'hari',
+                'nama_pendampingan' => 'Implementasi ERP',
+                'jenis_kegiatan' => 'offline',
+                'status' => 'pending',
+                'form_serah_terima_path' => 'spj/form-serah-terima/dummy.pdf',
+            ],
+            [
+                'user_email' => 'pic@example.com',
+                'pic_email' => 'manager@example.com',
+                'nama_kegiatan' => 'Evaluasi Pasca Pelatihan',
+                'tanggal_kegiatan' => now()->subDays(6)->toDateString(),
+                'durasi_nilai' => 2,
+                'durasi_satuan' => 'hari',
+                'nama_pendampingan' => 'Coaching Teamwork',
+                'jenis_kegiatan' => 'online',
+                'status' => 'approved',
+                'processed_by' => 'manager@example.com',
+                'processed_at' => now()->subDays(4),
+                'form_serah_terima_path' => 'spj/form-serah-terima/dummy.pdf',
+            ],
+        ];
+
+        foreach ($spjSeeds as $seed) {
+            $pengaju = User::where('email', $seed['user_email'])->first();
+            $pic = User::where('email', $seed['pic_email'])->first();
+            $processor = isset($seed['processed_by']) ? User::where('email', $seed['processed_by'])->first() : null;
+
+            if (! $pengaju || ! $pic) {
+                continue;
+            }
+
+            SpjSubmission::updateOrCreate(
+                [
+                    'user_id' => $pengaju->id,
+                    'nama_kegiatan' => $seed['nama_kegiatan'],
+                    'tanggal_kegiatan' => $seed['tanggal_kegiatan'],
+                ],
+                [
+                    'pic_id' => $pic->id,
+                    'durasi_nilai' => $seed['durasi_nilai'],
+                    'durasi_satuan' => $seed['durasi_satuan'],
+                    'nama_pendampingan' => $seed['nama_pendampingan'],
+                    'jenis_kegiatan' => $seed['jenis_kegiatan'],
+                    'form_serah_terima_path' => $seed['form_serah_terima_path'],
+                    'status' => $seed['status'],
+                    'processed_by' => $processor?->id,
+                    'processed_at' => $seed['processed_at'] ?? null,
+                ]
+            );
+        }
+
+        $nomorSuratSeeds = [
+            [
+                'user_email' => 'karyawan@example.com',
+                'tanggal_pengajuan' => now()->subDays(8)->toDateString(),
+                'tujuan_surat' => 'Permohonan Kerja Sama',
+                'nama_klien' => 'PT Sumber Sejati',
+                'catatan' => 'Pengajuan nomor surat untuk proposal kerja sama jangka panjang.',
+            ],
+            [
+                'user_email' => 'pic@example.com',
+                'tanggal_pengajuan' => now()->subDays(2)->toDateString(),
+                'tujuan_surat' => 'Undangan Pelatihan',
+                'nama_klien' => 'CV Maju Bersama',
+                'catatan' => 'Mengundang klien untuk mengikuti sesi pelatihan tindak lanjut.',
+            ],
+        ];
+
+        foreach ($nomorSuratSeeds as $seed) {
+            $pengaju = User::where('email', $seed['user_email'])->first();
+
+            if (! $pengaju) {
+                continue;
+            }
+
+            NomorSuratSubmission::updateOrCreate(
+                [
+                    'user_id' => $pengaju->id,
+                    'tujuan_surat' => $seed['tujuan_surat'],
+                    'nama_klien' => $seed['nama_klien'],
+                ],
+                [
+                    'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
+                    'catatan' => $seed['catatan'],
                 ]
             );
         }
