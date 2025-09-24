@@ -50,6 +50,8 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
   const [openReject, setOpenReject] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [openDetail, setOpenDetail] = useState(false);
+  const [detail, setDetail] = useState(null);
 
   const picOptions = useMemo(() => {
     if (!editing?.pic) {
@@ -151,6 +153,18 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
     );
   };
 
+  const openDetailDialog = (submission) => {
+    setDetail(submission);
+    setOpenDetail(true);
+  };
+
+  const handleDetailDialogChange = (open) => {
+    setOpenDetail(open);
+    if (!open) {
+      setDetail(null);
+    }
+  };
+
   return (
     <SidebarLayout header={<Typography>Daftar Pengajuan SPJ</Typography>}>
       <Head title="Daftar Pengajuan SPJ" />
@@ -176,8 +190,11 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                   {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                 </div>
                 <div className="mt-3 space-y-1.5">
+                  <Button variant="outline" className="w-full" onClick={() => openDetailDialog(item)}>
+                    Detail
+                  </Button>
                   {canApprove && item.status === 'pending' && (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       <Button onClick={() => onApprove(item)}>Setujui</Button>
                       <Button variant="outline" onClick={() => openRejectDialog(item)}>
                         Tolak
@@ -207,28 +224,28 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama Kegiatan</TableHead>
-                  <TableHead>Tanggal</TableHead>
+                  <TableHead className="text-center">Tanggal</TableHead>
                   <TableHead className="text-center">Durasi</TableHead>
-                  <TableHead>PIC</TableHead>
+                  <TableHead className="text-center">PIC</TableHead>
                   <TableHead>Pendampingan</TableHead>
-                  <TableHead>Jenis</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Pengaju</TableHead>
-                  <TableHead>Diproses Oleh</TableHead>
-                  {(canManage || canApprove) && <TableHead className="w-40 text-center">Aksi</TableHead>}
+                  <TableHead className="text-center">Jenis</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Pengaju</TableHead>
+                  <TableHead className="text-center">Diproses Oleh</TableHead>
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {submissions.data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.nama_kegiatan}</TableCell>
-                    <TableCell>{item.tanggal_kegiatan}</TableCell>
-                    <TableCell className="text-center">{item.durasi_nilai} {item.durasi_satuan}</TableCell>
+                    <TableCell className="font-medium text-foreground text-center">{item.nama_kegiatan}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{item.tanggal_kegiatan}</TableCell>
+                    <TableCell className="text-center whitespace-nowrap">{item.durasi_nilai} {item.durasi_satuan}</TableCell>
                     <TableCell>{item.pic?.name || '-'}</TableCell>
-                    <TableCell>{item.nama_pendampingan}</TableCell>
-                    <TableCell className="capitalize">{item.jenis_kegiatan}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col text-sm">
+                    <TableCell className="text-center">{item.nama_pendampingan}</TableCell>
+                    <TableCell className="text-center capitalize">{item.jenis_kegiatan}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center text-sm">
                         <span className={cn('font-medium capitalize', statusColor(item.status))}>{item.status}</span>
                         {item.catatan_revisi && (
                           <span className="text-xs text-muted-foreground">Catatan: {item.catatan_revisi}</span>
@@ -236,40 +253,41 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
                       </div>
                     </TableCell>
                     <TableCell>{item.pengaju?.name || '-'}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{item.processed_by?.name || '-'}</div>
+                    <TableCell className="text-center text-sm">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span>{item.processed_by?.name || '-'}</span>
                         {item.processed_at && (
-                          <div className="text-xs text-muted-foreground">{item.processed_at}</div>
+                          <span className="text-xs text-muted-foreground">{item.processed_at}</span>
                         )}
                       </div>
                     </TableCell>
-                    {(canManage || canApprove) && (
-                      <TableCell>
-                        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
-                          {canApprove && item.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => onApprove(item)}>
-                                Setujui
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => openRejectDialog(item)}>
-                                Tolak
-                              </Button>
-                            </div>
-                          )}
-                          {canManage && (
-                            <div className="flex gap-2">
-                              <Button variant="secondary" size="sm" onClick={() => openEditDialog(item)}>
-                                Edit
-                              </Button>
-                              <Button variant="destructive" size="sm" onClick={() => onDelete(item)}>
-                                Hapus
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    )}
+                    <TableCell>
+                      <div className="ml-auto flex w-full max-w-[220px] flex-col gap-2">
+                        <Button variant="outline" size="sm" className="justify-center" onClick={() => openDetailDialog(item)}>
+                          Detail
+                        </Button>
+                        {canApprove && item.status === 'pending' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button size="sm" onClick={() => onApprove(item)}>
+                              Setujui
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => openRejectDialog(item)}>
+                              Tolak
+                            </Button>
+                          </div>
+                        )}
+                        {canManage && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button variant="secondary" size="sm" onClick={() => openEditDialog(item)}>
+                              Edit
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => onDelete(item)}>
+                              Hapus
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -279,6 +297,83 @@ export default function SpjIndex({ submissions, canManage = false, canApprove = 
             <Pagination links={submissions.links} />
           </div>
         </div>
+      <Dialog
+        open={openDetail}
+        onOpenChange={handleDetailDialogChange}
+        panelClassName="w-full max-w-xl space-y-4 overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl"
+      >
+        <DialogHeader>
+          <DialogTitle>Detail Pengajuan SPJ</DialogTitle>
+        </DialogHeader>
+        {detail && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Informasi Kegiatan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Nama Kegiatan" value={detail.nama_kegiatan || '-'} />
+                <DetailRow label="Tanggal Kegiatan" value={detail.tanggal_kegiatan || '-'} />
+                <DetailRow
+                  label="Durasi"
+                  value={detail.durasi_nilai ? `${detail.durasi_nilai} ${detail.durasi_satuan}` : '-'}
+                />
+                <DetailRow label="Jenis Kegiatan" value={titleCase(detail.jenis_kegiatan || '') || '-'} />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                PIC & Pendampingan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="PIC" value={detail.pic?.name || '-'} />
+                <DetailRow label="Email PIC" value={detail.pic?.email || '-'} />
+                <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan || '-'} />
+                <DetailRow label="Pengaju" value={detail.pengaju?.name || '-'} />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Status & Dokumen
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow
+                  label="Status"
+                  value={titleCase(detail.status || '') || '-'}
+                  valueClass={statusColor(detail.status)}
+                  emphasise
+                />
+                <DetailRow label="Catatan Revisi" value={detail.catatan_revisi || '-'} />
+                <DetailRow label="Diproses Oleh" value={detail.processed_by?.name || '-'} />
+                <DetailRow label="Diproses Pada" value={detail.processed_at || '-'} />
+                <DetailRow
+                  label="Form Serah Terima"
+                  value={detail.form_serah_terima_url ? (
+                    <a
+                      href={detail.form_serah_terima_url}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-primary hover:underline"
+                    >
+                      {detail.form_serah_terima_name || 'Lihat dokumen'}
+                    </a>
+                  ) : (
+                    '-'
+                  )}
+                />
+              </div>
+            </section>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => handleDetailDialogChange(false)}>
+            Tutup
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
       </div>
 
       {canManage && (
@@ -427,6 +522,15 @@ function Detail({ label, value, valueClass }) {
     <div className="flex justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className={cn('font-medium', valueClass)}>{value}</span>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, valueClass = '', emphasise = false }) {
+  return (
+    <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn(emphasise ? 'font-semibold text-foreground' : 'text-foreground', valueClass)}>{value}</span>
     </div>
   );
 }
