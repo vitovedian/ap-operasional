@@ -45,12 +45,22 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     return new Intl.NumberFormat('id-ID').format(Number(digits));
   };
 
+  const bind = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const bindNumeric = (key) => (event) => {
+    const digits = event.target.value.replace(/\D/g, '');
+    setForm((prev) => ({ ...prev, [key]: digits }));
+  };
+
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [openReject, setOpenReject] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [instructors, setInstructors] = useState([{ nama: '', fee: '' }]);
   const [openDetail, setOpenDetail] = useState(false);
   const [detail, setDetail] = useState(null);
 
@@ -63,18 +73,58 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
       pic_id: submission.pic?.id || picOptions[0]?.id || '',
       nama_pendampingan: submission.nama_pendampingan || '',
       fee_pendampingan: submission.fee_pendampingan ? String(submission.fee_pendampingan) : '',
-      instruktor_1_nama: submission.instruktor_1_nama || '',
-      instruktor_1_fee: submission.instruktor_1_fee ? String(submission.instruktor_1_fee) : '',
-      instruktor_2_nama: submission.instruktor_2_nama || '',
-      instruktor_2_fee: submission.instruktor_2_fee ? String(submission.instruktor_2_fee) : '',
     });
+    
+    // Initialize instructors based on submission data
+    const instruktors = [];
+    if (submission.instruktor_1_nama) {
+      instruktors.push({ 
+        nama: submission.instruktor_1_nama || '', 
+        fee: submission.instruktor_1_fee ? String(submission.instruktor_1_fee) : '' 
+      });
+    }
+    if (submission.instruktor_2_nama) {
+      instruktors.push({ 
+        nama: submission.instruktor_2_nama || '', 
+        fee: submission.instruktor_2_fee ? String(submission.instruktor_2_fee) : '' 
+      });
+    }
+    
+    // If no instructors, add a default one
+    if (instruktors.length === 0) {
+      instruktors.push({ nama: '', fee: '' });
+    }
+    
+    setInstructors(instruktors);
     setOpenEdit(true);
+  };
+
+  const addInstructor = () => {
+    if (instructors.length >= 2) return;
+    setInstructors((prev) => [...prev, { nama: '', fee: '' }]);
+  };
+
+  const updateInstructor = (index, key) => (event) => {
+    const rawValue = event.target.value;
+    const value = key === 'fee' ? rawValue.replace(/\D/g, '') : rawValue;
+    setInstructors((prev) => prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item)));
+  };
+
+  const removeInstructor = (index) => {
+    if (instructors.length === 1) {
+      setInstructors([{ nama: '', fee: '' }]);
+      return;
+    }
+
+    setInstructors((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const submitUpdate = (e) => {
     e.preventDefault();
     if (!editing) return;
 
+    const [first = { nama: '', fee: '' }, second = { nama: '', fee: '' }] = instructors;
+    
     router.put(
       route('surat-tugas.update', editing.id),
       {
@@ -84,6 +134,10 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
         pic_id: form.pic_id,
         nama_pendampingan: form.nama_pendampingan,
         fee_pendampingan: form.fee_pendampingan,
+        instruktor_1_nama: first.nama,
+        instruktor_1_fee: first.fee,
+        instruktor_2_nama: second.nama,
+        instruktor_2_fee: second.fee,
       },
       {
         preserveScroll: true,
@@ -91,6 +145,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           setOpenEdit(false);
           setEditing(null);
           setForm(initialForm);
+          setInstructors([{ nama: '', fee: '' }]);
         },
       }
     );
@@ -327,21 +382,21 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Tanggal Pengajuan">
-                <Input type="date" value={form.tanggal_pengajuan} onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))} required />
+                <Input type="date" value={form.tanggal_pengajuan} onChange={bind('tanggal_pengajuan')} required />
               </Field>
               <Field label="Tanggal Kegiatan">
-                <Input type="date" value={form.tanggal_kegiatan} onChange={(e) => setForm((prev) => ({ ...prev, tanggal_kegiatan: e.target.value }))} required />
+                <Input type="date" value={form.tanggal_kegiatan} onChange={bind('tanggal_kegiatan')} required />
               </Field>
             </div>
             <Field label="Kegiatan">
-              <Input value={form.kegiatan} onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))} required />
+              <Input value={form.kegiatan} onChange={bind('kegiatan')} required />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="PIC">
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={form.pic_id}
-                  onChange={(e) => setForm((prev) => ({ ...prev, pic_id: e.target.value }))}
+                  onChange={bind('pic_id')}
                   required
                 >
                   {picOptions.map((pic) => (
@@ -352,27 +407,54 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                 </select>
               </Field>
               <Field label="Nama Pendampingan">
-                <Input value={form.nama_pendampingan} onChange={(e) => setForm((prev) => ({ ...prev, nama_pendampingan: e.target.value }))} required />
+                <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} required />
               </Field>
             </div>
             <Field label="Fee Pendampingan (Rp)">
-              <Input value={toIDRString(form.fee_pendampingan)} onChange={(e) => setForm((prev) => ({ ...prev, fee_pendampingan: e.target.value }))} inputMode="numeric" required />
+              <Input value={toIDRString(form.fee_pendampingan)} onChange={bindNumeric('fee_pendampingan')} inputMode="numeric" required />
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Instruktor 1">
-                <Input value={form.instruktor_1_nama} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_nama: e.target.value }))} required />
-              </Field>
-              <Field label="Fee Instruktor 1 (Rp)">
-                <Input value={toIDRString(form.instruktor_1_fee)} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_1_fee: e.target.value }))} inputMode="numeric" required />
-              </Field>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Instruktor 2 (opsional)">
-                <Input value={form.instruktor_2_nama} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_nama: e.target.value }))} />
-              </Field>
-              <Field label="Fee Instruktor 2 (Rp)">
-                <Input value={toIDRString(form.instruktor_2_fee)} onChange={(e) => setForm((prev) => ({ ...prev, instruktor_2_fee: e.target.value }))} inputMode="numeric" />
-              </Field>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">Instruktor</h2>
+                <Button type="button" size="sm" variant="outline" onClick={addInstructor} disabled={instructors.length >= 2}>
+                  Tambah Instruktor
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {instructors.map((instruktur, idx) => (
+                  <div key={idx} className="grid gap-3 sm:grid-cols-[2fr,2fr,auto]">
+                    <Field label={`Nama Instruktor ${idx + 1}`}>
+                      <Input value={instruktur.nama} onChange={updateInstructor(idx, 'nama')} required={idx === 0} placeholder="Nama instruktur" />
+                    </Field>
+                    <Field label={`Fee Instruktor ${idx + 1} (Rp)`}>
+                      <Input
+                        value={toIDRString(instruktur.fee)}
+                        onChange={updateInstructor(idx, 'fee')}
+                        inputMode="numeric"
+                        required={idx === 0}
+                      />
+                    </Field>
+                    <div className="flex items-end pb-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeInstructor(idx)}>
+                        Hapus
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Total Fee (Rp)</Label>
+                <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                  Rp {toIDRString(
+                    parseInt(form.fee_pendampingan || '0') + 
+                    instructors.reduce((acc, item) => acc + parseInt(item.fee || '0', 10), 0)
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Jumlahkan fee pendampingan dan semua fee instruktur.</p>
+              </div>
             </div>
           </div>
           <DialogFooter>
