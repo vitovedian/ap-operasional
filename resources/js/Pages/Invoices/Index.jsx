@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ export default function InvoicesIndex({ invoices }) {
   const [openEdit, setOpenEdit] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [form, setForm] = useState(initialForm);
+  const [opeItems, setOpeItems] = useState([{ deskripsi: '', nominal: '' }]);
 
   const openEditDialog = (inv) => {
     setEditingInvoice(inv);
@@ -44,6 +45,11 @@ export default function InvoicesIndex({ invoices }) {
       total_invoice_ope: inv.total_invoice_ope ? String(inv.total_invoice_ope) : '',
       bukti_surat_konfirmasi: null,
     });
+    
+    // Initialize OPE items based on the total OPE - we'll create a single item since we don't have itemized data
+    // For now, just set default
+    setOpeItems([{ deskripsi: '', nominal: inv.total_invoice_ope ? String(inv.total_invoice_ope) : '' }]);
+    
     setOpenEdit(true);
   };
 
@@ -58,10 +64,48 @@ export default function InvoicesIndex({ invoices }) {
     return digits ? Number(digits) : 0;
   };
 
+  const handleInput = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const handleNumericInput = (key) => (event) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const addOpeItem = () => {
+    if (opeItems.length >= 3) return;
+    setOpeItems((prev) => [...prev, { deskripsi: '', nominal: '' }]);
+  };
+
+  const updateOpeItem = (index, key) => (event) => {
+    const rawValue = event.target.value;
+    const value = key === 'nominal' ? rawValue.replace(/\D/g, '') : rawValue;
+    setOpeItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item)));
+  };
+
+  const removeOpeItem = (index) => {
+    if (opeItems.length === 1) {
+      setOpeItems([{ deskripsi: '', nominal: '' }]);
+      return;
+    }
+
+    setOpeItems((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const updateFormFromOpeItems = () => {
+    const totalOpeValue = opeItems.reduce((sum, item) => sum + parseCurrency(item.nominal), 0);
+    setForm(prev => ({ ...prev, total_invoice_ope: String(totalOpeValue) }));
+  };
+
+  // Update form when opeItems change
+  useEffect(() => {
+    updateFormFromOpeItems();
+  }, [opeItems]);
+
   const formTagihan = parseCurrency(form.tagihan_invoice);
-  const formOpe = parseCurrency(form.total_invoice_ope);
+  const totalOpeValue = opeItems.reduce((sum, item) => sum + parseCurrency(item.nominal), 0);
   const includePpn = form.ppn === 'include';
-  const formTotalTagihan = formTagihan + (includePpn ? Math.round(formTagihan * 0.11) : 0) + formOpe;
+  const formTotalTagihan = formTagihan + (includePpn ? Math.round(formTagihan * 0.11) : 0) + totalOpeValue;
 
   const submitUpdate = (e) => {
     e.preventDefault();
@@ -220,7 +264,7 @@ export default function InvoicesIndex({ invoices }) {
                 <Input
                   type="date"
                   value={form.tanggal_pengajuan}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tanggal_pengajuan: e.target.value }))}
+                  onChange={handleInput('tanggal_pengajuan')}
                   required
                 />
               </Field>
@@ -228,7 +272,7 @@ export default function InvoicesIndex({ invoices }) {
                 <Input
                   type="date"
                   value={form.tanggal_invoice}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tanggal_invoice: e.target.value }))}
+                  onChange={handleInput('tanggal_invoice')}
                   required
                 />
               </Field>
@@ -236,7 +280,7 @@ export default function InvoicesIndex({ invoices }) {
             <Field label="Kegiatan">
               <Input
                 value={form.kegiatan}
-                onChange={(e) => setForm((prev) => ({ ...prev, kegiatan: e.target.value }))}
+                onChange={handleInput('kegiatan')}
                 required
               />
             </Field>
@@ -244,7 +288,7 @@ export default function InvoicesIndex({ invoices }) {
               <Field label="Tagihan Invoice (Rp)">
                 <Input
                   value={toIDRString(form.tagihan_invoice)}
-                  onChange={(e) => setForm((prev) => ({ ...prev, tagihan_invoice: e.target.value }))}
+                  onChange={handleNumericInput('tagihan_invoice')}
                   inputMode="numeric"
                   required
                 />
@@ -253,7 +297,7 @@ export default function InvoicesIndex({ invoices }) {
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   value={form.ppn}
-                  onChange={(e) => setForm((prev) => ({ ...prev, ppn: e.target.value }))}
+                  onChange={handleInput('ppn')}
                 >
                   <option value="include">include ppn</option>
                   <option value="exclude">exclude ppn</option>
@@ -261,14 +305,48 @@ export default function InvoicesIndex({ invoices }) {
                 </select>
               </Field>
             </div>
-            <Field label="Total Invoice OPE (Rp)">
-              <Input
-                value={toIDRString(form.total_invoice_ope)}
-                onChange={(e) => setForm((prev) => ({ ...prev, total_invoice_ope: e.target.value }))}
-                inputMode="numeric"
-                required
-              />
-            </Field>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground">Rincian Invoice OPE</h2>
+                <Button type="button" size="sm" variant="outline" onClick={addOpeItem} disabled={opeItems.length >= 3}>
+                  Tambah Baris
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {opeItems.map((item, idx) => (
+                  <div key={idx} className="grid gap-3 sm:grid-cols-[2fr,2fr,auto]">
+                    <Field label={`Deskripsi OPE ${idx + 1}`}>
+                      <Input
+                        value={item.deskripsi}
+                        onChange={updateOpeItem(idx, 'deskripsi')}
+                        placeholder="Contoh: Transportasi"
+                      />
+                    </Field>
+                    <Field label={`Nominal OPE ${idx + 1} (Rp)`}>
+                      <Input
+                        value={toIDRString(item.nominal)}
+                        onChange={updateOpeItem(idx, 'nominal')}
+                        inputMode="numeric"
+                      />
+                    </Field>
+                    <div className="flex items-end pb-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => removeOpeItem(idx)}>
+                        Hapus
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-muted-foreground">Total Invoice OPE (Rp)</Label>
+                <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
+                  Rp {toIDRString(totalOpeValue)}
+                </div>
+                <p className="text-xs text-muted-foreground">Total ini otomatis menjumlahkan seluruh nominal OPE.</p>
+              </div>
+            </div>
             <Field label="Total Tagihan (Rp)">
               <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
                 <span>Rp {toIDR(formTotalTagihan)}</span>
