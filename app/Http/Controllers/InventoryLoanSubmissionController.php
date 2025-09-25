@@ -22,7 +22,7 @@ class InventoryLoanSubmissionController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager']) ?? false;
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $query = InventoryLoanSubmission::query()
             ->with(['user', 'processor'])
@@ -97,6 +97,7 @@ class InventoryLoanSubmissionController extends Controller
                 'bank' => $loan->bank,
                 'items' => $loan->items ?? [],
                 'quantity' => $loan->quantity,
+                'catatan' => $loan->catatan,
                 'tanggal_pinjam' => $loan->tanggal_pinjam?->toDateString(),
             ],
         ]);

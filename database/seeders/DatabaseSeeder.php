@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\InvoiceSubmission;
 use App\Models\SuratTugasSubmission;
+use App\Models\InventoryLoanSubmission;
 use App\Models\SpjSubmission;
 use App\Models\NomorSuratSubmission;
 use App\Models\User;
@@ -11,6 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -266,6 +268,92 @@ class DatabaseSeeder extends Seeder
                 [
                     'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
                     'catatan' => $seed['catatan'],
+                ]
+            );
+        }
+
+        $inventoryLoanSeeds = [
+            [
+                'user_email' => 'karyawan@example.com',
+                'nama_pemesan' => 'Karyawan',
+                'metode_kegiatan' => 'offline',
+                'nama_kegiatan' => 'Maintenance Ruang Meeting',
+                'bank' => 'BCA',
+                'items' => [
+                    ['type' => 'alat', 'label' => 'Proyektor Full HD'],
+                    ['type' => 'ruangan', 'label' => 'Ruang Rapat Lantai 2'],
+                ],
+                'quantity' => 2,
+                'catatan' => 'Butuh perangkat siap sebelum pukul 08.30.',
+                'tanggal_pinjam' => now()->addDays(3)->toDateString(),
+                'status' => 'pending',
+            ],
+            [
+                'user_email' => 'pic@example.com',
+                'nama_pemesan' => 'PIC Utama',
+                'metode_kegiatan' => 'online',
+                'nama_kegiatan' => 'Webinar Onboarding Klien',
+                'bank' => 'Mandiri',
+                'items' => [
+                    ['type' => 'akun_zoom', 'label' => 'Akun Zoom Pro'],
+                    ['type' => 'alat', 'label' => 'Headset Noise Cancelling'],
+                ],
+                'quantity' => 1,
+                'catatan' => 'Durasi kegiatan 3 jam, mohon aktivasi akun 30 menit sebelum mulai.',
+                'tanggal_pinjam' => now()->subDays(5)->toDateString(),
+                'status' => 'approved',
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDays(4),
+            ],
+            [
+                'user_email' => 'karyawan@example.com',
+                'nama_pemesan' => 'Karyawan',
+                'metode_kegiatan' => 'offline',
+                'nama_kegiatan' => 'Sesi Pelatihan Internal',
+                'bank' => 'BRI',
+                'items' => [
+                    ['type' => 'alat', 'label' => 'Laptop Cadangan'],
+                    ['type' => 'barang', 'label' => 'Papan Tulis Besar'],
+                ],
+                'quantity' => 3,
+                'catatan' => 'Inventaris dikembalikan pada hari yang sama.',
+                'tanggal_pinjam' => now()->subDays(10)->toDateString(),
+                'status' => 'completed',
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDays(9),
+                'returned_at' => now()->subDays(9)->addHours(6),
+            ],
+        ];
+
+        foreach ($inventoryLoanSeeds as $seed) {
+            $pengaju = User::where('email', $seed['user_email'])->first();
+            $processor = isset($seed['processed_by_email'])
+                ? User::where('email', $seed['processed_by_email'])->first()
+                : null;
+
+            if (! $pengaju) {
+                continue;
+            }
+
+            $tanggalPinjam = Carbon::parse($seed['tanggal_pinjam'], config('app.timezone'))->setTime(9, 0);
+
+            InventoryLoanSubmission::updateOrCreate(
+                [
+                    'user_id' => $pengaju->id,
+                    'nama_kegiatan' => $seed['nama_kegiatan'],
+                    'tanggal_pinjam' => $tanggalPinjam,
+                ],
+                [
+                    'nama_pemesan' => $seed['nama_pemesan'],
+                    'metode_kegiatan' => $seed['metode_kegiatan'],
+                    'bank' => $seed['bank'],
+                    'items' => $seed['items'],
+                    'quantity' => $seed['quantity'],
+                    'catatan' => $seed['catatan'] ?? null,
+                    'status' => $seed['status'],
+                    'processed_by' => $processor?->id,
+                    'processed_at' => $seed['processed_at'] ?? null,
+                    'returned_at' => $seed['returned_at'] ?? null,
                 ]
             );
         }

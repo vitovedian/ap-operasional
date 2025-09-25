@@ -35,6 +35,8 @@ export default function InventoryLoanIndex({ loans, canManage }) {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejecting, setRejecting] = useState(null);
   const [rejectNote, setRejectNote] = useState('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoan, setDetailLoan] = useState(null);
 
   const handleApprove = (loan) => {
     router.post(route('peminjaman-inventaris.approve', loan.id), {}, { preserveScroll: true });
@@ -71,6 +73,18 @@ export default function InventoryLoanIndex({ loans, canManage }) {
   const handleDelete = (loan) => {
     if (!confirm('Hapus pengajuan peminjaman inventaris ini?')) return;
     router.delete(route('peminjaman-inventaris.destroy', loan.id), { preserveScroll: true });
+  };
+
+  const handleDetail = (loan) => {
+    setDetailLoan(loan);
+    setDetailOpen(true);
+  };
+
+  const handleDetailDialogChange = (open) => {
+    setDetailOpen(open);
+    if (!open) {
+      setDetailLoan(null);
+    }
   };
 
   return (
@@ -119,6 +133,9 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                 </div>
 
                 <div className="mt-3 space-y-1.5">
+                  <Button variant="outline" className="w-full" onClick={() => handleDetail(loan)}>
+                    Detail
+                  </Button>
                   {(loan.can_edit || loan.can_admin_edit) && (
                     <Button variant="outline" className="w-full" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
                       Revisi
@@ -156,8 +173,8 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                   <TableHead>Metode</TableHead>
                   <TableHead>Nama Kegiatan</TableHead>
                   <TableHead>Bank</TableHead>
-                  <TableHead>Kebutuhan</TableHead>
                   <TableHead>Catatan</TableHead>
+                  <TableHead>Kebutuhan</TableHead>
                   <TableHead className="text-center">Jumlah</TableHead>
                   <TableHead className="text-center">Tanggal Pinjam</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -169,7 +186,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
               <TableBody>
                 {loans.data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={11} className="py-6 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={12} className="py-6 text-center text-sm text-muted-foreground">
                       Belum ada pengajuan.
                     </TableCell>
                   </TableRow>
@@ -215,6 +232,9 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                     <TableCell>{loan.returned_at || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-col items-stretch gap-2 text-right">
+                        <Button size="sm" variant="outline" onClick={() => handleDetail(loan)}>
+                          Detail
+                        </Button>
                         {(loan.can_edit || loan.can_admin_edit) && (
                           <Button size="sm" variant="outline" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
                             Revisi
@@ -233,8 +253,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                         {canManage && loan.status === 'pending' && (
                           <div className="flex gap-2">
                             <Button size="sm" onClick={() => handleApprove(loan)}>Setujui</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleReject(loan)}>Tolak
-                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleReject(loan)}>Tolak</Button>
                           </div>
                         )}
                       </div>
@@ -249,6 +268,71 @@ export default function InventoryLoanIndex({ loans, canManage }) {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={detailOpen}
+        onOpenChange={handleDetailDialogChange}
+        panelClassName="w-full max-w-2xl space-y-4 overflow-y-auto sm:max-h-[90vh]"
+      >
+        <DialogHeader>
+          <DialogTitle>Detail Peminjaman Inventaris</DialogTitle>
+        </DialogHeader>
+        {detailLoan && (
+          <div className="space-y-4">
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Informasi Peminjam</h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Nama Pemesan" value={detailLoan.nama_pemesan} />
+                <DetailRow label="Pengaju" value={detailLoan.pengaju?.name || '-'} />
+                <DetailRow label="Metode Kegiatan" value={detailLoan.metode_kegiatan} valueClass="capitalize" />
+                <DetailRow label="Tanggal Pinjam" value={detailLoan.tanggal_pinjam} />
+                <DetailRow label="Status" value={STATUS_LABELS[detailLoan.status] || detailLoan.status} valueClass={statusColor(detailLoan.status)} emphasise />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detail Kegiatan</h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Nama Kegiatan" value={detailLoan.nama_kegiatan} />
+                <DetailRow label="Bank" value={detailLoan.bank} />
+                <DetailRow label="Catatan" value={detailLoan.catatan || '-'} />
+                <DetailRow label="Jumlah" value={detailLoan.quantity} />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Kebutuhan</h3>
+              <div className="mt-3 space-y-2 text-sm">
+                {Array.isArray(detailLoan.items) && detailLoan.items.length ? (
+                  detailLoan.items.map((item, idx) => (
+                    <div key={idx} className="flex items-baseline justify-between gap-4 text-sm">
+                      <span className="font-medium">{ITEM_TYPE_LABELS[item.type] || item.type}</span>
+                      <span className="text-muted-foreground">{item.label}</span>
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-xs text-muted-foreground">Tidak ada kebutuhan</span>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status & Pemrosesan</h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Catatan Manajer" value={detailLoan.manager_note || '-'} />
+                <DetailRow label="Diproses Oleh" value={detailLoan.processor?.name || '-'} />
+                <DetailRow label="Diproses Pada" value={detailLoan.processed_at || '-'} />
+                <DetailRow label="Tanggal Pengembalian" value={detailLoan.returned_at || '-'} />
+              </div>
+            </section>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => handleDetailDialogChange(false)}>
+            Tutup
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <form onSubmit={submitReject} className="space-y-4">
@@ -281,6 +365,15 @@ function Detail({ label, value, className }) {
     <div className="text-sm">
       <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
       <span className={cn('font-medium', className)}>{value || '-'}</span>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, valueClass = '', emphasise = false }) {
+  return (
+    <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn(emphasise ? 'font-semibold text-foreground' : 'text-foreground', valueClass)}>{value || '-'}</span>
     </div>
   );
 }
