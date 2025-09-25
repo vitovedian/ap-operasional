@@ -221,8 +221,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
             {submissions.data.map((item) => {
               const status = item.status || 'pending';
               return (
-                <div key={item.id} className="rounded-lg border border-border bg-background p-3">
-                  <div className="space-y-1 text-sm">
+                <div key={item.id} className="rounded-lg border border-border bg-background p-2">
+                  <div className="space-y-1 text-xs">
                     <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
                     <Detail label="Tanggal Kegiatan" value={item.tanggal_kegiatan} />
                     <Detail label="Kegiatan" value={item.kegiatan} />
@@ -238,32 +238,32 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
                   </div>
-                    <div className="mt-3 space-y-1.5">
-                      <Button variant="outline" className="w-full" onClick={() => handleDetail(item)}>
-                        Lihat Detail
-                      </Button>
-                    {canManage && (
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <Button variant="secondary" onClick={() => openEditDialog(item)}>
-                          Edit
-                        </Button>
-                        <Button variant="destructive" onClick={() => onDelete(item)}>
-                          Hapus
-                        </Button>
-                      </div>
-                    )}
+                  <div className="mt-2 space-y-1.5">
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleDetail(item)}>
+                      Lihat Detail
+                    </Button>
                     {canModerate && status === 'pending' && (
                       <div className="grid grid-cols-2 gap-1.5">
-                        <Button variant="default" onClick={() => onApprove(item)}>
+                        <Button size="sm" className="text-xs" onClick={() => onApprove(item)}>
                           Terima
                         </Button>
-                        <Button variant="outline" onClick={() => openRejectDialog(item)}>
+                        <Button size="sm" variant="outline" className="text-xs" onClick={() => openRejectDialog(item)}>
                           Tolak
                         </Button>
                       </div>
                     )}
+                    {canManage && (
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Button size="sm" variant="secondary" className="text-xs" onClick={() => openEditDialog(item)}>
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="destructive" className="text-xs" onClick={() => onDelete(item)}>
+                          Hapus
+                        </Button>
+                      </div>
+                    )}
                     {item.can_self_edit && (
-                      <Button className="w-full" onClick={() => openEditDialog(item)}>
+                      <Button size="sm" className="w-full text-xs" onClick={() => openEditDialog(item)}>
                         Perbarui
                       </Button>
                     )}
@@ -277,7 +277,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[920px] text-sm">
+            <Table className="min-w-[920px] text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tgl Pengajuan</TableHead>
@@ -321,41 +321,41 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                       <TableCell className="text-center">{toIDR(item.total_fee)}</TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
                       <TableCell>
-                        <div className="text-sm">
+                        <div className="text-xs">
                           <div className={cn('font-medium', statusColor(status))}>{status}</div>
                           {item.catatan_revisi && (
-                            <div className="text-xs text-muted-foreground">Catatan: {item.catatan_revisi}</div>
+                            <div className="text-[11px] text-muted-foreground">Catatan: {item.catatan_revisi}</div>
                           )}
                         </div>
                       </TableCell>
                       {(canManage || canModerate || item.can_self_edit) && (
                         <TableCell>
-                          <div className="flex flex-col items-stretch gap-2 text-right">
-                            <Button variant="outline" size="sm" className="justify-center" onClick={() => handleDetail(item)}>
+                          <div className="flex flex-col items-stretch gap-1.5 text-right">
+                            <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
                               Detail
                             </Button>
-                            {canManage && (
-                              <div className="flex gap-2">
-                                <Button variant="secondary" size="sm" className="flex-1" onClick={() => openEditDialog(item)}>
-                                  Edit
-                                </Button>
-                                <Button variant="destructive" size="sm" className="flex-1" onClick={() => onDelete(item)}>
-                                  Hapus
-                                </Button>
-                              </div>
-                            )}
                             {canModerate && status === 'pending' && (
-                              <div className="flex gap-2">
-                                <Button variant="default" size="sm" className="flex-1" onClick={() => onApprove(item)}>
+                              <div className="flex gap-1.5">
+                                <Button variant="default" size="sm" className="flex-1 text-xs" onClick={() => onApprove(item)}>
                                   Terima
                                 </Button>
-                                <Button variant="outline" size="sm" className="flex-1" onClick={() => openRejectDialog(item)}>
+                                <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openRejectDialog(item)}>
                                   Tolak
                                 </Button>
                               </div>
                             )}
+                            {canManage && (
+                              <div className="flex gap-1.5">
+                                <Button variant="secondary" size="sm" className="flex-1 text-xs" onClick={() => openEditDialog(item)}>
+                                  Edit
+                                </Button>
+                                <Button variant="destructive" size="sm" className="flex-1 text-xs" onClick={() => onDelete(item)}>
+                                  Hapus
+                                </Button>
+                              </div>
+                            )}
                             {item.can_self_edit && (
-                              <Button size="sm" className="w-full" onClick={() => openEditDialog(item)}>
+                              <Button size="sm" className="w-full text-xs" onClick={() => openEditDialog(item)}>
                                 Perbarui
                               </Button>
                             )}
@@ -566,8 +566,8 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
 
 function Detail({ label, value, valueClass = '' }) {
   return (
-    <div className="text-center text-sm">
-      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+    <div className="text-center text-xs sm:text-sm">
+      <span className="block text-[10px] uppercase tracking-wide text-muted-foreground sm:text-xs">{label}</span>
       <span className={cn('block font-medium', valueClass)}>{value}</span>
     </div>
   );

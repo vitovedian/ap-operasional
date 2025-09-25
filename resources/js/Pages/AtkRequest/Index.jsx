@@ -21,7 +21,7 @@ function statusColor(status) {
   return 'text-amber-600';
 }
 
-export default function AtkRequestIndex({ requests, canManage, canCreate }) {
+export default function AtkRequestIndex({ requests, canManage }) {
   const { props } = usePage();
   const { flash } = props;
 
@@ -86,158 +86,158 @@ export default function AtkRequestIndex({ requests, canManage, canCreate }) {
         {flash?.success && <Alert type="success" message={flash.success} />}
         {flash?.error && <Alert type="error" message={flash.error} />}
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold text-foreground">Daftar Permintaan</h2>
-          {canCreate && (
-            <Button onClick={() => router.visit(route('atk-requests.create'))}>Tambah Pengajuan</Button>
-          )}
-        </div>
-
-        <Card className="block lg:hidden">
-          <CardHeader>
-            <CardTitle>Daftar Pengajuan</CardTitle>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Daftar Permintaan ATK</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {requests.data.length === 0 && (
-              <div className="rounded-lg border border-border bg-background p-3 text-sm text-muted-foreground">
-                Belum ada pengajuan.
-              </div>
-            )}
-
-            {requests.data.map((item) => (
-              <div key={item.id} className="rounded-lg border border-border bg-background p-3">
-                <div className="space-y-1 text-sm">
-                  <Detail label="Nama Pemesan" value={item.nama_pemesan} />
-                  <Detail label="Nama Barang" value={item.nama_barang} />
-                  <Detail label="Referensi" value={item.referensi || '-'} />
-                  <Detail label="Merek" value={item.merek || '-'} />
-                  <Detail label="Kegiatan" value={item.kegiatan} />
-                  <Detail label="Bank" value={item.bank} />
-                  <Detail label="Budgeting" value={item.budgeting_label} />
-                  <Detail label="Quantity" value={item.quantity} />
-                  <Detail label="Tanggal Pesan" value={item.tanggal_pesan} />
-                  <Detail label="Deadline" value={item.deadline} />
-                  <Detail label="Catatan" value={item.catatan || '-'} />
-                  <Detail label="Status" value={STATUS_LABELS[item.status] || item.status} className={statusColor(item.status)} />
-                  {item.manager_note && <Detail label="Catatan Manajer" value={item.manager_note} />}
+          <CardContent className="space-y-3">
+            <div className="space-y-2 lg:hidden">
+              {requests.data.length === 0 && (
+                <div className="rounded-lg border border-border bg-background p-2 text-xs text-muted-foreground">
+                  Belum ada pengajuan.
                 </div>
+              )}
 
-                <div className="mt-3 space-y-1.5">
-                  <Button variant="outline" className="w-full" onClick={() => openDetail(item)}>
-                    Detail
-                  </Button>
-                  {(item.can_edit || item.can_admin_edit) && (
-                    <Button variant="outline" className="w-full" onClick={() => router.visit(route('atk-requests.edit', item.id))}>
-                      Revisi
+              {requests.data.map((item) => (
+                <div key={item.id} className="rounded-lg border border-border bg-background p-2">
+                  <div className="space-y-1 text-xs">
+                    <Detail label="Nama Pemesan" value={item.nama_pemesan} />
+                    <Detail label="Nama Barang" value={item.nama_barang} />
+                    <Detail label="Referensi" value={item.referensi || '-'} />
+                    <Detail label="Merek" value={item.merek || '-'} />
+                    <Detail label="Kegiatan" value={item.kegiatan} />
+                    <Detail label="Bank" value={item.bank} />
+                    <Detail label="Budgeting" value={item.budgeting_label} />
+                    <Detail label="Quantity" value={item.quantity} />
+                    <Detail label="Tanggal Pesan" value={item.tanggal_pesan} />
+                    <Detail label="Deadline" value={item.deadline} />
+                    <Detail label="Catatan" value={item.catatan || '-'} />
+                    <Detail label="Status" value={STATUS_LABELS[item.status] || item.status} className={statusColor(item.status)} />
+                    {item.manager_note && <Detail label="Catatan Manajer" value={item.manager_note} />}
+                    <Detail label="Diproses Oleh" value={item.processor?.name || '-'} />
+                    <Detail label="Diproses Pada" value={item.processed_at || '-'} />
+                    <Detail label="Selesai Pada" value={item.completed_at || '-'} />
+                    <Detail label="Pengaju" value={item.pengaju?.name || '-'} />
+                    {item.pengaju?.email && <Detail label="Email Pengaju" value={item.pengaju.email} />}
+                  </div>
+
+                  <div className="mt-2 space-y-1.5">
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => openDetail(item)}>
+                      Detail
                     </Button>
-                  )}
-                  {item.can_mark_done && (
-                    <Button className="w-full" onClick={() => handleComplete(item)}>
-                      Done
-                    </Button>
-                  )}
-                  {item.can_delete && (
-                    <Button variant="destructive" className="w-full" onClick={() => handleDelete(item)}>
-                      Hapus
-                    </Button>
-                  )}
-                  {canManage && item.status === 'pending' && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" onClick={() => handleApprove(item)}>
-                        Setujui
+                    {canManage && item.status === 'pending' && (
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <Button size="sm" className="text-xs" onClick={() => handleApprove(item)}>
+                          Setujui
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs" onClick={() => handleReject(item)}>
+                          Tolak
+                        </Button>
+                      </div>
+                    )}
+                    {(item.can_edit || item.can_admin_edit) && (
+                      <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => router.visit(route('atk-requests.edit', item.id))}>
+                        Revisi
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleReject(item)}>
-                        Tolak
+                    )}
+                    {item.can_mark_done && (
+                      <Button size="sm" className="w-full text-xs" onClick={() => handleComplete(item)}>
+                        Done
                       </Button>
-                    </div>
-                  )}
+                    )}
+                    {item.can_delete && (
+                      <Button size="sm" variant="destructive" className="w-full text-xs" onClick={() => handleDelete(item)}>
+                        Hapus
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            <Pagination links={requests.links} className="pt-1" />
+              <Pagination links={requests.links} className="pt-1" />
+            </div>
+
+            <div className="hidden lg:block">
+              <div className="overflow-x-auto">
+                <Table className="min-w-[960px] text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama Pemesan</TableHead>
+                      <TableHead>Nama Barang</TableHead>
+                      <TableHead>Kegiatan</TableHead>
+                      <TableHead>Bank</TableHead>
+                      <TableHead>Budgeting</TableHead>
+                      <TableHead className="text-center">Quantity</TableHead>
+                      <TableHead className="text-center">Tanggal Pesan</TableHead>
+                      <TableHead className="text-center">Deadline</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Pemroses</TableHead>
+                      <TableHead>Selesai Pada</TableHead>
+                      <TableHead className="text-center">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {requests.data.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={12} className="py-6 text-center text-sm text-muted-foreground">
+                          Belum ada pengajuan.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {requests.data.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.nama_pemesan}</TableCell>
+                        <TableCell>{item.nama_barang}</TableCell>
+                        <TableCell>{item.kegiatan}</TableCell>
+                        <TableCell>{item.bank}</TableCell>
+                        <TableCell>{item.budgeting_label}</TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-center">{item.tanggal_pesan}</TableCell>
+                        <TableCell className="text-center">{item.deadline}</TableCell>
+                        <TableCell className={cn('font-medium', statusColor(item.status))}>{STATUS_LABELS[item.status] || item.status}</TableCell>
+                        <TableCell>{item.processor?.name || '-'}</TableCell>
+                        <TableCell>{item.completed_at || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col items-stretch gap-1.5">
+                            <Button size="sm" variant="outline" className="text-xs" onClick={() => openDetail(item)}>
+                              Detail
+                            </Button>
+                            {canManage && item.status === 'pending' && (
+                              <div className="flex gap-1.5">
+                                <Button size="sm" className="flex-1 text-xs" onClick={() => handleApprove(item)}>
+                                  Setujui
+                                </Button>
+                                <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleReject(item)}>
+                                  Tolak
+                                </Button>
+                              </div>
+                            )}
+                            {(item.can_edit || item.can_admin_edit) && (
+                              <Button size="sm" variant="outline" className="text-xs" onClick={() => router.visit(route('atk-requests.edit', item.id))}>
+                                Revisi
+                              </Button>
+                            )}
+                            {item.can_mark_done && (
+                              <Button size="sm" className="text-xs" onClick={() => handleComplete(item)}>
+                                Done
+                              </Button>
+                            )}
+                            {item.can_delete && (
+                              <Button size="sm" variant="destructive" className="text-xs" onClick={() => handleDelete(item)}>
+                                Hapus
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <Pagination links={requests.links} className="mt-4" />
+            </div>
           </CardContent>
         </Card>
-
-        <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
-          <div className="overflow-x-auto">
-            <Table className="min-w-[1100px] text-sm">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Pemesan</TableHead>
-                  <TableHead>Nama Barang</TableHead>
-                  <TableHead>Kegiatan</TableHead>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Budgeting</TableHead>
-                  <TableHead className="text-center">Quantity</TableHead>
-                  <TableHead className="text-center">Tanggal Pesan</TableHead>
-                  <TableHead className="text-center">Deadline</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Pemroses</TableHead>
-                  <TableHead>Selesai Pada</TableHead>
-                  <TableHead className="text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.data.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={12} className="py-6 text-center text-sm text-muted-foreground">
-                      Belum ada pengajuan.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {requests.data.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.nama_pemesan}</TableCell>
-                    <TableCell>{item.nama_barang}</TableCell>
-                    <TableCell>{item.kegiatan}</TableCell>
-                    <TableCell>{item.bank}</TableCell>
-                    <TableCell>{item.budgeting_label}</TableCell>
-                    <TableCell className="text-center">{item.quantity}</TableCell>
-                    <TableCell className="text-center">{item.tanggal_pesan}</TableCell>
-                    <TableCell className="text-center">{item.deadline}</TableCell>
-                    <TableCell className={cn('font-medium', statusColor(item.status))}>{STATUS_LABELS[item.status] || item.status}</TableCell>
-                    <TableCell>{item.processor?.name || '-'}</TableCell>
-                    <TableCell>{item.completed_at || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap items-center justify-center gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openDetail(item)}>
-                          Detail
-                        </Button>
-                        {(item.can_edit || item.can_admin_edit) && (
-                          <Button size="sm" variant="outline" onClick={() => router.visit(route('atk-requests.edit', item.id))}>
-                            Revisi
-                          </Button>
-                        )}
-                        {item.can_mark_done && (
-                          <Button size="sm" onClick={() => handleComplete(item)}>
-                            Done
-                          </Button>
-                        )}
-                        {canManage && item.status === 'pending' && (
-                          <>
-                            <Button size="sm" onClick={() => handleApprove(item)}>
-                              Setujui
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleReject(item)}>
-                              Tolak
-                            </Button>
-                          </>
-                        )}
-                        {item.can_delete && (
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(item)}>
-                            Hapus
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <Pagination links={requests.links} className="py-3" />
-        </div>
       </div>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -323,8 +323,8 @@ export default function AtkRequestIndex({ requests, canManage, canCreate }) {
 
 function Detail({ label, value, className }) {
   return (
-    <div className="text-sm">
-      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+    <div className="text-xs sm:text-sm">
+      <span className="block text-[10px] uppercase tracking-wide text-muted-foreground sm:text-xs">{label}</span>
       <span className={cn('font-medium', className)}>{value ?? '-'}</span>
     </div>
   );

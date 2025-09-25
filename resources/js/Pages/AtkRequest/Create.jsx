@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 export default function AtkRequestForm({ budgetingOptions = [], requestData = null }) {
   const { props } = usePage();
@@ -153,7 +154,7 @@ function Field({ label, error, children }) {
 
 function Alert({ type, message }) {
   const variant = type === 'error' ? 'bg-destructive/15 text-destructive' : 'bg-primary/10 text-primary';
-  return <div className={`rounded-md px-4 py-3 text-sm font-medium ${variant}`}>{message}</div>;
+  return <div className={cn('rounded-md px-4 py-3 text-sm font-medium', variant)}>{message}</div>;
 }
 
 function Typography({ children }) {

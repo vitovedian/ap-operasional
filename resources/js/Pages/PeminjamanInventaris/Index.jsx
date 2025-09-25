@@ -96,18 +96,18 @@ export default function InventoryLoanIndex({ loans, canManage }) {
         {flash?.error && <Alert type="error" message={flash.error} />}
 
         <Card className="block lg:hidden">
-          <CardHeader>
-            <CardTitle>Daftar Pengajuan</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Daftar Pengajuan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {loans.data.length === 0 && (
-              <div className="rounded-lg border border-border bg-background p-3 text-sm text-muted-foreground">
+              <div className="rounded-lg border border-border bg-background p-2 text-xs text-muted-foreground">
                 Belum ada pengajuan.
               </div>
             )}
             {loans.data.map((loan) => (
-              <div key={loan.id} className="rounded-lg border border-border bg-background p-3">
-                <div className="space-y-1 text-sm">
+              <div key={loan.id} className="rounded-lg border border-border bg-background p-2">
+                <div className="space-y-1 text-xs">
                   <Detail label="Nama Pemesan" value={loan.nama_pemesan} />
                   <Detail label="Metode" value={loan.metode_kegiatan} className="capitalize" />
                   <Detail label="Nama Kegiatan" value={loan.nama_kegiatan} />
@@ -132,30 +132,34 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                   {loan.returned_at && (<Detail label="Tanggal Kembali" value={loan.returned_at} />)}
                 </div>
 
-                <div className="mt-3 space-y-1.5">
-                  <Button variant="outline" className="w-full" onClick={() => handleDetail(loan)}>
+                <div className="mt-2 space-y-1.5">
+                  <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleDetail(loan)}>
                     Detail
                   </Button>
+                  {canManage && loan.status === 'pending' && (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button size="sm" className="text-xs" onClick={() => handleApprove(loan)}>
+                        Setujui
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => handleReject(loan)}>
+                        Tolak
+                      </Button>
+                    </div>
+                  )}
                   {(loan.can_edit || loan.can_admin_edit) && (
-                    <Button variant="outline" className="w-full" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
                       Revisi
                     </Button>
                   )}
                   {loan.can_mark_done && (
-                    <Button className="w-full" onClick={() => handleComplete(loan)}>
+                    <Button size="sm" className="w-full text-xs" onClick={() => handleComplete(loan)}>
                       Done
                     </Button>
                   )}
                   {loan.can_delete && (
-                    <Button variant="destructive" className="w-full" onClick={() => handleDelete(loan)}>
+                    <Button size="sm" variant="destructive" className="w-full text-xs" onClick={() => handleDelete(loan)}>
                       Hapus
                     </Button>
-                  )}
-                  {canManage && loan.status === 'pending' && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" onClick={() => handleApprove(loan)}>Setujui</Button>
-                      <Button size="sm" variant="outline" onClick={() => handleReject(loan)}>Tolak</Button>
-                    </div>
                   )}
                 </div>
               </div>
@@ -166,7 +170,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
 
         <div className="hidden rounded-xl border border-border bg-card shadow-sm lg:block">
           <div className="overflow-x-auto">
-            <Table className="min-w-[960px] text-sm">
+            <Table className="min-w-[960px] text-xs">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama Pemesan</TableHead>
@@ -231,30 +235,34 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                     </TableCell>
                     <TableCell>{loan.returned_at || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col items-stretch gap-2 text-right">
-                        <Button size="sm" variant="outline" onClick={() => handleDetail(loan)}>
+                      <div className="flex flex-col items-stretch gap-1.5 text-right">
+                        <Button size="sm" variant="outline" className="text-xs" onClick={() => handleDetail(loan)}>
                           Detail
                         </Button>
+                        {canManage && loan.status === 'pending' && (
+                          <div className="flex gap-1.5">
+                            <Button size="sm" className="flex-1 text-xs" onClick={() => handleApprove(loan)}>
+                              Setujui
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={() => handleReject(loan)}>
+                              Tolak
+                            </Button>
+                          </div>
+                        )}
                         {(loan.can_edit || loan.can_admin_edit) && (
-                          <Button size="sm" variant="outline" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
+                          <Button size="sm" variant="outline" className="text-xs" onClick={() => router.visit(route('peminjaman-inventaris.edit', loan.id))}>
                             Revisi
                           </Button>
                         )}
                         {loan.can_mark_done && (
-                          <Button size="sm" onClick={() => handleComplete(loan)}>
+                          <Button size="sm" className="text-xs" onClick={() => handleComplete(loan)}>
                             Done
                           </Button>
                         )}
                         {loan.can_delete && (
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(loan)}>
+                          <Button size="sm" variant="destructive" className="text-xs" onClick={() => handleDelete(loan)}>
                             Hapus
                           </Button>
-                        )}
-                        {canManage && loan.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => handleApprove(loan)}>Setujui</Button>
-                            <Button size="sm" variant="outline" onClick={() => handleReject(loan)}>Tolak</Button>
-                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -362,8 +370,8 @@ export default function InventoryLoanIndex({ loans, canManage }) {
 
 function Detail({ label, value, className }) {
   return (
-    <div className="text-sm">
-      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+    <div className="text-xs sm:text-sm">
+      <span className="block text-[10px] uppercase tracking-wide text-muted-foreground sm:text-xs">{label}</span>
       <span className={cn('font-medium', className)}>{value || '-'}</span>
     </div>
   );

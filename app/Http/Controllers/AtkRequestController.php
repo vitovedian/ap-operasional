@@ -22,7 +22,6 @@ class AtkRequestController extends Controller
     {
         $user = $request->user();
         $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
-        $canCreate = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC']) ?? false;
         $canManage = $user?->hasAnyRole(['Manager', 'Admin']) ?? false;
 
         $query = AtkRequest::query()
@@ -74,7 +73,6 @@ class AtkRequestController extends Controller
         return Inertia::render('AtkRequest/Index', [
             'requests' => $requests,
             'canManage' => $canManage,
-            'canCreate' => $canCreate,
             'budgetingOptions' => $this->budgetingOptions(),
         ]);
     }

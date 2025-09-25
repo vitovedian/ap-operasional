@@ -35,7 +35,7 @@ export default function SidebarLayout({ header, children }) {
   const canViewSpjList = canViewInvoicesList;
   const canViewInventoryList = canViewInvoicesList;
   const canViewAtkRequests = isAdmin || isManager || isSupervisor || isPic;
-  const canSubmitAtk = isAdmin || isManager || isSupervisor || isPic;
+  const canSubmitAtk = isAdmin || isSupervisor || isPic;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);

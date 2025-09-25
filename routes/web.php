@@ -90,7 +90,7 @@ Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->gr
     Route::get('/atk-requests', [AtkRequestController::class, 'index'])->name('atk-requests.index');
 });
 
-Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:Admin|Supervisor|PIC'])->group(function () {
     Route::get('/atk-requests/create', [AtkRequestController::class, 'create'])->name('atk-requests.create');
     Route::post('/atk-requests', [AtkRequestController::class, 'store'])->name('atk-requests.store');
     Route::get('/atk-requests/{atk}/edit', [AtkRequestController::class, 'edit'])->name('atk-requests.edit');
