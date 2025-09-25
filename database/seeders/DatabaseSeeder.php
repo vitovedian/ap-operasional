@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\InvoiceSubmission;
 use App\Models\SuratTugasSubmission;
 use App\Models\InventoryLoanSubmission;
+use App\Models\AtkRequest;
 use App\Models\SpjSubmission;
 use App\Models\NomorSuratSubmission;
 use App\Models\User;
@@ -231,6 +232,114 @@ class DatabaseSeeder extends Seeder
                     'status' => $seed['status'],
                     'processed_by' => $processor?->id,
                     'processed_at' => $seed['processed_at'] ?? null,
+                ]
+            );
+        }
+
+        $atkSeeds = [
+            [
+                'user_email' => 'pic@example.com',
+                'nama_pemesan' => 'Dewi Lestari',
+                'nama_barang' => 'Pulpen Gel 0.5mm',
+                'referensi' => 'https://contoh.toko/pulpen-gel',
+                'merek' => 'Snowman',
+                'quantity' => 24,
+                'tanggal_pesan' => now()->subDays(3)->toDateString(),
+                'deadline' => now()->addDays(1)->toDateString(),
+                'kegiatan' => 'Workshop Pengelolaan Dokumen',
+                'bank' => 'BCA',
+                'budgeting' => 'belum_funding',
+                'catatan' => 'Perlengkapan peserta workshop.',
+                'status' => 'pending',
+            ],
+            [
+                'user_email' => 'karyawan@example.com',
+                'nama_pemesan' => 'Rudi Hartono',
+                'nama_barang' => 'Notebook A5',
+                'referensi' => null,
+                'merek' => 'Campus',
+                'quantity' => 40,
+                'tanggal_pesan' => now()->subDays(7)->toDateString(),
+                'deadline' => now()->subDays(2)->toDateString(),
+                'kegiatan' => 'Pelatihan Softskill Tim',
+                'bank' => 'Mandiri',
+                'budgeting' => 'sudah_funding',
+                'catatan' => 'Disiapkan untuk peserta pelatihan.',
+                'status' => 'approved',
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDays(2),
+            ],
+            [
+                'user_email' => 'pic@example.com',
+                'nama_pemesan' => 'Andi Saputra',
+                'nama_barang' => 'Tinta Printer',
+                'referensi' => 'https://contoh.toko/tinta-printer',
+                'merek' => 'Epson',
+                'quantity' => 4,
+                'tanggal_pesan' => now()->subDays(10)->toDateString(),
+                'deadline' => now()->subDays(5)->toDateString(),
+                'kegiatan' => 'Cetak Modul Pelatihan',
+                'bank' => 'BNI',
+                'budgeting' => 'belum_funding',
+                'catatan' => 'Printer kantor kehabisan tinta.',
+                'status' => 'rejected',
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDays(5),
+                'manager_note' => 'Gunakan stok cadangan di gudang terlebih dahulu.',
+            ],
+            [
+                'user_email' => 'karyawan@example.com',
+                'nama_pemesan' => 'Sari Putri',
+                'nama_barang' => 'Map Arsip Warna',
+                'referensi' => null,
+                'merek' => 'Sinar Dunia',
+                'quantity' => 50,
+                'tanggal_pesan' => now()->subDays(15)->toDateString(),
+                'deadline' => now()->subDays(10)->toDateString(),
+                'kegiatan' => 'Audit Internal',
+                'bank' => 'BRI',
+                'budgeting' => 'sudah_funding',
+                'catatan' => 'Dibutuhkan untuk pengarsipan dokumen audit.',
+                'status' => 'completed',
+                'processed_by_email' => 'admin@example.com',
+                'processed_at' => now()->subDays(11),
+                'completed_at' => now()->subDays(1),
+            ],
+        ];
+
+        foreach ($atkSeeds as $seed) {
+            $user = User::where('email', $seed['user_email'])->first();
+            if (! $user) {
+                continue;
+            }
+
+            $processorId = null;
+            if (! empty($seed['processed_by_email'])) {
+                $processor = User::where('email', $seed['processed_by_email'])->first();
+                $processorId = $processor?->id;
+            }
+
+            AtkRequest::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'nama_barang' => $seed['nama_barang'],
+                    'tanggal_pesan' => $seed['tanggal_pesan'],
+                ],
+                [
+                    'nama_pemesan' => $seed['nama_pemesan'],
+                    'referensi' => $seed['referensi'] ?? null,
+                    'merek' => $seed['merek'] ?? null,
+                    'quantity' => $seed['quantity'],
+                    'deadline' => $seed['deadline'],
+                    'kegiatan' => $seed['kegiatan'],
+                    'bank' => $seed['bank'],
+                    'budgeting' => $seed['budgeting'],
+                    'catatan' => $seed['catatan'] ?? null,
+                    'status' => $seed['status'],
+                    'manager_note' => $seed['manager_note'] ?? null,
+                    'processed_by' => $processorId,
+                    'processed_at' => $seed['processed_at'] ?? null,
+                    'completed_at' => $seed['completed_at'] ?? null,
                 ]
             );
         }
