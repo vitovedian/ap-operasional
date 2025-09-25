@@ -7,6 +7,7 @@ use App\Http\Controllers\NomorSuratSubmissionController;
 use App\Http\Controllers\SpjSubmissionController;
 use App\Http\Controllers\InventoryLoanSubmissionController;
 use App\Http\Controllers\SuratTugasSubmissionController;
+use App\Http\Controllers\AtkRequestController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -83,6 +84,24 @@ Route::middleware(['auth', 'verified', 'role:Manager|Admin'])->group(function ()
     Route::post('/peminjaman-inventaris/{loan}/approve', [InventoryLoanSubmissionController::class, 'approve'])->name('peminjaman-inventaris.approve');
     Route::post('/peminjaman-inventaris/{loan}/reject', [InventoryLoanSubmissionController::class, 'reject'])->name('peminjaman-inventaris.reject');
     Route::delete('/peminjaman-inventaris/{loan}', [InventoryLoanSubmissionController::class, 'destroy'])->name('peminjaman-inventaris.destroy');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
+    Route::get('/atk-requests', [AtkRequestController::class, 'index'])->name('atk-requests.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
+    Route::get('/atk-requests/create', [AtkRequestController::class, 'create'])->name('atk-requests.create');
+    Route::post('/atk-requests', [AtkRequestController::class, 'store'])->name('atk-requests.store');
+    Route::get('/atk-requests/{atk}/edit', [AtkRequestController::class, 'edit'])->name('atk-requests.edit');
+    Route::put('/atk-requests/{atk}', [AtkRequestController::class, 'update'])->name('atk-requests.update');
+    Route::post('/atk-requests/{atk}/complete', [AtkRequestController::class, 'complete'])->name('atk-requests.complete');
+});
+
+Route::middleware(['auth', 'verified', 'role:Manager|Admin'])->group(function () {
+    Route::post('/atk-requests/{atk}/approve', [AtkRequestController::class, 'approve'])->name('atk-requests.approve');
+    Route::post('/atk-requests/{atk}/reject', [AtkRequestController::class, 'reject'])->name('atk-requests.reject');
+    Route::delete('/atk-requests/{atk}', [AtkRequestController::class, 'destroy'])->name('atk-requests.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {

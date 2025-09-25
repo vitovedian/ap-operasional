@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature, Receipt, Archive } from 'lucide-react';
+import {
+  Menu,
+  LogOut,
+  UserCircle,
+  LayoutDashboard,
+  FileText,
+  Users,
+  FileEdit,
+  ScrollText,
+  FileSignature,
+  Receipt,
+  Archive,
+  Package,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -21,6 +34,8 @@ export default function SidebarLayout({ header, children }) {
   const canViewNomorSuratList = canViewInvoicesList;
   const canViewSpjList = canViewInvoicesList;
   const canViewInventoryList = canViewInvoicesList;
+  const canViewAtkRequests = isAdmin || isManager || isSupervisor || isPic;
+  const canSubmitAtk = isAdmin || isManager || isSupervisor || isPic;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -84,6 +99,16 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
+    ...(canViewAtkRequests
+      ? [
+          {
+            label: 'Permintaan ATK',
+            icon: Package,
+            href: route('atk-requests.index'),
+            active: isActive('atk-requests.*'),
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
@@ -144,6 +169,16 @@ export default function SidebarLayout({ header, children }) {
             icon: FileEdit,
             href: route('peminjaman-inventaris.create'),
             active: isActive('peminjaman-inventaris.create'),
+          },
+        ]
+      : []),
+    ...(canSubmitAtk
+      ? [
+          {
+            label: 'Pengajuan ATK',
+            icon: FileEdit,
+            href: route('atk-requests.create'),
+            active: isActive('atk-requests.create'),
           },
         ]
       : []),
