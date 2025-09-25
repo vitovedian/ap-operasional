@@ -5,6 +5,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\InvoiceSubmissionController;
 use App\Http\Controllers\NomorSuratSubmissionController;
 use App\Http\Controllers\SpjSubmissionController;
+use App\Http\Controllers\InventoryLoanSubmissionController;
 use App\Http\Controllers\SuratTugasSubmissionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -64,6 +65,24 @@ Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|Karyawan|P
 Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|PIC'])->group(function () {
     Route::get('/spj/create', [SpjSubmissionController::class, 'create'])->name('spj.create');
     Route::post('/spj', [SpjSubmissionController::class, 'store'])->name('spj.store');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|Karyawan|PIC'])->group(function () {
+    Route::get('/peminjaman-inventaris', [InventoryLoanSubmissionController::class, 'index'])->name('peminjaman-inventaris.index');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|PIC'])->group(function () {
+    Route::get('/peminjaman-inventaris/create', [InventoryLoanSubmissionController::class, 'create'])->name('peminjaman-inventaris.create');
+    Route::post('/peminjaman-inventaris', [InventoryLoanSubmissionController::class, 'store'])->name('peminjaman-inventaris.store');
+    Route::get('/peminjaman-inventaris/{loan}/edit', [InventoryLoanSubmissionController::class, 'edit'])->name('peminjaman-inventaris.edit');
+    Route::put('/peminjaman-inventaris/{loan}', [InventoryLoanSubmissionController::class, 'update'])->name('peminjaman-inventaris.update');
+    Route::post('/peminjaman-inventaris/{loan}/complete', [InventoryLoanSubmissionController::class, 'complete'])->name('peminjaman-inventaris.complete');
+});
+
+Route::middleware(['auth', 'verified', 'role:Manager|Admin'])->group(function () {
+    Route::post('/peminjaman-inventaris/{loan}/approve', [InventoryLoanSubmissionController::class, 'approve'])->name('peminjaman-inventaris.approve');
+    Route::post('/peminjaman-inventaris/{loan}/reject', [InventoryLoanSubmissionController::class, 'reject'])->name('peminjaman-inventaris.reject');
+    Route::delete('/peminjaman-inventaris/{loan}', [InventoryLoanSubmissionController::class, 'destroy'])->name('peminjaman-inventaris.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {

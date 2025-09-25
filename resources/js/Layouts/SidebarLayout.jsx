@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature, Receipt } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LayoutDashboard, FileText, Users, FileEdit, ScrollText, FileSignature, Receipt, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,7 @@ export default function SidebarLayout({ header, children }) {
   const canViewSuratTugasList = canViewInvoicesList;
   const canViewNomorSuratList = canViewInvoicesList;
   const canViewSpjList = canViewInvoicesList;
+  const canViewInventoryList = canViewInvoicesList;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -73,6 +74,16 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
+    ...(canViewInventoryList
+      ? [
+          {
+            label: 'Peminjaman Inventaris',
+            icon: Archive,
+            href: route('peminjaman-inventaris.index'),
+            active: isActive('peminjaman-inventaris.index'),
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           {
@@ -123,6 +134,16 @@ export default function SidebarLayout({ header, children }) {
             icon: FileEdit,
             href: route('spj.create'),
             active: isActive('spj.create'),
+          },
+        ]
+      : []),
+    ...(canSubmitForms
+      ? [
+          {
+            label: 'Pengajuan Inventaris',
+            icon: FileEdit,
+            href: route('peminjaman-inventaris.create'),
+            active: isActive('peminjaman-inventaris.create'),
           },
         ]
       : []),
