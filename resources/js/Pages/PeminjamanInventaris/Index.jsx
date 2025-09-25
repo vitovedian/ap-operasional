@@ -98,6 +98,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                   <Detail label="Metode" value={loan.metode_kegiatan} className="capitalize" />
                   <Detail label="Nama Kegiatan" value={loan.nama_kegiatan} />
                   <Detail label="Bank" value={loan.bank} />
+                  <Detail label="Catatan" value={loan.catatan || '-'} />
                   <div>
                     <span className="block text-xs uppercase tracking-wide text-muted-foreground">Kebutuhan</span>
                     <ul className="mt-1 space-y-1 text-xs">
@@ -156,6 +157,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                   <TableHead>Nama Kegiatan</TableHead>
                   <TableHead>Bank</TableHead>
                   <TableHead>Kebutuhan</TableHead>
+                  <TableHead>Catatan</TableHead>
                   <TableHead className="text-center">Jumlah</TableHead>
                   <TableHead className="text-center">Tanggal Pinjam</TableHead>
                   <TableHead className="text-center">Status</TableHead>
@@ -178,6 +180,7 @@ export default function InventoryLoanIndex({ loans, canManage }) {
                     <TableCell className="capitalize">{loan.metode_kegiatan}</TableCell>
                     <TableCell>{loan.nama_kegiatan}</TableCell>
                     <TableCell>{loan.bank}</TableCell>
+                    <TableCell>{loan.catatan || '-'}</TableCell>
                     <TableCell>
                       <ul className="space-y-1 text-xs">
                         {(loan.items || []).map((item, idx) => (

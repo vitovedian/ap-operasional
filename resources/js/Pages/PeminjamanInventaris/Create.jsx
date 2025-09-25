@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 const CATEGORY_OPTIONS = [
   { value: 'alat', label: 'Alat' },
   { value: 'barang', label: 'Barang' },
@@ -55,6 +56,7 @@ export default function InventoryLoanCreate({ itemOptions = [], loan = null }) {
     bank: loan?.bank ?? '',
     items: initialItems,
     quantity: loan?.quantity ? String(loan.quantity) : '',
+    catatan: loan?.catatan ?? '',
     tanggal_pinjam: loan?.tanggal_pinjam ?? '',
   });
 
@@ -202,6 +204,15 @@ export default function InventoryLoanCreate({ itemOptions = [], loan = null }) {
                 />
               </Field>
             </div>
+
+            <Field label="Catatan" error={errors.catatan}>
+              <Textarea
+                value={data.catatan}
+                onChange={(event) => setData('catatan', event.target.value)}
+                placeholder="Catatan (opsional)"
+                rows={4}
+              />
+            </Field>
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => router.visit(route('peminjaman-inventaris.index'))}>

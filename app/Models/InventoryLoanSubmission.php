@@ -17,6 +17,7 @@ class InventoryLoanSubmission extends Model
         'bank',
         'items',
         'quantity',
+        'catatan',
         'tanggal_pinjam',
         'status',
         'manager_note',

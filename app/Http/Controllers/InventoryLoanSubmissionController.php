@@ -43,6 +43,7 @@ class InventoryLoanSubmissionController extends Controller
                     'bank' => $loan->bank,
                     'items' => $loan->items ?? [],
                     'quantity' => $loan->quantity,
+                    'catatan' => $loan->catatan,
                     'tanggal_pinjam' => $loan->tanggal_pinjam?->toDateTimeString(),
                     'status' => $loan->status,
                     'manager_note' => $loan->manager_note,
@@ -112,6 +113,7 @@ class InventoryLoanSubmissionController extends Controller
             'items.*.type' => ['required', Rule::in(self::ITEM_TYPES)],
             'items.*.label' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'catatan' => ['nullable', 'string'],
             'tanggal_pinjam' => ['required', 'date'],
         ]);
 
@@ -133,6 +135,7 @@ class InventoryLoanSubmissionController extends Controller
             'bank' => $validated['bank'],
             'items' => $items,
             'quantity' => (int) $validated['quantity'],
+            'catatan' => $validated['catatan'] ?? null,
             'tanggal_pinjam' => $tanggalPinjam,
             'status' => 'pending',
         ]);
@@ -218,6 +221,7 @@ class InventoryLoanSubmissionController extends Controller
             'items.*.type' => ['required', Rule::in(self::ITEM_TYPES)],
             'items.*.label' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'catatan' => ['nullable', 'string'],
             'tanggal_pinjam' => ['required', 'date'],
         ]);
 
@@ -238,6 +242,7 @@ class InventoryLoanSubmissionController extends Controller
             'bank' => $validated['bank'],
             'items' => $items,
             'quantity' => (int) $validated['quantity'],
+            'catatan' => $validated['catatan'] ?? null,
             'tanggal_pinjam' => $tanggalPinjam,
             'status' => 'pending',
             'manager_note' => null,

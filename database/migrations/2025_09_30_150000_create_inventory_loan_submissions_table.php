@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('bank');
             $table->json('items');
             $table->unsignedInteger('quantity');
+            $table->longText('catatan')->nullable();
             $table->timestamp('tanggal_pinjam');
             $table->string('status', 20)->default('pending');
             $table->text('manager_note')->nullable();
