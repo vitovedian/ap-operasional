@@ -45,7 +45,7 @@ class SpjSubmissionController extends Controller
                     'status' => $submission->status,
                     'catatan_revisi' => $submission->catatan_revisi,
                     'form_serah_terima_url' => $submission->form_serah_terima_path
-                        ? Storage::url($submission->form_serah_terima_path)
+                        ? route('spj.form-serah-terima', $submission)
                         : null,
                     'form_serah_terima_name' => $submission->form_serah_terima_path
                         ? basename($submission->form_serah_terima_path)
@@ -225,4 +225,27 @@ class SpjSubmissionController extends Controller
 
         return back()->with('success', 'SPJ ditolak dengan catatan');
     }
+
+    public function downloadFormSerahTerima(Request $request, SpjSubmission $spj)
+    {
+        $user = $request->user();
+        $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
+        $isOwner = $spj->user_id === ($user?->id);
+        $isPic = $spj->pic_id === ($user?->id);
+
+        if (! ($canViewAll || $isOwner || $isPic)) {
+            abort(403);
+        }
+
+        if (! $spj->form_serah_terima_path || ! Storage::exists($spj->form_serah_terima_path)) {
+            abort(404);
+        }
+
+        return Storage::download(
+            $spj->form_serah_terima_path,
+            basename($spj->form_serah_terima_path)
+        );
+    }
+
 }
+

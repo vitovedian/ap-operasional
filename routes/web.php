@@ -58,6 +58,7 @@ Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|PIC'])->group(functi
 
 Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|Karyawan|PIC'])->group(function () {
     Route::get('/spj', [SpjSubmissionController::class, 'index'])->name('spj.index');
+    Route::get('/spj/{spj}/form-serah-terima', [SpjSubmissionController::class, 'downloadFormSerahTerima'])->name('spj.form-serah-terima');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|PIC'])->group(function () {
