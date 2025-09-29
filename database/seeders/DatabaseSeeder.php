@@ -52,6 +52,21 @@ class DatabaseSeeder extends Seeder
                 'role' => 'PIC',
             ],
             [
+                'name' => 'PIC Finance',
+                'email' => 'pic.finance@example.com',
+                'role' => 'PIC',
+            ],
+            [
+                'name' => 'PIC Operasional',
+                'email' => 'pic.operasional@example.com',
+                'role' => 'PIC',
+            ],
+            [
+                'name' => 'PIC Kegiatan',
+                'email' => 'pic.kegiatan@example.com',
+                'role' => 'PIC',
+            ],
+            [
                 'name' => 'Karyawan',
                 'email' => 'karyawan@example.com',
                 'role' => 'Karyawan',

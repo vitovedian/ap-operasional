@@ -29,10 +29,11 @@ class NomorSuratSubmissionController extends Controller
             ->through(function (NomorSuratSubmission $submission) {
                 return [
                     'id' => $submission->id,
-                    'tanggal_pengajuan' => $submission->tanggal_pengajuan,
+                    'tanggal_pengajuan' => optional($submission->tanggal_pengajuan)->format('Y-m-d'),
                     'tujuan_surat' => $submission->tujuan_surat,
                     'nama_klien' => $submission->nama_klien,
                     'catatan' => $submission->catatan,
+                    'nomor_surat' => $submission->formatted_nomor_surat,
                     'user' => $submission->user ? [
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,

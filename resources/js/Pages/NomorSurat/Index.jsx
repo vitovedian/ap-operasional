@@ -84,6 +84,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                   <Detail label="Tujuan Surat" value={item.tujuan_surat} />
                   <Detail label="Nama Klien" value={item.nama_klien} />
                   <Detail label="Catatan" value={item.catatan} />
+                  <Detail label="Nomor Surat" value={item.nomor_surat || '-'} />
                   <Detail label="Pengaju" value={item.user?.name || '-'} />
                 </div>
                 {canManage && (
@@ -111,6 +112,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                   <TableHead className="text-center">Tujuan Surat</TableHead>
                   <TableHead className="text-center">Nama Klien</TableHead>
                   <TableHead className="text-center">Catatan</TableHead>
+                  <TableHead className="text-center">Nomor Surat</TableHead>
                   <TableHead className="text-center">Diajukan Oleh</TableHead>
                   {canManage && <TableHead className="w-48 text-center">Aksi</TableHead>}
                 </TableRow>
@@ -122,6 +124,7 @@ export default function NomorSuratIndex({ submissions, canManage = false }) {
                     <TableCell className="text-center">{item.tujuan_surat}</TableCell>
                     <TableCell className="text-center">{item.nama_klien}</TableCell>
                     <TableCell className="text-center">{item.catatan}</TableCell>
+                    <TableCell className="text-center">{item.nomor_surat || '-'}</TableCell>
                     <TableCell className="text-center">{item.user?.name || '-'}</TableCell>
                   {canManage && (
                     <TableCell>

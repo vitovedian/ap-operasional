@@ -2,3 +2,20 @@ Pengajuan Nomor Surat ok
 Pengajuan Form SPJ ok
 Pengajuan ATK
 Pengajuan Inventaris
+
+
+PIC kirim form surat tugas
+Supervisor dapat menghubungkan nomor surat ke surat tugas
+Supervisor melihat list dan informasikan ke Manager
+Manager terima/tolak surat
+PIC dapat print ke PDF
+
+PIC kirim form invoice
+Supervisor menghubungkan nomor surat ke invoice
+Supervisor melihat list dan informasikan ke Manager
+Manager terima/tolak surat
+Supervisor keuangan print ke PDF
+
+
+buat sehingga nomor surat menghasilkan string dengan format sebagai berikut:
+{id nomor surat}/SPP-{2 huruf singkatan tujuan surat}/{bulan pengajuan dalam format romawi}/{tahun pengajuan}
