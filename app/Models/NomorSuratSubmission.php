@@ -90,4 +90,9 @@ class NomorSuratSubmission extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function suratTugas()
+    {
+        return $this->hasOne(SuratTugasSubmission::class, 'nomor_surat_submission_id');
+    }
 }

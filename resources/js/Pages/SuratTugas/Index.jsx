@@ -21,7 +21,15 @@ function statusColor(status) {
   return 'text-amber-600';
 }
 
-export default function SuratTugasIndex({ submissions, picOptions = [], canManage = false, canModerate = false }) {
+export default function SuratTugasIndex({
+  submissions,
+  picOptions = [],
+  canManage = false,
+  canModerate = false,
+  canAssignNomor = false,
+  nomorSuratOptions = [],
+  canDownloadPdf = false,
+}) {
   const { props } = usePage();
   const { flash } = props;
   const hasSelfEditable = Array.isArray(submissions?.data) && submissions.data.some((item) => item.can_self_edit);
@@ -63,6 +71,14 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
   const [instructors, setInstructors] = useState([{ nama: '', fee: '' }]);
   const [openDetail, setOpenDetail] = useState(false);
   const [detail, setDetail] = useState(null);
+  const [openAssign, setOpenAssign] = useState(false);
+  const [assigning, setAssigning] = useState(null);
+  const [selectedNomor, setSelectedNomor] = useState('');
+  const nomorOptions = Array.isArray(nomorSuratOptions) ? nomorSuratOptions : [];
+  const assignCurrentValue = assigning?.nomor_surat_submission_id
+    ? String(assigning.nomor_surat_submission_id)
+    : '';
+  const assignHasChanges = assigning ? assignCurrentValue !== selectedNomor : false;
 
   const openEditDialog = (submission) => {
     setEditing(submission);
@@ -124,7 +140,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
     if (!editing) return;
 
     const [first = { nama: '', fee: '' }, second = { nama: '', fee: '' }] = instructors;
-    
+
     router.put(
       route('surat-tugas.update', editing.id),
       {
@@ -146,6 +162,32 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           setEditing(null);
           setForm(initialForm);
           setInstructors([{ nama: '', fee: '' }]);
+        },
+      }
+    );
+  };
+
+  const openAssignDialog = (submission) => {
+    setAssigning(submission);
+    setSelectedNomor(submission.nomor_surat_submission_id ? String(submission.nomor_surat_submission_id) : '');
+    setOpenAssign(true);
+  };
+
+  const submitAssign = (event) => {
+    event.preventDefault();
+    if (!assigning) return;
+
+    router.post(
+      route('surat-tugas.assign-nomor', assigning.id),
+      {
+        nomor_surat_submission_id: selectedNomor ? Number(selectedNomor) : null,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenAssign(false);
+          setAssigning(null);
+          setSelectedNomor('');
         },
       }
     );
@@ -202,6 +244,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
       total_fee_instruktur: Number(item.total_fee_instruktur || 0),
       total_fee: Number(item.total_fee || 0),
       instruktors,
+      download_url: route('surat-tugas.download', item.id),
     });
     setOpenDetail(true);
   };
@@ -237,11 +280,33 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                     <Detail label="Total Fee" value={`Rp ${toIDR(item.total_fee)}`} />
                     <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
+                    <Detail label="Nomor Surat" value={item.nomor_surat || '-'} />
                   </div>
                   <div className="mt-2 space-y-1.5">
                     <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleDetail(item)}>
                       Lihat Detail
                     </Button>
+                    {canDownloadPdf && (
+                      <Button size="sm" variant="outline" className="w-full text-xs" asChild>
+                        <a
+                          href={route('surat-tugas.download', item.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Unduh PDF
+                        </a>
+                      </Button>
+                    )}
+                    {canAssignNomor && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-xs"
+                        onClick={() => openAssignDialog(item)}
+                      >
+                        {item.nomor_surat ? 'Ubah Nomor Surat' : 'Hubungkan Nomor Surat'}
+                      </Button>
+                    )}
                     {canModerate && status === 'pending' && (
                       <div className="grid grid-cols-2 gap-1.5">
                         <Button size="sm" className="text-xs" onClick={() => onApprove(item)}>
@@ -288,9 +353,12 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                   <TableHead className="text-center">Fee Pendamping (Rp)</TableHead>
                   <TableHead className="text-center">Instruktor (Nama & Fee)</TableHead>
                   <TableHead className="text-center">Total Fee (Rp)</TableHead>
+                  <TableHead className="text-center">Nomor Surat</TableHead>
                   <TableHead className="text-center">Diajukan oleh</TableHead>
                   <TableHead className="text-center">Status</TableHead>
-                  {(canManage || canModerate || hasSelfEditable) && <TableHead className="text-center">Aksi</TableHead>}
+                  {(canManage || canModerate || hasSelfEditable || canAssignNomor || canDownloadPdf) && (
+                    <TableHead className="text-center">Aksi</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -319,6 +387,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                         </div>
                       </TableCell>
                       <TableCell className="text-center">{toIDR(item.total_fee)}</TableCell>
+                      <TableCell className="text-center">{item.nomor_surat || '-'}</TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
                       <TableCell>
                         <div className="text-xs">
@@ -328,12 +397,33 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                           )}
                         </div>
                       </TableCell>
-                      {(canManage || canModerate || item.can_self_edit) && (
+                      {(canManage || canModerate || item.can_self_edit || canAssignNomor || canDownloadPdf) && (
                         <TableCell>
                           <div className="flex flex-col items-stretch gap-1.5 text-right">
                             <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
                               Detail
                             </Button>
+                            {canDownloadPdf && (
+                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
+                                <a
+                                  href={route('surat-tugas.download', item.id)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Unduh PDF
+                                </a>
+                              </Button>
+                            )}
+                            {canAssignNomor && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="justify-center text-xs"
+                                onClick={() => openAssignDialog(item)}
+                              >
+                                {item.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
+                              </Button>
+                            )}
                             {canModerate && status === 'pending' && (
                               <div className="flex gap-1.5">
                                 <Button variant="default" size="sm" className="flex-1 text-xs" onClick={() => onApprove(item)}>
@@ -466,6 +556,80 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
         </form>
       </Dialog>
 
+      {canAssignNomor && (
+        <Dialog
+          open={openAssign}
+          onOpenChange={(value) => {
+            setOpenAssign(value);
+            if (!value) {
+              setAssigning(null);
+              setSelectedNomor('');
+            }
+          }}
+        >
+          <form onSubmit={submitAssign} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Hubungkan Nomor Surat</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Nomor saat ini</p>
+                <p className="text-sm font-semibold text-foreground">{assigning?.nomor_surat || '-'}</p>
+                {assigning?.nomor_surat_detail?.tujuan_surat && (
+                  <p className="text-xs text-muted-foreground">
+                    Tujuan: {assigning.nomor_surat_detail.tujuan_surat}
+                  </p>
+                )}
+              </div>
+
+              <Field label="Nomor Surat Tersedia">
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={selectedNomor}
+                  onChange={(event) => setSelectedNomor(event.target.value)}
+                >
+                  <option value="">Lepas nomor surat</option>
+                  {nomorOptions.map((option) => {
+                    const labelParts = [option.formatted || `Nomor #${option.id}`];
+                    if (option.tujuan_surat) {
+                      labelParts.push(option.tujuan_surat);
+                    }
+                    if (option.tanggal_pengajuan) {
+                      labelParts.push(option.tanggal_pengajuan);
+                    }
+                    return (
+                      <option key={option.id} value={String(option.id)}>
+                        {labelParts.join(' - ')}
+                      </option>
+                    );
+                  })}
+                </select>
+              </Field>
+
+              {!nomorOptions.length && (
+                <p className="text-xs text-muted-foreground">
+                  Saat ini belum ada nomor surat bebas. Anda tetap dapat melepas nomor yang terpasang.
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setOpenAssign(false);
+                }}
+              >
+                Batal
+              </Button>
+              <Button type="submit" disabled={!assignHasChanges}>
+                Simpan
+              </Button>
+            </DialogFooter>
+          </form>
+        </Dialog>
+      )}
+
       <Dialog open={openReject} onOpenChange={setOpenReject}>
         <form onSubmit={submitReject} className="space-y-4">
           <DialogHeader>
@@ -528,6 +692,7 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
                 </div>
                 <DetailRow label="Total Fee Instruktor" value={`Rp ${toIDR(detail.total_fee_instruktur)}`} emphasise />
                 <DetailRow label="Total Fee" value={`Rp ${toIDR(detail.total_fee)}`} emphasise />
+                <DetailRow label="Nomor Surat" value={detail.nomor_surat || '-'} emphasise />
               </div>
             </section>
 
@@ -555,6 +720,13 @@ export default function SuratTugasIndex({ submissions, picOptions = [], canManag
           </div>
         )}
         <DialogFooter>
+          {canDownloadPdf && detail?.download_url && (
+            <Button variant="outline" asChild>
+              <a href={detail.download_url} target="_blank" rel="noopener noreferrer">
+                Unduh PDF
+              </a>
+            </Button>
+          )}
           <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
             Tutup
           </Button>

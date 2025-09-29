@@ -25,6 +25,13 @@ class SuratTugasSubmission extends Model
         'catatan_revisi',
         'processed_by',
         'processed_at',
+        'nomor_surat_submission_id',
+    ];
+
+    protected $casts = [
+        'tanggal_pengajuan' => 'date',
+        'tanggal_kegiatan' => 'date',
+        'processed_at' => 'datetime',
     ];
 
     public function user()
@@ -40,5 +47,10 @@ class SuratTugasSubmission extends Model
     public function processor()
     {
         return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function nomorSurat()
+    {
+        return $this->belongsTo(NomorSuratSubmission::class, 'nomor_surat_submission_id');
     }
 }

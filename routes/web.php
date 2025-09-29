@@ -122,6 +122,14 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
     Route::delete('/surat-tugas/{suratTugas}', [SuratTugasSubmissionController::class, 'destroy'])->name('surat-tugas.destroy');
 });
 
+Route::middleware(['auth', 'verified', 'role:Admin|Supervisor'])->group(function () {
+    Route::post('/surat-tugas/{suratTugas}/assign-nomor-surat', [SuratTugasSubmissionController::class, 'assignNomorSurat'])->name('surat-tugas.assign-nomor');
+});
+
+Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
+    Route::get('/surat-tugas/{suratTugas}/download', [SuratTugasSubmissionController::class, 'download'])->name('surat-tugas.download');
+});
+
 Route::middleware(['auth', 'verified', 'role:Manager'])->group(function () {
     Route::post('/surat-tugas/{suratTugas}/approve', [SuratTugasSubmissionController::class, 'approve'])->name('surat-tugas.approve');
     Route::post('/surat-tugas/{suratTugas}/reject', [SuratTugasSubmissionController::class, 'reject'])->name('surat-tugas.reject');

@@ -6,7 +6,12 @@ import { cn } from '@/lib/utils';
 
 const formatIDR = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
 
-export default function SuratTugasShow({ submission, canModerate = false, canEdit = false }) {
+export default function SuratTugasShow({
+  submission,
+  canModerate = false,
+  canEdit = false,
+  canDownloadPdf = false,
+}) {
   if (!submission) return null;
 
   return (
@@ -25,6 +30,7 @@ export default function SuratTugasShow({ submission, canModerate = false, canEdi
               <Detail label="Kegiatan" value={submission.kegiatan} full />
               <Detail label="Nama Pendampingan" value={submission.nama_pendampingan} full />
               <Detail label="Fee Pendampingan" value={`Rp ${formatIDR(submission.fee_pendampingan)}`} />
+              <Detail label="Nomor Surat" value={submission.nomor_surat || '-'} />
               <Detail label="Instruktor 1" value={`${submission.instruktor_1_nama} (Rp ${formatIDR(submission.instruktor_1_fee)})`} />
               <Detail
                 label="Instruktor 2"
@@ -63,20 +69,27 @@ export default function SuratTugasShow({ submission, canModerate = false, canEdi
           </Card>
 
           {(canModerate || canEdit) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Tindakan</CardTitle>
-                <CardDescription>Kelola surat tugas ini dari halaman daftar.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button asChild className="w-full" variant="outline">
-                  <Link href={route('surat-tugas.index')}>Kembali ke Daftar</Link>
+          <Card>
+            <CardHeader>
+              <CardTitle>Tindakan</CardTitle>
+              <CardDescription>Kelola surat tugas ini dari halaman daftar.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button asChild className="w-full" variant="outline">
+                <Link href={route('surat-tugas.index')}>Kembali ke Daftar</Link>
+              </Button>
+              {canDownloadPdf && (
+                <Button asChild className="w-full">
+                  <a href={route('surat-tugas.download', submission.id)} target="_blank" rel="noopener noreferrer">
+                    Unduh PDF Placeholder
+                  </a>
                 </Button>
-                {canEdit && (
-                  <p className="text-xs text-muted-foreground">
-                    Anda dapat memperbarui surat tugas ini langsung dari daftar jika statusnya ditolak.
-                  </p>
-                )}
+              )}
+              {canEdit && (
+                <p className="text-xs text-muted-foreground">
+                  Anda dapat memperbarui surat tugas ini langsung dari daftar jika statusnya ditolak.
+                </p>
+              )}
               </CardContent>
             </Card>
           )}
