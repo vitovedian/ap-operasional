@@ -85,6 +85,7 @@ class SuratTugasSubmissionController extends Controller
                         'nama_klien' => $submission->nomorSurat->nama_klien,
                         'tanggal_pengajuan' => optional($submission->nomorSurat->tanggal_pengajuan)->format('Y-m-d'),
                     ] : null,
+                    'can_download_pdf' => $user ? $this->userCanDownload($user, $submission) : false,
                     'can_self_edit' => $user
                         && $user->hasAnyRole(['Karyawan', 'PIC'])
                         && $submission->user_id === $user->id
@@ -100,7 +101,6 @@ class SuratTugasSubmissionController extends Controller
             ->values();
 
         $canAssignNomor = $user?->hasAnyRole(['Admin', 'Supervisor']) ?? false;
-        $canDownloadPdf = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC']) ?? false;
 
         $nomorSuratOptions = [];
         if ($canAssignNomor) {
@@ -137,7 +137,6 @@ class SuratTugasSubmissionController extends Controller
             'canViewAll' => $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false,
             'canAssignNomor' => $canAssignNomor,
             'nomorSuratOptions' => $nomorSuratOptions,
-            'canDownloadPdf' => $canDownloadPdf,
         ]);
     }
 
@@ -259,7 +258,7 @@ class SuratTugasSubmissionController extends Controller
                 || ((($isKaryawan || $isPic)
                     && $suratTugas->user_id === $user?->id
                     && ($suratTugas->status ?? 'pending') === 'rejected')),
-            'canDownloadPdf' => $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC']) ?? false,
+            'canDownloadPdf' => $user ? $this->userCanDownload($user, $suratTugas) : false,
         ]);
     }
 
@@ -344,11 +343,16 @@ class SuratTugasSubmissionController extends Controller
                 'nullable',
                 'integer',
                 'exists:nomor_surat_submissions,id',
-                Rule::unique('surat_tugas_submissions', 'nomor_surat_submission_id')->ignore($suratTugas->id),
             ],
         ]);
 
         $nomorSuratId = $validated['nomor_surat_submission_id'] ?? null;
+
+        if ($nomorSuratId) {
+            SuratTugasSubmission::where('nomor_surat_submission_id', $nomorSuratId)
+                ->where('id', '!=', $suratTugas->id)
+                ->update(['nomor_surat_submission_id' => null]);
+        }
 
         $suratTugas->nomor_surat_submission_id = $nomorSuratId;
         $suratTugas->save();
@@ -368,6 +372,10 @@ class SuratTugasSubmissionController extends Controller
         }
 
         $suratTugas->loadMissing(['nomorSurat', 'pic', 'user']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
 
         $pdfContent = $this->buildPdf($suratTugas);
         $fileName = sprintf('surat-tugas-%d.pdf', $suratTugas->id);
@@ -521,6 +529,20 @@ class SuratTugasSubmissionController extends Controller
         }
 
         return sprintf('%s (%s)', $name, $this->formatCurrency($fee));
+    }
+
+    private function userCanDownload(User $user, SuratTugasSubmission $submission): bool
+    {
+        if ($user->hasAnyRole(['Admin', 'Manager', 'Supervisor'])) {
+            return true;
+        }
+
+        if ($user->hasRole('PIC')) {
+            return ($submission->status ?? 'pending') === 'approved'
+                && $submission->pic_id === $user->id;
+        }
+
+        return false;
     }
 
     private function escapePdfText(string $text): string

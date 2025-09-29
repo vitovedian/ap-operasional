@@ -1,0 +1,36 @@
+Alur Surat Tugas
+
+  - PIC atau Karyawan membuat pengajuan di halaman Surat Tugas
+  dengan data kegiatan, PIC penanggung jawab, instruktur, dan biaya
+  (SuratTugasSubmissionController@store).
+  - Supervisor (atau Admin) meninjau daftar pengajuan, lalu
+  menghubungkan nomor surat yang belum terpakai melalui dialog
+  “Hubungkan Nomor” (SuratTugasSubmissionController@assignNomorSurat).
+  - Manager memutuskan pengajuan: menekan Terima/Tolak dari daftar.
+  Jika menolak, sistem menyimpan catatan revisi dan mengembalikan
+  status ke pemohon (SuratTugasSubmissionController@approve/reject).
+  - Setelah status approved, PIC penanggung jawab otomatis mendapat
+  tombol “Unduh PDF” di dialog detail. PDF berisi informasi resmi
+  surat tugas dan nomor surat bila sudah tertaut.
+
+  Peran & Hak Akses
+
+  - PIC
+      - Membuat dan memperbarui pengajuan miliknya (selama status
+  rejected).
+      - Melihat daftar milik sendiri; PIC dengan status approved dapat
+  mengunduh PDF jika ia PIC terkait.
+  - Karyawan
+      - Membuat pengajuan (PIC ditentukan melalui form).
+      - Bisa memperbarui miliknya ketika status rejected.
+  - Supervisor
+      - Melihat semua pengajuan.
+      - Menghubungkan atau melepas nomor surat (termasuk memindahkan
+  nomor antar pengajuan).
+  - Manager
+      - Melihat semua pengajuan.
+      - Menyetujui atau menolak, serta memberi catatan revisi.
+  - Admin
+      - Memiliki semua hak di atas: membuat, mengedit, menghapus
+  pengajuan, mengelola nomor, menjalankan aksi Supervisor/Manager
+  bila diperlukan.

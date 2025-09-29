@@ -28,7 +28,6 @@ export default function SuratTugasIndex({
   canModerate = false,
   canAssignNomor = false,
   nomorSuratOptions = [],
-  canDownloadPdf = false,
 }) {
   const { props } = usePage();
   const { flash } = props;
@@ -245,6 +244,7 @@ export default function SuratTugasIndex({
       total_fee: Number(item.total_fee || 0),
       instruktors,
       download_url: route('surat-tugas.download', item.id),
+      can_download_pdf: Boolean(item.can_download_pdf),
     });
     setOpenDetail(true);
   };
@@ -286,17 +286,6 @@ export default function SuratTugasIndex({
                     <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => handleDetail(item)}>
                       Lihat Detail
                     </Button>
-                    {canDownloadPdf && (
-                      <Button size="sm" variant="outline" className="w-full text-xs" asChild>
-                        <a
-                          href={route('surat-tugas.download', item.id)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Unduh PDF
-                        </a>
-                      </Button>
-                    )}
                     {canAssignNomor && (
                       <Button
                         size="sm"
@@ -356,9 +345,7 @@ export default function SuratTugasIndex({
                   <TableHead className="text-center">Nomor Surat</TableHead>
                   <TableHead className="text-center">Diajukan oleh</TableHead>
                   <TableHead className="text-center">Status</TableHead>
-                  {(canManage || canModerate || hasSelfEditable || canAssignNomor || canDownloadPdf) && (
-                    <TableHead className="text-center">Aksi</TableHead>
-                  )}
+                  <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -397,61 +384,48 @@ export default function SuratTugasIndex({
                           )}
                         </div>
                       </TableCell>
-                      {(canManage || canModerate || item.can_self_edit || canAssignNomor || canDownloadPdf) && (
-                        <TableCell>
-                          <div className="flex flex-col items-stretch gap-1.5 text-right">
-                            <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
-                              Detail
+                      <TableCell>
+                        <div className="flex flex-col items-stretch gap-1.5 text-right">
+                          <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
+                            Detail
+                          </Button>
+                          {canAssignNomor && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="justify-center text-xs"
+                              onClick={() => openAssignDialog(item)}
+                            >
+                              {item.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
                             </Button>
-                            {canDownloadPdf && (
-                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
-                                <a
-                                  href={route('surat-tugas.download', item.id)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  Unduh PDF
-                                </a>
+                          )}
+                          {canModerate && status === 'pending' && (
+                            <div className="flex gap-1.5">
+                              <Button variant="default" size="sm" className="flex-1 text-xs" onClick={() => onApprove(item)}>
+                                Terima
                               </Button>
-                            )}
-                            {canAssignNomor && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="justify-center text-xs"
-                                onClick={() => openAssignDialog(item)}
-                              >
-                                {item.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
+                              <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openRejectDialog(item)}>
+                                Tolak
                               </Button>
-                            )}
-                            {canModerate && status === 'pending' && (
-                              <div className="flex gap-1.5">
-                                <Button variant="default" size="sm" className="flex-1 text-xs" onClick={() => onApprove(item)}>
-                                  Terima
-                                </Button>
-                                <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openRejectDialog(item)}>
-                                  Tolak
-                                </Button>
-                              </div>
-                            )}
-                            {canManage && (
-                              <div className="flex gap-1.5">
-                                <Button variant="secondary" size="sm" className="flex-1 text-xs" onClick={() => openEditDialog(item)}>
-                                  Edit
-                                </Button>
-                                <Button variant="destructive" size="sm" className="flex-1 text-xs" onClick={() => onDelete(item)}>
-                                  Hapus
-                                </Button>
-                              </div>
-                            )}
-                            {item.can_self_edit && (
-                              <Button size="sm" className="w-full text-xs" onClick={() => openEditDialog(item)}>
-                                Perbarui
+                            </div>
+                          )}
+                          {canManage && (
+                            <div className="flex gap-1.5">
+                              <Button variant="secondary" size="sm" className="flex-1 text-xs" onClick={() => openEditDialog(item)}>
+                                Edit
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
+                              <Button variant="destructive" size="sm" className="flex-1 text-xs" onClick={() => onDelete(item)}>
+                                Hapus
+                              </Button>
+                            </div>
+                          )}
+                          {item.can_self_edit && (
+                            <Button size="sm" className="w-full text-xs" onClick={() => openEditDialog(item)}>
+                              Perbarui
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -720,7 +694,7 @@ export default function SuratTugasIndex({
           </div>
         )}
         <DialogFooter>
-          {canDownloadPdf && detail?.download_url && (
+          {detail?.can_download_pdf && detail?.download_url && (
             <Button variant="outline" asChild>
               <a href={detail.download_url} target="_blank" rel="noopener noreferrer">
                 Unduh PDF

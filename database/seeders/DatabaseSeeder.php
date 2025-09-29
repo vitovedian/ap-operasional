@@ -73,6 +73,8 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
+        $users = collect();
+
         foreach ($defaultUsers as $seedData) {
             $user = User::updateOrCreate(
                 ['email' => $seedData['email']],
@@ -86,6 +88,8 @@ class DatabaseSeeder extends Seeder
             if (! $user->hasRole($seedData['role'])) {
                 $user->syncRoles([$seedData['role']]);
             }
+
+            $users->put($seedData['email'], $user);
         }
 
         $invoiceSeeds = [
@@ -134,44 +138,139 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $nomorSuratSeeds = [
+            'implementasi-erp' => [
+                'user_email' => 'karyawan@example.com',
+                'tanggal_pengajuan' => now()->subDays(9)->toDateString(),
+                'tujuan_surat' => 'Pendampingan Implementasi ERP',
+                'nama_klien' => 'PT Satu Data Nusantara',
+                'catatan' => 'Nomor surat untuk koordinasi implementasi ERP di lokasi klien.',
+            ],
+            'softskill-team' => [
+                'user_email' => 'pic@example.com',
+                'tanggal_pengajuan' => now()->subDays(6)->toDateString(),
+                'tujuan_surat' => 'Pelatihan Softskill Internal',
+                'nama_klien' => 'Divisi SDM Internal',
+                'catatan' => 'Digunakan untuk surat tugas pelatihan softskill tim internal.',
+            ],
+            'onboarding-mitra' => [
+                'user_email' => 'pic.finance@example.com',
+                'tanggal_pengajuan' => now()->subDays(4)->toDateString(),
+                'tujuan_surat' => 'Onboarding Mitra Baru',
+                'nama_klien' => 'PT Mitra Harmoni',
+                'catatan' => 'Surat tugas onboarding untuk mitra baru di wilayah Bandung.',
+            ],
+        ];
+
+        $nomorSuratRecords = collect();
+
+        foreach ($nomorSuratSeeds as $slug => $seed) {
+            $pengaju = $users->get($seed['user_email']);
+
+            if (! $pengaju) {
+                continue;
+            }
+
+            $record = NomorSuratSubmission::updateOrCreate(
+                [
+                    'user_id' => $pengaju->id,
+                    'tujuan_surat' => $seed['tujuan_surat'],
+                    'nama_klien' => $seed['nama_klien'],
+                ],
+                [
+                    'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
+                    'catatan' => $seed['catatan'],
+                ]
+            );
+
+            $nomorSuratRecords->put($slug, $record);
+        }
+
         $suratTugasSeeds = [
             [
                 'user_email' => 'karyawan@example.com',
+                'pic_email' => 'pic@example.com',
                 'tanggal_pengajuan' => now()->subDays(7)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(3)->toDateString(),
                 'kegiatan' => 'Pendampingan Implementasi Sistem',
-                'pic_email' => 'pic@example.com',
                 'nama_pendampingan' => 'Implementasi ERP',
                 'fee_pendampingan' => 0,
                 'instruktors' => [
                     ['nama' => 'Andi Saputra', 'fee' => 1_500_000],
                     ['nama' => 'Dewi Lestari', 'fee' => 1_250_000],
                 ],
+                'status' => 'pending',
+                'catatan_revisi' => null,
+                'processed_by_email' => null,
+                'processed_at' => null,
+                'nomor_slug' => null,
             ],
             [
                 'user_email' => 'pic@example.com',
+                'pic_email' => 'pic@example.com',
                 'tanggal_pengajuan' => now()->subDays(4)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(7)->toDateString(),
                 'kegiatan' => 'Pelatihan Softskill Tim',
-                'pic_email' => 'pic@example.com',
                 'nama_pendampingan' => 'Coaching Teamwork',
                 'fee_pendampingan' => 500_000,
                 'instruktors' => [
                     ['nama' => 'Rudi Hartono', 'fee' => 900_000],
                 ],
+                'status' => 'approved',
+                'catatan_revisi' => null,
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDay()->setTime(14, 30),
+                'nomor_slug' => 'softskill-team',
+            ],
+            [
+                'user_email' => 'pic.finance@example.com',
+                'pic_email' => 'pic.finance@example.com',
+                'tanggal_pengajuan' => now()->subDays(5)->toDateString(),
+                'tanggal_kegiatan' => now()->addDays(5)->toDateString(),
+                'kegiatan' => 'Onboarding Mitra Baru',
+                'nama_pendampingan' => 'Pendampingan Keuangan Mitra',
+                'fee_pendampingan' => 350_000,
+                'instruktors' => [
+                    ['nama' => 'Siti Hapsari', 'fee' => 600_000],
+                ],
+                'status' => 'approved',
+                'catatan_revisi' => null,
+                'processed_by_email' => 'manager@example.com',
+                'processed_at' => now()->subDay()->setTime(10, 0),
+                'nomor_slug' => 'onboarding-mitra',
+            ],
+            [
+                'user_email' => 'karyawan@example.com',
+                'pic_email' => 'pic.operasional@example.com',
+                'tanggal_pengajuan' => now()->subDays(6)->toDateString(),
+                'tanggal_kegiatan' => now()->addDays(6)->toDateString(),
+                'kegiatan' => 'Workshop Onboarding Mitra',
+                'nama_pendampingan' => 'Onboarding Mitra Wilayah Barat',
+                'fee_pendampingan' => 350_000,
+                'instruktors' => [
+                    ['nama' => 'Siti Hapsari', 'fee' => 600_000],
+                ],
+                'status' => 'rejected',
+                'catatan_revisi' => 'Mohon lengkapi daftar peserta dan agenda rinci.',
+                'processed_by_email' => 'supervisor@example.com',
+                'processed_at' => now()->subDays(3)->setTime(9, 0),
+                'nomor_slug' => null,
             ],
         ];
 
         foreach ($suratTugasSeeds as $seed) {
-            $pengaju = User::where('email', $seed['user_email'])->first();
-            $pic = User::where('email', $seed['pic_email'])->first();
+            $pengaju = $users->get($seed['user_email']);
+            $pic = $users->get($seed['pic_email']);
+            $processor = $seed['processed_by_email'] ? $users->get($seed['processed_by_email']) : null;
+            $nomor = $seed['nomor_slug'] ? $nomorSuratRecords->get($seed['nomor_slug']) : null;
 
             if (! $pengaju || ! $pic) {
                 continue;
             }
 
-            $instruktor1 = $seed['instruktors'][0] ?? ['nama' => null, 'fee' => 0];
-            $instruktor2 = $seed['instruktors'][1] ?? ['nama' => null, 'fee' => 0];
+            $instruktors = $seed['instruktors'] ?? [];
+            $instruktor1 = $instruktors[0] ?? ['nama' => null, 'fee' => 0];
+            $instruktor2 = $instruktors[1] ?? ['nama' => null, 'fee' => 0];
 
             SuratTugasSubmission::updateOrCreate(
                 [
@@ -188,7 +287,11 @@ class DatabaseSeeder extends Seeder
                     'instruktor_1_fee' => $instruktor1['fee'],
                     'instruktor_2_nama' => $instruktor2['nama'],
                     'instruktor_2_fee' => $instruktor2['fee'],
-                    'status' => 'pending',
+                    'status' => $seed['status'],
+                    'catatan_revisi' => $seed['catatan_revisi'],
+                    'processed_by' => $processor?->id,
+                    'processed_at' => $seed['processed_at'],
+                    'nomor_surat_submission_id' => $nomor?->id,
                 ]
             );
         }
@@ -355,43 +458,6 @@ class DatabaseSeeder extends Seeder
                     'processed_by' => $processorId,
                     'processed_at' => $seed['processed_at'] ?? null,
                     'completed_at' => $seed['completed_at'] ?? null,
-                ]
-            );
-        }
-
-        $nomorSuratSeeds = [
-            [
-                'user_email' => 'karyawan@example.com',
-                'tanggal_pengajuan' => now()->subDays(8)->toDateString(),
-                'tujuan_surat' => 'Permohonan Kerja Sama',
-                'nama_klien' => 'PT Sumber Sejati',
-                'catatan' => 'Pengajuan nomor surat untuk proposal kerja sama jangka panjang.',
-            ],
-            [
-                'user_email' => 'pic@example.com',
-                'tanggal_pengajuan' => now()->subDays(2)->toDateString(),
-                'tujuan_surat' => 'Undangan Pelatihan',
-                'nama_klien' => 'CV Maju Bersama',
-                'catatan' => 'Mengundang klien untuk mengikuti sesi pelatihan tindak lanjut.',
-            ],
-        ];
-
-        foreach ($nomorSuratSeeds as $seed) {
-            $pengaju = User::where('email', $seed['user_email'])->first();
-
-            if (! $pengaju) {
-                continue;
-            }
-
-            NomorSuratSubmission::updateOrCreate(
-                [
-                    'user_id' => $pengaju->id,
-                    'tujuan_surat' => $seed['tujuan_surat'],
-                    'nama_klien' => $seed['nama_klien'],
-                ],
-                [
-                    'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
-                    'catatan' => $seed['catatan'],
                 ]
             );
         }
