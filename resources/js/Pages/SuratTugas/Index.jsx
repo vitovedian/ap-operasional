@@ -386,6 +386,20 @@ export default function SuratTugasIndex({
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col items-stretch gap-1.5 text-right">
+                          {item.can_download_pdf && (
+                            <>
+                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
+                                <a href={route('surat-tugas.download', item.id)} target="_blank" rel="noopener noreferrer">
+                                  Print PDF
+                                </a>
+                              </Button>
+                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
+                                <a href={route('surat-tugas.download-pic', item.id)} target="_blank" rel="noopener noreferrer">
+                                  Print PIC PDF
+                                </a>
+                              </Button>
+                            </>
+                          )}
                           <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
                             Detail
                           </Button>
@@ -694,12 +708,19 @@ export default function SuratTugasIndex({
           </div>
         )}
         <DialogFooter>
-          {detail?.can_download_pdf && detail?.download_url && (
-            <Button variant="outline" asChild>
-              <a href={detail.download_url} target="_blank" rel="noopener noreferrer">
-                Unduh PDF
-              </a>
-            </Button>
+          {detail?.can_download_pdf && (
+            <>
+              <Button variant="outline" asChild>
+                <a href={detail.download_url} target="_blank" rel="noopener noreferrer">
+                  Unduh PDF
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={route('surat-tugas.download-pic', detail.id)} target="_blank" rel="noopener noreferrer">
+                  Unduh PIC PDF
+                </a>
+              </Button>
+            </>
           )}
           <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
             Tutup

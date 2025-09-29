@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\NomorSuratSubmission;
 use App\Models\SuratTugasSubmission;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -363,7 +364,7 @@ class SuratTugasSubmissionController extends Controller
         );
     }
 
-    public function download(Request $request, SuratTugasSubmission $suratTugas): StreamedResponse
+    public function download(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
     {
         $user = $request->user();
 
@@ -371,164 +372,36 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
         }
 
-        $pdfContent = $this->buildPdf($suratTugas);
+        $pdf = Pdf::loadView('pdf.surat-tugas', ['suratTugas' => $suratTugas]);
         $fileName = sprintf('surat-tugas-%d.pdf', $suratTugas->id);
 
-        return response()->streamDownload(
-            static function () use ($pdfContent) {
-                echo $pdfContent;
-            },
-            $fileName,
-            ['Content-Type' => 'application/pdf']
-        );
+        return $pdf->download($fileName);
     }
 
-    private function buildPdf(SuratTugasSubmission $suratTugas): string
+    public function downloadPicTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
     {
-        $title = 'SURAT TUGAS';
-        $subtitle = $suratTugas->nomorSurat?->formatted_nomor_surat
-            ?? sprintf('ID: %d', $suratTugas->id);
-        $issuedAt = optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '-';
+        $user = $request->user();
 
-        $sections = [
-            'DETAIL PENUGASAN' => [
-                'Nama Kegiatan' => $suratTugas->kegiatan,
-                'Tanggal Kegiatan' => optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?? '-',
-                'Nama Pendampingan' => $suratTugas->nama_pendampingan,
-                'PIC Penanggung Jawab' => $suratTugas->pic?->name ?? '-',
-            ],
-            'PEMBIAYAAN' => [
-                'Fee Pendampingan' => $this->formatCurrency($suratTugas->fee_pendampingan),
-                'Instruktur 1' => $this->formatInstructor($suratTugas->instruktor_1_nama, $suratTugas->instruktor_1_fee),
-                'Instruktur 2' => $this->formatInstructor($suratTugas->instruktor_2_nama, $suratTugas->instruktor_2_fee),
-                'Total Estimasi' => $this->formatCurrency(
-                    ($suratTugas->fee_pendampingan ?? 0)
-                    + ($suratTugas->instruktor_1_fee ?? 0)
-                    + ($suratTugas->instruktor_2_fee ?? 0)
-                ),
-            ],
-            'INFORMASI TAMBAHAN' => [
-                'Status Persetujuan' => strtoupper($suratTugas->status ?? 'PENDING'),
-                'Pengaju' => $suratTugas->user?->name ?? '-',
-                'Tanggal Dibuat' => optional($suratTugas->created_at)->format('d F Y H:i') ?? '-',
-            ],
-        ];
-
-        $stream = [];
-
-        // Title & subtitle block
-        $stream[] = 'BT';
-        $stream[] = '/F2 20 Tf';
-        $stream[] = '72 790 Td';
-        $stream[] = '(' . $this->escapePdfText($title) . ') Tj';
-        $stream[] = '/F1 12 Tf';
-        $stream[] = '0 -24 Td';
-        $stream[] = '(' . $this->escapePdfText('Nomor: ' . $subtitle) . ') Tj';
-        $stream[] = '0 -18 Td';
-        $stream[] = '(' . $this->escapePdfText('Tanggal Terbit: ' . $issuedAt) . ') Tj';
-        $stream[] = 'ET';
-
-        // Divider line
-        $stream[] = '0.8 w';
-        $stream[] = '72 738 m';
-        $stream[] = '523 738 l';
-        $stream[] = 'S';
-
-        $currentY = 720;
-
-        foreach ($sections as $label => $items) {
-            // Section heading
-            $stream[] = 'BT';
-            $stream[] = '/F2 13 Tf';
-            $stream[] = '72 ' . $currentY . ' Td';
-            $stream[] = '(' . $this->escapePdfText($label) . ') Tj';
-            $stream[] = 'ET';
-
-            $currentY -= 18;
-
-            foreach ($items as $key => $value) {
-                $stream[] = 'BT';
-                $stream[] = '/F3 11 Tf';
-                $stream[] = '72 ' . $currentY . ' Td';
-                $stream[] = '(' . $this->escapePdfText($key . ':') . ') Tj';
-                $stream[] = 'ET';
-
-                $stream[] = 'BT';
-                $stream[] = '/F1 11 Tf';
-                $stream[] = '200 ' . $currentY . ' Td';
-                $stream[] = '(' . $this->escapePdfText($value) . ') Tj';
-                $stream[] = 'ET';
-
-                $currentY -= 16;
-            }
-
-            $currentY -= 10;
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
         }
 
-        // Footer note
-        $stream[] = 'BT';
-        $stream[] = '/F1 9 Tf';
-        $stream[] = '72 140 Td';
-        $stream[] = '(' . $this->escapePdfText('Dokumen ini dihasilkan oleh sistem AP Operasional.') . ') Tj';
-        $stream[] = 'ET';
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
 
-        $streamContent = implode("\n", $stream) . "\n";
-        $streamLength = strlen($streamContent);
-
-        $objects = [
-            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> >>\nendobj\n",
-            "4 0 obj\n<< /Length {$streamLength} >>\nstream\n{$streamContent}endstream\nendobj\n",
-            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-            "6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n",
-            "7 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>\nendobj\n",
-        ];
-
-        $pdf = "%PDF-1.4\n";
-        $offsets = [];
-
-        foreach ($objects as $object) {
-            $offsets[] = strlen($pdf);
-            $pdf .= $object;
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
         }
 
-        $xrefOffset = strlen($pdf);
-        $pdf .= "xref\n";
-        $pdf .= '0 ' . (count($objects) + 1) . "\n";
-        $pdf .= "0000000000 65535 f \n";
+        $pdf = Pdf::loadView('pdf.surat-tugas-pic', ['suratTugas' => $suratTugas]);
+        $fileName = sprintf('surat-tugas-pic-%d.pdf', $suratTugas->id);
 
-        foreach ($offsets as $offset) {
-            $pdf .= str_pad((string) $offset, 10, '0', STR_PAD_LEFT) . " 00000 n \n";
-        }
-
-        $pdf .= "trailer\n";
-        $pdf .= "<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\n";
-        $pdf .= "startxref\n";
-        $pdf .= $xrefOffset . "\n";
-        $pdf .= "%%EOF\n";
-
-        return $pdf;
-    }
-
-    private function formatCurrency(?int $amount): string
-    {
-        return 'Rp ' . number_format((int) $amount, 0, ',', '.');
-    }
-
-    private function formatInstructor(?string $name, ?int $fee): string
-    {
-        if (! $name) {
-            return '-';
-        }
-
-        return sprintf('%s (%s)', $name, $this->formatCurrency($fee));
+        return $pdf->download($fileName);
     }
 
     private function userCanDownload(User $user, SuratTugasSubmission $submission): bool
@@ -545,14 +418,6 @@ class SuratTugasSubmissionController extends Controller
         return false;
     }
 
-    private function escapePdfText(string $text): string
-    {
-        return strtr($text, [
-            '\\' => '\\\\',
-            '(' => '\\(',
-            ')' => '\\)',
-        ]);
-    }
 
     public function approve(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
     {

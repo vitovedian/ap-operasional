@@ -8,6 +8,7 @@ use App\Http\Controllers\SpjSubmissionController;
 use App\Http\Controllers\InventoryLoanSubmissionController;
 use App\Http\Controllers\SuratTugasSubmissionController;
 use App\Http\Controllers\AtkRequestController;
+use App\Http\Controllers\PdfTestController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -128,6 +129,7 @@ Route::middleware(['auth', 'verified', 'role:Admin|Supervisor'])->group(function
 
 Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
     Route::get('/surat-tugas/{suratTugas}/download', [SuratTugasSubmissionController::class, 'download'])->name('surat-tugas.download');
+    Route::get('/surat-tugas/{suratTugas}/download-pic', [SuratTugasSubmissionController::class, 'downloadPicTemplate'])->name('surat-tugas.download-pic');
 });
 
 Route::middleware(['auth', 'verified', 'role:Manager'])->group(function () {
@@ -149,5 +151,8 @@ Route::middleware(['auth', 'verified', 'role:Manager'])->group(function () {
     Route::post('/spj/{spj}/approve', [SpjSubmissionController::class, 'approve'])->name('spj.approve');
     Route::post('/spj/{spj}/reject', [SpjSubmissionController::class, 'reject'])->name('spj.reject');
 });
+
+// Test route for PDF generation
+Route::get('/test-pdf', [PdfTestController::class, 'test'])->name('test.pdf');
 
 require __DIR__.'/auth.php';
