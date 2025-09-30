@@ -95,4 +95,9 @@ class NomorSuratSubmission extends Model
     {
         return $this->hasOne(SuratTugasSubmission::class, 'nomor_surat_submission_id');
     }
+
+    public function invoice()
+    {
+        return $this->hasOne(InvoiceSubmission::class, 'nomor_surat_submission_id');
+    }
 }

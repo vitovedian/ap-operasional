@@ -14,10 +14,11 @@ function toIDR(n) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
-export default function InvoicesIndex({ invoices }) {
+export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratOptionsFromProps = [] }) {
   const { props } = usePage();
   const { flash } = props;
   const canManage = Boolean(props?.canManageInvoices);
+  const canAssignNomor = Boolean(props?.canAssignNomor);
 
   const initialForm = {
     tanggal_pengajuan: '',
@@ -30,9 +31,27 @@ export default function InvoicesIndex({ invoices }) {
   };
 
   const [openEdit, setOpenEdit] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [openAssign, setOpenAssign] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
+  const [detailedInvoice, setDetailedInvoice] = useState(null);
+  const [assigningInvoice, setAssigningInvoice] = useState(null);
+  const [selectedNomor, setSelectedNomor] = useState('');
+  const [nomorSuratOptions, setNomorSuratOptions] = useState(nomorSuratOptionsFromProps || []);
   const [form, setForm] = useState(initialForm);
   const [opeItems, setOpeItems] = useState([{ deskripsi: '', nominal: '' }]);
+
+  const assignCurrentValue = assigningInvoice?.nomor_surat_submission_id
+    ? String(assigningInvoice.nomor_surat_submission_id)
+    : '';
+  const assignHasChanges = assigningInvoice ? assignCurrentValue !== selectedNomor : false;
+  
+  // Update nomorSuratOptions ketika component mount atau props berubah
+  useEffect(() => {
+    setNomorSuratOptions(nomorSuratOptionsFromProps || []);
+  }, [nomorSuratOptionsFromProps]);
+  
+
 
   const openEditDialog = (inv) => {
     setEditingInvoice(inv);
@@ -51,6 +70,41 @@ export default function InvoicesIndex({ invoices }) {
     setOpeItems([{ deskripsi: '', nominal: inv.total_invoice_ope ? String(inv.total_invoice_ope) : '' }]);
     
     setOpenEdit(true);
+  };
+
+  const openDetailDialog = (inv) => {
+    setDetailedInvoice(inv);
+    setOpenDetail(true);
+  };
+
+  const openAssignDialog = (inv) => {
+    setAssigningInvoice(inv);
+    setSelectedNomor(inv.nomor_surat_submission_id ? String(inv.nomor_surat_submission_id) : '');
+    // Gunakan nomor surat options dari props
+    setNomorSuratOptions(nomorSuratOptionsFromProps);
+    setOpenAssign(true);
+  };
+
+  const submitAssign = (event) => {
+    event.preventDefault();
+    if (!assigningInvoice) return;
+
+    router.post(
+      route('invoices.assign-nomor', assigningInvoice.id),
+      {
+        nomor_surat_submission_id: selectedNomor ? Number(selectedNomor) : null,
+      },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          setOpenAssign(false);
+          setAssigningInvoice(null);
+          setSelectedNomor('');
+          // Refresh data dengan memanggil route saat ini tanpa perlu reload
+          router.visit(window.location.href, { preserveScroll: true });
+        },
+      }
+    );
   };
 
   const toIDRString = (value) => {
@@ -174,11 +228,18 @@ export default function InvoicesIndex({ invoices }) {
                   <Detail label="Pengaju" value={inv.user?.name || '-'} />
                 </div>
                 <div className="mt-3 space-y-1.5">
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={inv.download_url} target="_blank" rel="noopener">
-                      Unduh Bukti
-                    </a>
+                  <Button variant="outline" className="w-full" onClick={() => openDetailDialog(inv)}>
+                    Detail
                   </Button>
+                  {canAssignNomor && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => openAssignDialog(inv)}
+                    >
+                      {inv.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
+                    </Button>
+                  )}
                   {canManage && (
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="secondary" onClick={() => openEditDialog(inv)}>
@@ -225,11 +286,19 @@ export default function InvoicesIndex({ invoices }) {
                     <TableCell>{inv.user?.name || '-'}</TableCell>
                     <TableCell>
                       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
-                        <Button variant="outline" className="sm:flex-1" asChild>
-                          <a href={inv.download_url} target="_blank" rel="noopener">
-                            Unduh
-                          </a>
+                        <Button variant="outline" className="sm:flex-1" onClick={() => openDetailDialog(inv)}>
+                          Detail
                         </Button>
+                        {canAssignNomor && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="sm:flex-1"
+                            onClick={() => openAssignDialog(inv)}
+                          >
+                            {inv.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
+                          </Button>
+                        )}
                         {canManage && (
                           <div className="flex flex-1 gap-1.5">
                             <Button variant="secondary" size="sm" className="flex-1" onClick={() => openEditDialog(inv)}>
@@ -253,7 +322,72 @@ export default function InvoicesIndex({ invoices }) {
         </div>
       </div>
 
-      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+      {/* Dialog untuk detail invoice */}
+      <Dialog
+        open={openDetail}
+        onOpenChange={setOpenDetail}
+        panelClassName="w-full max-w-xl space-y-4 overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl"
+      >
+        <DialogHeader>
+          <DialogTitle>Detail Invoice</DialogTitle>
+        </DialogHeader>
+        {detailedInvoice && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Informasi Dasar
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="ID" value={detailedInvoice.id} />
+                <DetailRow label="Tanggal Pengajuan" value={detailedInvoice.tanggal_pengajuan} />
+                <DetailRow label="Tanggal Invoice" value={detailedInvoice.tanggal_invoice} />
+                <DetailRow label="Kegiatan" value={detailedInvoice.kegiatan} />
+                <DetailRow label="Pengaju" value={detailedInvoice.user?.name || '-'} />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Rincian Keuangan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow label="Tagihan (Rp)" value={`Rp ${toIDR(detailedInvoice.tagihan_invoice)}`} emphasise />
+                <DetailRow label="PPN" value={detailedInvoice.ppn} />
+                <DetailRow label="Total OPE (Rp)" value={`Rp ${toIDR(detailedInvoice.total_invoice_ope)}`} emphasise />
+                <DetailRow label="Total Tagihan (Rp)" value={`Rp ${toIDR(detailedInvoice.total_tagihan)}`} emphasise />
+              </div>
+            </section>
+
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Nomor Surat & Lampiran
+              </h3>
+              <div className="mt-3 space-y-3">
+                <DetailRow label="Nomor Surat" value={detailedInvoice.nomor_surat || '-'} emphasise />
+                <div>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-1">Lampiran</span>
+                  <Button variant="outline" asChild>
+                    <a href={detailedInvoice.download_url} target="_blank" rel="noopener">
+                      Unduh Bukti Surat Konfirmasi
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </section>
+          </div>
+        )}
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
+            Tutup
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      <Dialog
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        panelClassName="w-full max-w-2xl overflow-y-auto sm:max-h-[90vh]"
+      >
         <form onSubmit={submitUpdate}>
           <DialogHeader>
             <DialogTitle>Edit Invoice</DialogTitle>
@@ -370,6 +504,85 @@ export default function InvoicesIndex({ invoices }) {
           </DialogFooter>
         </form>
       </Dialog>
+
+      {canAssignNomor && (
+        <Dialog
+          open={openAssign}
+          onOpenChange={(value) => {
+            setOpenAssign(value);
+            if (!value) {
+              setAssigningInvoice(null);
+              setSelectedNomor('');
+              // Tidak mereset nomorSuratOptions karena datanya dari props
+            }
+          }}
+          panelClassName="w-full max-w-xl space-y-4 overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl"
+        >
+          <form onSubmit={submitAssign} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Hubungkan Nomor Surat</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Nomor saat ini</p>
+                <p className="text-sm font-semibold text-foreground">{assigningInvoice?.nomor_surat || '-'}</p>
+                {assigningInvoice?.nomor_surat && (
+                  <p className="text-xs text-muted-foreground">
+                    ID: {assigningInvoice?.nomor_surat_submission_id}
+                  </p>
+                )}
+              </div>
+
+              <Field label="Nomor Surat Tersedia">
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={selectedNomor}
+                  onChange={(event) => setSelectedNomor(event.target.value)}
+                >
+                  <option value="">Lepas nomor surat</option>
+                  {nomorSuratOptions.map((option) => {
+                    const labelParts = [option.formatted || `Nomor #${option.id}`];
+                    if (option.tujuan_surat) {
+                      labelParts.push(option.tujuan_surat);
+                    }
+                    if (option.tanggal_pengajuan) {
+                      labelParts.push(option.tanggal_pengajuan);
+                    }
+                    return (
+                      <option key={option.id} value={String(option.id)}>
+                        {labelParts.join(' - ')}
+                      </option>
+                    );
+                  })}
+                </select>
+              </Field>
+
+              {!nomorSuratOptions.length && (
+                <p className="text-xs text-muted-foreground">
+                  Saat ini belum ada nomor surat bebas. Anda tetap dapat melepas nomor yang terpasang.
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setOpenAssign(false);
+                  setAssigningInvoice(null);
+                  setSelectedNomor('');
+                  setNomorSuratOptions([]);
+                }}
+              >
+                Batal
+              </Button>
+              <Button type="submit" disabled={!assignHasChanges}>
+                Simpan
+              </Button>
+            </DialogFooter>
+          </form>
+        </Dialog>
+      )}
     </SidebarLayout>
   );
 }
@@ -408,9 +621,18 @@ function sanitizeLabel(label) {
 
 function Detail({ label, value }) {
   return (
-    <div className="text-center text-sm">
-      <span className="block text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
-      <span className="block font-medium">{value}</span>
+    <div className="space-y-1">
+      <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
+      <div className="font-medium">{value}</div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, valueClass = '', emphasise = false }) {
+  return (
+    <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
+      <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className={cn(emphasise ? 'font-semibold text-foreground' : 'text-foreground', valueClass)}>{value}</span>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\InvoiceSubmission;
+use App\Models\NomorSuratSubmission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +23,7 @@ class InvoiceSubmissionController extends Controller
         $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $invoices = InvoiceSubmission::query()
-            ->with('user')
+            ->with(['user', 'nomorSurat'])
             ->when(! $canViewAll, fn ($query) => $query->where('user_id', $user?->id))
             ->orderByDesc('id')
             ->paginate(10)
@@ -40,21 +41,74 @@ class InvoiceSubmissionController extends Controller
                         'id' => $inv->user?->id,
                         'name' => $inv->user?->name,
                     ],
+                    'nomor_surat_submission_id' => $inv->nomor_surat_submission_id,
+                    'nomor_surat' => $inv->nomorSurat?->formatted_nomor_surat,
                     'download_url' => route('invoices.download', $inv->id),
                 ];
             })
             ->withQueryString();
 
+        $canAssignNomor = $user?->hasAnyRole(['Admin', 'Supervisor']) ?? false;
+        
+        $nomorSuratOptions = [];
+        if ($canAssignNomor) {
+            $assignedNomorIds = collect($invoices->items())
+                ->pluck('nomor_surat_submission_id')
+                ->filter()
+                ->unique();
+
+            $nomorSuratOptions = NomorSuratSubmission::query()
+                ->whereDoesntHave('suratTugas')
+                ->whereDoesntHave('invoice')
+                ->orderByDesc('tanggal_pengajuan')
+                ->limit(100)
+                ->get()
+                ->map(fn (NomorSuratSubmission $nomor) => [
+                    'id' => $nomor->id,
+                    'formatted' => $nomor->formatted_nomor_surat,
+                    'tujuan_surat' => $nomor->tujuan_surat,
+                    'tanggal_pengajuan' => optional($nomor->tanggal_pengajuan)->format('Y-m-d'),
+                    'nama_klien' => $nomor->nama_klien,
+                ])
+                ->values();
+        }
+
         return Inertia::render('Invoices/Index', [
             'invoices' => $invoices,
             'canManageInvoices' => $user?->hasRole('Admin') ?? false,
             'canViewAllInvoices' => $canViewAll,
+            'canAssignNomor' => $canAssignNomor,
+            'nomorSuratOptions' => $nomorSuratOptions,
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Invoices/Create');
+        $user = Auth::user();
+        $canAssignNomor = $user?->hasAnyRole(['Admin', 'Supervisor']) ?? false;
+        
+        $nomorSuratOptions = [];
+        if ($canAssignNomor) {
+            $nomorSuratOptions = NomorSuratSubmission::query()
+                ->whereDoesntHave('suratTugas') // tidak terpakai di surat tugas
+                ->whereDoesntHave('invoice') // tidak terpakai di invoice
+                ->orderByDesc('tanggal_pengajuan')
+                ->limit(100)
+                ->get()
+                ->map(fn (NomorSuratSubmission $nomor) => [
+                    'id' => $nomor->id,
+                    'formatted' => $nomor->formatted_nomor_surat,
+                    'tujuan_surat' => $nomor->tujuan_surat,
+                    'tanggal_pengajuan' => optional($nomor->tanggal_pengajuan)->format('Y-m-d'),
+                    'nama_klien' => $nomor->nama_klien,
+                ])
+                ->values();
+        }
+
+        return Inertia::render('Invoices/Create', [
+            'canAssignNomor' => $canAssignNomor,
+            'nomorSuratOptions' => $nomorSuratOptions,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -145,6 +199,8 @@ class InvoiceSubmissionController extends Controller
         return back()->with('success', 'Pengajuan Invoice dihapus');
     }
 
+
+
     public function download(Request $request, InvoiceSubmission $invoice)
     {
         $user = $request->user();
@@ -161,4 +217,39 @@ class InvoiceSubmissionController extends Controller
 
         return \Storage::download($path);
     }
+
+    public function assignNomorSurat(Request $request, InvoiceSubmission $invoice): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Supervisor'])) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'nomor_surat_submission_id' => [
+                'nullable',
+                'integer',
+                'exists:nomor_surat_submissions,id',
+            ],
+        ]);
+
+        $nomorSuratId = $validated['nomor_surat_submission_id'] ?? null;
+
+        if ($nomorSuratId) {
+            InvoiceSubmission::where('nomor_surat_submission_id', $nomorSuratId)
+                ->where('id', '!=', $invoice->id)
+                ->update(['nomor_surat_submission_id' => null]);
+        }
+
+        $invoice->nomor_surat_submission_id = $nomorSuratId;
+        $invoice->save();
+
+        return back()->with(
+            'success',
+            $nomorSuratId ? 'Nomor surat berhasil dihubungkan ke invoice.' : 'Nomor surat dilepas dari invoice.'
+        );
+    }
+
+
 }

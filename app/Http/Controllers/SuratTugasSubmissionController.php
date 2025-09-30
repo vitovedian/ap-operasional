@@ -118,12 +118,8 @@ class SuratTugasSubmissionController extends Controller
                 ->unique();
 
             $nomorSuratOptions = NomorSuratSubmission::query()
-                ->where(function ($query) use ($assignedNomorIds) {
-                    $query->whereDoesntHave('suratTugas');
-                    if ($assignedNomorIds->isNotEmpty()) {
-                        $query->orWhereIn('id', $assignedNomorIds);
-                    }
-                })
+                ->whereDoesntHave('suratTugas')
+                ->whereDoesntHave('invoice')
                 ->orderByDesc('tanggal_pengajuan')
                 ->limit(100)
                 ->get()

@@ -56,4 +56,8 @@ function DialogFooter({ className, ...props }) {
   return <div className={cn('mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)} {...props} />;
 }
 
-export { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter };
+function DialogContent({ className, ...props }) {
+  return <div className={cn('w-full max-w-lg rounded-xl border border-border bg-background p-6 shadow-lg', className)} {...props} />;
+}
+
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter };

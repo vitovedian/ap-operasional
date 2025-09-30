@@ -19,10 +19,16 @@ class InvoiceSubmission extends Model
         'total_invoice_ope',
         'total_tagihan',
         'bukti_surat_konfirmasi',
+        'nomor_surat_submission_id',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function nomorSurat()
+    {
+        return $this->belongsTo(NomorSuratSubmission::class, 'nomor_surat_submission_id');
     }
 }

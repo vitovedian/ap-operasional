@@ -125,6 +125,7 @@ Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'role:Admin|Supervisor'])->group(function () {
     Route::post('/surat-tugas/{suratTugas}/assign-nomor-surat', [SuratTugasSubmissionController::class, 'assignNomorSurat'])->name('surat-tugas.assign-nomor');
+    Route::post('/invoices/{invoice}/assign-nomor-surat', [InvoiceSubmissionController::class, 'assignNomorSurat'])->name('invoices.assign-nomor');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
