@@ -87,6 +87,13 @@ class SuratTugasSubmissionController extends Controller
                         'tanggal_pengajuan' => optional($submission->nomorSurat->tanggal_pengajuan)->format('Y-m-d'),
                     ] : null,
                     'can_download_pdf' => $user ? $this->userCanDownload($user, $submission) : false,
+                    'download_urls' => $user && $this->userCanDownload($user, $submission) ? [
+                        'utama' => route('surat-tugas.download', $submission->id),
+                        'pic' => route('surat-tugas.download-pic', $submission->id),
+                        'trainer' => route('surat-tugas.download-trainer', $submission->id),
+                        'pendamping' => route('surat-tugas.download-pendamping', $submission->id),
+                        'instruktur' => route('surat-tugas.download-instruktur', $submission->id),
+                    ] : null,
                     'can_self_edit' => $user
                         && $user->hasAnyRole(['Karyawan', 'PIC'])
                         && $submission->user_id === $user->id
@@ -260,6 +267,13 @@ class SuratTugasSubmissionController extends Controller
                     && $suratTugas->user_id === $user?->id
                     && ($suratTugas->status ?? 'pending') === 'rejected')),
             'canDownloadPdf' => $user ? $this->userCanDownload($user, $suratTugas) : false,
+            'downloadUrls' => $user && $this->userCanDownload($user, $suratTugas) ? [
+                'utama' => route('surat-tugas.download', $suratTugas->id),
+                'pic' => route('surat-tugas.download-pic', $suratTugas->id),
+                'trainer' => route('surat-tugas.download-trainer', $suratTugas->id),
+                'pendamping' => route('surat-tugas.download-pendamping', $suratTugas->id),
+                'instruktur' => route('surat-tugas.download-instruktur', $suratTugas->id),
+            ] : null,
         ]);
     }
 
@@ -400,6 +414,66 @@ class SuratTugasSubmissionController extends Controller
 
         $pdf = Pdf::loadView('pdf.surat-tugas-pic', ['suratTugas' => $suratTugas]);
         $fileName = sprintf('surat-tugas-pic-%d.pdf', $suratTugas->id);
+
+        return $pdf->download($fileName);
+    }
+
+    public function downloadTrainerTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-trainer', ['suratTugas' => $suratTugas]);
+        $fileName = sprintf('surat-tugas-trainer-%d.pdf', $suratTugas->id);
+
+        return $pdf->download($fileName);
+    }
+
+    public function downloadPendampingTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-pendamping', ['suratTugas' => $suratTugas]);
+        $fileName = sprintf('surat-tugas-pendamping-%d.pdf', $suratTugas->id);
+
+        return $pdf->download($fileName);
+    }
+
+    public function downloadInstrukturTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-instruktur', ['suratTugas' => $suratTugas]);
+        $fileName = sprintf('surat-tugas-instruktur-%d.pdf', $suratTugas->id);
 
         return $pdf->download($fileName);
     }

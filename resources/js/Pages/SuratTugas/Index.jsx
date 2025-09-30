@@ -8,6 +8,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import PDFDropdown from '@/Components/PDFDropdown';
 import { cn } from '@/lib/utils';
 
 function toIDR(n) {
@@ -89,27 +90,27 @@ export default function SuratTugasIndex({
       nama_pendampingan: submission.nama_pendampingan || '',
       fee_pendampingan: submission.fee_pendampingan ? String(submission.fee_pendampingan) : '',
     });
-    
+
     // Initialize instructors based on submission data
     const instruktors = [];
     if (submission.instruktor_1_nama) {
-      instruktors.push({ 
-        nama: submission.instruktor_1_nama || '', 
-        fee: submission.instruktor_1_fee ? String(submission.instruktor_1_fee) : '' 
+      instruktors.push({
+        nama: submission.instruktor_1_nama || '',
+        fee: submission.instruktor_1_fee ? String(submission.instruktor_1_fee) : ''
       });
     }
     if (submission.instruktor_2_nama) {
-      instruktors.push({ 
-        nama: submission.instruktor_2_nama || '', 
-        fee: submission.instruktor_2_fee ? String(submission.instruktor_2_fee) : '' 
+      instruktors.push({
+        nama: submission.instruktor_2_nama || '',
+        fee: submission.instruktor_2_fee ? String(submission.instruktor_2_fee) : ''
       });
     }
-    
+
     // If no instructors, add a default one
     if (instruktors.length === 0) {
       instruktors.push({ nama: '', fee: '' });
     }
-    
+
     setInstructors(instruktors);
     setOpenEdit(true);
   };
@@ -243,7 +244,13 @@ export default function SuratTugasIndex({
       total_fee_instruktur: Number(item.total_fee_instruktur || 0),
       total_fee: Number(item.total_fee || 0),
       instruktors,
-      download_url: route('surat-tugas.download', item.id),
+      download_urls: {
+        utama: route('surat-tugas.download', item.id),
+        pic: route('surat-tugas.download-pic', item.id),
+        trainer: route('surat-tugas.download-trainer', item.id),
+        pendamping: route('surat-tugas.download-pendamping', item.id),
+        instruktur: route('surat-tugas.download-instruktur', item.id),
+      },
       can_download_pdf: Boolean(item.can_download_pdf),
     });
     setOpenDetail(true);
@@ -387,18 +394,16 @@ export default function SuratTugasIndex({
                       <TableCell>
                         <div className="flex flex-col items-stretch gap-1.5 text-right">
                           {item.can_download_pdf && (
-                            <>
-                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
-                                <a href={route('surat-tugas.download', item.id)} target="_blank" rel="noopener noreferrer">
-                                  Print PDF
-                                </a>
-                              </Button>
-                              <Button variant="outline" size="sm" className="justify-center text-xs" asChild>
-                                <a href={route('surat-tugas.download-pic', item.id)} target="_blank" rel="noopener noreferrer">
-                                  Print PIC PDF
-                                </a>
-                              </Button>
-                            </>
+                            <PDFDropdown downloadUrls={{
+                              utama: route('surat-tugas.download', item.id),
+                              pic: route('surat-tugas.download-pic', item.id),
+                              trainer: route('surat-tugas.download-trainer', item.id),
+                              pendamping: route('surat-tugas.download-pendamping', item.id),
+                              instruktur: route('surat-tugas.download-instruktur', item.id),
+                            }} 
+                            suratTugasId={item.id} 
+                            size="sm"
+                            className="justify-center text-xs" />
                           )}
                           <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
                             Detail
@@ -527,7 +532,7 @@ export default function SuratTugasIndex({
                 <Label className="text-sm font-medium text-muted-foreground">Total Fee (Rp)</Label>
                 <div className="flex h-10 items-center rounded-md border border-input bg-muted px-3 text-sm font-semibold text-foreground">
                   Rp {toIDRString(
-                    parseInt(form.fee_pendampingan || '0') + 
+                    parseInt(form.fee_pendampingan || '0') +
                     instructors.reduce((acc, item) => acc + parseInt(item.fee || '0', 10), 0)
                   )}
                 </div>
@@ -709,18 +714,10 @@ export default function SuratTugasIndex({
         )}
         <DialogFooter>
           {detail?.can_download_pdf && (
-            <>
-              <Button variant="outline" asChild>
-                <a href={detail.download_url} target="_blank" rel="noopener noreferrer">
-                  Unduh PDF
-                </a>
-              </Button>
-              <Button variant="outline" asChild>
-                <a href={route('surat-tugas.download-pic', detail.id)} target="_blank" rel="noopener noreferrer">
-                  Unduh PIC PDF
-                </a>
-              </Button>
-            </>
+            <PDFDropdown
+              downloadUrls={detail.download_urls}
+              suratTugasId={detail.id}
+            />
           )}
           <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
             Tutup
@@ -775,6 +772,8 @@ function Pagination({ links, className }) {
     </div>
   );
 }
+
+
 
 function sanitizeLabel(label) {
   return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');

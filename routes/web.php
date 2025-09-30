@@ -130,6 +130,9 @@ Route::middleware(['auth', 'verified', 'role:Admin|Supervisor'])->group(function
 Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
     Route::get('/surat-tugas/{suratTugas}/download', [SuratTugasSubmissionController::class, 'download'])->name('surat-tugas.download');
     Route::get('/surat-tugas/{suratTugas}/download-pic', [SuratTugasSubmissionController::class, 'downloadPicTemplate'])->name('surat-tugas.download-pic');
+    Route::get('/surat-tugas/{suratTugas}/download-trainer', [SuratTugasSubmissionController::class, 'downloadTrainerTemplate'])->name('surat-tugas.download-trainer');
+    Route::get('/surat-tugas/{suratTugas}/download-pendamping', [SuratTugasSubmissionController::class, 'downloadPendampingTemplate'])->name('surat-tugas.download-pendamping');
+    Route::get('/surat-tugas/{suratTugas}/download-instruktur', [SuratTugasSubmissionController::class, 'downloadInstrukturTemplate'])->name('surat-tugas.download-instruktur');
 });
 
 Route::middleware(['auth', 'verified', 'role:Manager'])->group(function () {

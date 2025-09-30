@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Tugas PIC - {{ $suratTugas->pic ? $suratTugas->pic->name }}</title>
+    <title>Surat Tugas Pendamping - {{ $suratTugas->nama_pendampingan ?? '{Nama Pendamping}' }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -63,18 +63,15 @@
     </div>
 
     <div class="greeting">
-        Ykh {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
-        Assalamu’alaikum Wr.Wb.
+        Ykh {{ $suratTugas->nama_pendampingan ?? '{Nama Pendamping}' }}<br>
+        Assalamu'alaikum Wr.Wb.
     </div>
 
     <div class="content">
         <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
-        maka kami menugaskan
-        {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}
-        sebagai PIC</p>
+        secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }} maka kami menugaskan {Ibu/Bapak} sebagai {Pendamping}.</p>
 
         <p>Dengan agenda acara kegiatan:</p>
 
@@ -82,7 +79,7 @@
             <thead>
                 <tr>
                     <th>No</th>
-                    <th>Kegiatan</th>
+                    <th>Tempat & Kegiatan</th>
                     <th>Tanggal</th>
                     <th>Bank</th>
                 </tr>
@@ -97,7 +94,7 @@
             </tbody>
         </table>
 
-        <p>Untuk itu Sdra ditugaskan untuk menjadi PIC acara tersebut.</p>
+        <p>Untuk itu {Ibu/Bapak} ditugaskan untuk menjadi Pendamping untuk acara tersebut.</p>
 
         <p>Demikian surat tugas ini kami sampaikan agar dilaksanakan dengan penuh tanggung jawab dan atas kerjasamanya kami ucapkan terima kasih.</p>
 

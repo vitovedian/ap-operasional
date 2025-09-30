@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import PDFDropdown from '@/Components/PDFDropdown';
 import { cn } from '@/lib/utils';
 
 const formatIDR = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
@@ -11,6 +12,7 @@ export default function SuratTugasShow({
   canModerate = false,
   canEdit = false,
   canDownloadPdf = false,
+  downloadUrls = null,
 }) {
   if (!submission) return null;
 
@@ -78,12 +80,12 @@ export default function SuratTugasShow({
               <Button asChild className="w-full" variant="outline">
                 <Link href={route('surat-tugas.index')}>Kembali ke Daftar</Link>
               </Button>
-              {canDownloadPdf && (
-                <Button asChild className="w-full">
-                  <a href={route('surat-tugas.download', submission.id)} target="_blank" rel="noopener noreferrer">
-                    Unduh PDF Placeholder
-                  </a>
-                </Button>
+              {canDownloadPdf && downloadUrls && (
+                <PDFDropdown 
+                  downloadUrls={downloadUrls} 
+                  suratTugasId={submission.id} 
+                  className="w-full" 
+                />
               )}
               {canEdit && (
                 <p className="text-xs text-muted-foreground">

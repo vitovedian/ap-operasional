@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Tugas PIC - {{ $suratTugas->pic ? $suratTugas->pic->name }}</title>
+    <title>Surat Tugas Instruktur - {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Instruktur}' }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -59,54 +59,79 @@
 </head>
 <body>
     <div class="date-place">
-        Jakarta, {{ optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '{Tanggal berformat}' }}
+        Tanggal: {{ optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '{Tanggal Pengajuan}' }}<br>
+        Nomor Surat: {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->formatted_nomor_surat : '{Nomor Surat}' }}
     </div>
 
     <div class="greeting">
-        Ykh {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
-        Assalamu’alaikum Wr.Wb.
+        Kepada Yth,<br>
+        {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}<br>
+        Assalamu'alaikum Wr.Wb.
     </div>
 
     <div class="content">
         <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
-        <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
-        maka kami menugaskan
-        {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}
-        sebagai PIC</p>
+        <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }} 
+        maka kami menugaskan {Ibu/Bapak} sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}</p>
 
-        <p>Dengan agenda acara kegiatan:</p>
+        <p>Dengan jadwal sebagai berikut :</p>
 
         <table>
             <thead>
                 <tr>
-                    <th>No</th>
-                    <th>Kegiatan</th>
-                    <th>Tanggal</th>
-                    <th>Bank</th>
+                    <th>Tanggal Kegiatan</th>
+                    <th>Nama Kegiatan</th>
+                    <th>Fee</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>1</td>
-                    <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }}</td>
                     <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
-                    <td>{{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}</td>
+                    <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }}</td>
+                    <td>Rp {{ number_format($suratTugas->instruktor_1_fee ?? 0, 0, ',', '.') }} x {banyak jpl}</td>
                 </tr>
             </tbody>
         </table>
+        
+        <p><strong>Total: Rp {{ number_format(($suratTugas->instruktor_1_fee ?? 0) * ($suratTugas->jumlah_jpl ?? 1), 0, ',', '.') }}</strong></p>
 
-        <p>Untuk itu Sdra ditugaskan untuk menjadi PIC acara tersebut.</p>
+        <p><strong>Dengan Tugas sebagai berikut :</strong></p>
+        <ol>
+            <li>Mengajar peserta sesuai Rundown yang di berikan</li>
+            <li>Menjadikan komunikasi 2 arah dengan peserta</li>
+            <li>Memberikan RolePlay soal dan pembahasan</li>
+        </ol>
 
-        <p>Demikian surat tugas ini kami sampaikan agar dilaksanakan dengan penuh tanggung jawab dan atas kerjasamanya kami ucapkan terima kasih.</p>
+        <p>Terima kasih atas kerja sama dan supporting {Ibu/Bapak} kepada Synergy Partner Prima semoga terjalin komunikasi, kerja sama yang harmonis dan berdampak.</p>
 
         <p class="closing">Wassalamu'alaikum Wr.Wb.</p>
     </div>
 
     <table class="signature-table">
         <tr>
+            <td>Hormat Kami,</td>
+        </tr>
+        <tr>
+            <td>Synergy Partner Prima</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
             <td>Manager,</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>(..................)</td>
+        </tr>
+        <tr>
+            <td>PIC,</td>
         </tr>
         <tr>
             <td>&nbsp;</td>
