@@ -637,7 +637,7 @@ export default function SuratTugasIndex({
       <Dialog
         open={openDetail}
         onOpenChange={setOpenDetail}
-        panelClassName="w-full max-w-xl space-y-4 overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl"
+        panelClassName="w-full max-w-xl space-y-4 overflow-visible sm:max-h-[90vh] sm:max-w-2xl"
       >
         <DialogHeader>
           <DialogTitle>Detail Surat Tugas</DialogTitle>

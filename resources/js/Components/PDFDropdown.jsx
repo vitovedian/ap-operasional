@@ -64,7 +64,10 @@ export default function PDFDropdown({ downloadUrls, suratTugasId, size = "defaul
       </Button>
       
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-56 origin-top-right rounded-md border border-border bg-background shadow-lg">
+        <div 
+          className="absolute z-[100] mt-1 w-56 origin-top-right rounded-md border border-border bg-background shadow-lg"
+          style={{ overflow: 'visible' }}
+        >
           <div className="py-1">
             {validOptions.map((option) => (
               <a
