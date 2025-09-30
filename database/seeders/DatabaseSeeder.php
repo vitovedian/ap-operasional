@@ -193,7 +193,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pengajuan' => now()->subDays(7)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(3)->toDateString(),
                 'kegiatan' => 'Pendampingan Implementasi Sistem',
-                'nama_pendampingan' => 'Implementasi ERP',
+                'nama_pendampingan' => 'Ahmad Fauzi',
                 'fee_pendampingan' => 0,
                 'instruktors' => [
                     ['nama' => 'Andi Saputra', 'fee' => 1_500_000],
@@ -211,7 +211,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pengajuan' => now()->subDays(4)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(7)->toDateString(),
                 'kegiatan' => 'Pelatihan Softskill Tim',
-                'nama_pendampingan' => 'Coaching Teamwork',
+                'nama_pendampingan' => 'Siti Rahayu',
                 'fee_pendampingan' => 500_000,
                 'instruktors' => [
                     ['nama' => 'Rudi Hartono', 'fee' => 900_000],
@@ -228,7 +228,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pengajuan' => now()->subDays(5)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(5)->toDateString(),
                 'kegiatan' => 'Onboarding Mitra Baru',
-                'nama_pendampingan' => 'Pendampingan Keuangan Mitra',
+                'nama_pendampingan' => 'Budi Santoso',
                 'fee_pendampingan' => 350_000,
                 'instruktors' => [
                     ['nama' => 'Siti Hapsari', 'fee' => 600_000],
@@ -245,7 +245,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pengajuan' => now()->subDays(6)->toDateString(),
                 'tanggal_kegiatan' => now()->addDays(6)->toDateString(),
                 'kegiatan' => 'Workshop Onboarding Mitra',
-                'nama_pendampingan' => 'Onboarding Mitra Wilayah Barat',
+                'nama_pendampingan' => 'Dewi Kartika',
                 'fee_pendampingan' => 350_000,
                 'instruktors' => [
                     ['nama' => 'Siti Hapsari', 'fee' => 600_000],
@@ -304,7 +304,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_kegiatan' => now()->addDays(10)->toDateString(),
                 'durasi_nilai' => 3,
                 'durasi_satuan' => 'hari',
-                'nama_pendampingan' => 'Implementasi ERP',
+                'nama_pendampingan' => 'Rizki Pratama',
                 'jenis_kegiatan' => 'offline',
                 'status' => 'pending',
                 'form_serah_terima_path' => 'spj/form-serah-terima/dummy.pdf',
@@ -316,7 +316,7 @@ class DatabaseSeeder extends Seeder
                 'tanggal_kegiatan' => now()->subDays(6)->toDateString(),
                 'durasi_nilai' => 2,
                 'durasi_satuan' => 'hari',
-                'nama_pendampingan' => 'Coaching Teamwork',
+                'nama_pendampingan' => 'Ani Lestari',
                 'jenis_kegiatan' => 'online',
                 'status' => 'approved',
                 'processed_by' => 'manager@example.com',

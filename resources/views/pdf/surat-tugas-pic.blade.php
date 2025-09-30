@@ -2,8 +2,12 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Tugas PIC - {{ $suratTugas->pic ? $suratTugas->pic->name }}</title>
+    <title>Surat Tugas PIC - {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}</title>
     <style>
+        @page {
+            margin: 20px;
+            size: A4;
+        }
         body {
             font-family: Arial, sans-serif;
             margin: 40px;

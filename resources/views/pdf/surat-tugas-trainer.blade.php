@@ -19,13 +19,12 @@
             margin-bottom: 10px;
         }
         .date-place {
-            text-align: right;
+            text-align: left;
             font-size: 11px;
             margin-bottom: 10px;
         }
         .greeting {
             margin: 8px 0;
-            font-weight: bold;
         }
         .content {
             margin: 10px 0;
@@ -70,23 +69,22 @@
 </head>
 <body>
     <div class="date-place">
-        Tanggal: {{ optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '{Tanggal Pengajuan}' }}<br>
-        Nomor Surat: {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->formatted_nomor_surat : '{Nomor Surat}' }}
+        Tanggal&#9;&#9;: {{ optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '{Tanggal Pengajuan}' }}<br>
+        No&#9;&#9;: {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->formatted_nomor_surat : '{Nomor Surat}' }}
     </div>
 
     <div class="greeting">
-        Kepada Yth,<br>
+        Kepada Yth : <br>
         {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}<br>
-        Assalamu'alaikum Wr.Wb.
     </div>
 
     <div class="content">
-        <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
+        <p>Assalamu'alaikum Wr.Wb.
+        Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        maka kami menugaskan {Ibu/Bapak} sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}</p>
-
-        <p>Dengan jadwal sebagai berikut :</p>
+        maka kami menugaskan {Ibu/Bapak} sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
+        Dengan jadwal sebagai berikut :</p>
 
         <table>
             <thead>
@@ -117,12 +115,12 @@
         <p>Terima kasih atas kerja sama dan supporting {Ibu/Bapak} kepada Synergy Partner Prima semoga terjalin komunikasi, kerja sama yang harmonis dan berdampak.</p>
 
         <p class="closing">Wassalamu'alaikum Wr.Wb.</p>
-        <p class="closing">Hormat Kami,</p>
-        <p><b>Synergy Partner Prima</b></p>
+        <p class="closing">Hormat Kami,<Br>
+        <b>Synergy Partner Prima</b></p>
     </div>
 
     <div class="signature-section">
-    <table class="signature-table">
+        <table class="signature-table">
             <tr>
                 <td>Manager</td>
                 <td>PIC</td>
@@ -131,7 +129,7 @@
                 <td style="padding-top: 40px;">(..................)</td>
                 <td style="padding-top: 40px;">(..................)</td>
             </tr>
-    </table>
+        </table>
     </div>
 
     <div class="footer">

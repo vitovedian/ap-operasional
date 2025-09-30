@@ -46,7 +46,7 @@ class SuratTugasAssignNomorTest extends TestCase
             'kegiatan' => 'Pelatihan Internal',
             'tanggal_kegiatan' => '2024-09-10',
             'pic_id' => $pic->id,
-            'nama_pendampingan' => 'Pendampingan Umum',
+            'nama_pendampingan' => 'Rahmatullah',
             'fee_pendampingan' => 250000,
             'instruktor_1_nama' => 'Instruktur A',
             'instruktor_1_fee' => 500000,

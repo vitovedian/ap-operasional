@@ -245,11 +245,11 @@ export default function SuratTugasIndex({
       total_fee: Number(item.total_fee || 0),
       instruktors,
       download_urls: {
-        utama: route('surat-tugas.download', item.id),
+        // utama: route('surat-tugas.download', item.id),
         pic: route('surat-tugas.download-pic', item.id),
         trainer: route('surat-tugas.download-trainer', item.id),
         pendamping: route('surat-tugas.download-pendamping', item.id),
-        instruktur: route('surat-tugas.download-instruktur', item.id),
+        // instruktur: route('surat-tugas.download-instruktur', item.id),
       },
       can_download_pdf: Boolean(item.can_download_pdf),
     });
@@ -393,18 +393,7 @@ export default function SuratTugasIndex({
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col items-stretch gap-1.5 text-right">
-                          {item.can_download_pdf && (
-                            <PDFDropdown downloadUrls={{
-                              utama: route('surat-tugas.download', item.id),
-                              pic: route('surat-tugas.download-pic', item.id),
-                              trainer: route('surat-tugas.download-trainer', item.id),
-                              pendamping: route('surat-tugas.download-pendamping', item.id),
-                              instruktur: route('surat-tugas.download-instruktur', item.id),
-                            }} 
-                            suratTugasId={item.id} 
-                            size="sm"
-                            className="justify-center text-xs" />
-                          )}
+
                           <Button variant="outline" size="sm" className="justify-center text-xs" onClick={() => handleDetail(item)}>
                             Detail
                           </Button>

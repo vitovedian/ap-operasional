@@ -53,7 +53,7 @@ class SuratTugasPdfDownloadTest extends TestCase
             'kegiatan' => 'Workshop Pengembangan SDM',
             'tanggal_kegiatan' => '2024-10-02',
             'pic_id' => $pic->id,
-            'nama_pendampingan' => 'Pendampingan SDM',
+            'nama_pendampingan' => 'Ahmad Hidayat',
             'fee_pendampingan' => 350000,
             'instruktor_1_nama' => 'Instruktur Utama',
             'instruktor_1_fee' => 750000,
@@ -74,7 +74,7 @@ class SuratTugasPdfDownloadTest extends TestCase
         $this->assertStringContainsString('SURAT TUGAS', $contents);
         $this->assertStringContainsString($formattedNomor, $contents);
         $this->assertStringContainsString('Workshop Pengembangan SDM', $contents);
-        $this->assertStringContainsString('Pendampingan SDM', $contents);
+        $this->assertStringContainsString('Ahmad Hidayat', $contents);
     }
 
     public function test_pic_can_download_when_submission_is_approved_and_assigned(): void
@@ -99,7 +99,7 @@ class SuratTugasPdfDownloadTest extends TestCase
             'kegiatan' => 'Coaching Team Building',
             'tanggal_kegiatan' => '2024-09-25',
             'pic_id' => $pic->id,
-            'nama_pendampingan' => 'Pendampingan Team Building',
+            'nama_pendampingan' => 'Sari Wijayanti',
             'fee_pendampingan' => 400000,
             'instruktor_1_nama' => 'Instruktur Senior',
             'instruktor_1_fee' => 600000,
@@ -128,7 +128,7 @@ class SuratTugasPdfDownloadTest extends TestCase
             'kegiatan' => 'Workshop Leadership',
             'tanggal_kegiatan' => '2024-09-30',
             'pic_id' => $pic->id,
-            'nama_pendampingan' => 'Pendampingan Leadership',
+            'nama_pendampingan' => 'Bambang Kurniawan',
             'fee_pendampingan' => 500000,
             'instruktor_1_nama' => 'Instruktur 1',
             'instruktor_1_fee' => 700000,
@@ -159,7 +159,7 @@ class SuratTugasPdfDownloadTest extends TestCase
             'kegiatan' => 'Pelatihan Softskill',
             'tanggal_kegiatan' => '2024-09-28',
             'pic_id' => $otherPic->id,
-            'nama_pendampingan' => 'Pendampingan Softskill',
+            'nama_pendampingan' => 'Dina Kusuma',
             'fee_pendampingan' => 450000,
             'instruktor_1_nama' => 'Instruktur A',
             'instruktor_1_fee' => 500000,
