@@ -20,6 +20,19 @@ class InvoiceSubmission extends Model
         'total_tagihan',
         'bukti_surat_konfirmasi',
         'nomor_surat_submission_id',
+        'status',
+        'manager_notes',
+        'approved_by',
+        'approved_at',
+    ];
+
+    protected $casts = [
+        'tanggal_pengajuan' => 'date',
+        'tanggal_invoice' => 'date',
+        'tagihan_invoice' => 'decimal:2',
+        'total_invoice_ope' => 'decimal:2',
+        'total_tagihan' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     public function user()
@@ -30,5 +43,10 @@ class InvoiceSubmission extends Model
     public function nomorSurat()
     {
         return $this->belongsTo(NomorSuratSubmission::class, 'nomor_surat_submission_id');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

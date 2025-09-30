@@ -139,6 +139,8 @@ Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->gr
 Route::middleware(['auth', 'verified', 'role:Manager'])->group(function () {
     Route::post('/surat-tugas/{suratTugas}/approve', [SuratTugasSubmissionController::class, 'approve'])->name('surat-tugas.approve');
     Route::post('/surat-tugas/{suratTugas}/reject', [SuratTugasSubmissionController::class, 'reject'])->name('surat-tugas.reject');
+    Route::post('/invoices/{invoice}/approve', [InvoiceSubmissionController::class, 'approve'])->name('invoices.approve');
+    Route::post('/invoices/{invoice}/reject', [InvoiceSubmissionController::class, 'reject'])->name('invoices.reject');
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin'])->group(function () {

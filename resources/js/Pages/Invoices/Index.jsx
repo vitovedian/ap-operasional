@@ -45,6 +45,8 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
     ? String(assigningInvoice.nomor_surat_submission_id)
     : '';
   const assignHasChanges = assigningInvoice ? assignCurrentValue !== selectedNomor : false;
+  const actionGroupClass = 'flex flex-wrap justify-end gap-2';
+  const actionButtonClass = 'min-w-[112px] justify-center text-xs';
   
   // Update nomorSuratOptions ketika component mount atau props berubah
   useEffect(() => {
@@ -528,7 +530,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 <p className="text-sm font-semibold text-foreground">{assigningInvoice?.nomor_surat || '-'}</p>
                 {assigningInvoice?.nomor_surat && (
                   <p className="text-xs text-muted-foreground">
-                    ID: {assigningInvoice?.nomor_surat_submission_id}
+                    Tujuan: {assigningInvoice?.kegiatan}
                   </p>
                 )}
               </div>

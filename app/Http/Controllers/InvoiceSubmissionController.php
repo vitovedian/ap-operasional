@@ -23,15 +23,15 @@ class InvoiceSubmissionController extends Controller
         $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $invoices = InvoiceSubmission::query()
-            ->with(['user', 'nomorSurat'])
+            ->with(['user', 'nomorSurat', 'approvedBy'])
             ->when(! $canViewAll, fn ($query) => $query->where('user_id', $user?->id))
             ->orderByDesc('id')
             ->paginate(10)
             ->through(function (InvoiceSubmission $inv) {
                 return [
                     'id' => $inv->id,
-                    'tanggal_pengajuan' => $inv->tanggal_pengajuan,
-                    'tanggal_invoice' => $inv->tanggal_invoice,
+                    'tanggal_pengajuan' => $inv->tanggal_pengajuan ? $inv->tanggal_pengajuan->format('Y-m-d') : null,
+                    'tanggal_invoice' => $inv->tanggal_invoice ? $inv->tanggal_invoice->format('Y-m-d') : null,
                     'kegiatan' => $inv->kegiatan,
                     'tagihan_invoice' => (int) $inv->tagihan_invoice,
                     'ppn' => $inv->ppn,
@@ -43,6 +43,10 @@ class InvoiceSubmissionController extends Controller
                     ],
                     'nomor_surat_submission_id' => $inv->nomor_surat_submission_id,
                     'nomor_surat' => $inv->nomorSurat?->formatted_nomor_surat,
+                    'status' => $inv->status,
+                    'manager_notes' => $inv->manager_notes,
+                    'approved_by' => $inv->approvedBy?->name,
+                    'approved_at' => $inv->approved_at?->format('Y-m-d H:i'),
                     'download_url' => route('invoices.download', $inv->id),
                 ];
             })
@@ -82,9 +86,9 @@ class InvoiceSubmissionController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        $user = Auth::user();
+        $user = $request->user();
         $canAssignNomor = $user?->hasAnyRole(['Admin', 'Supervisor']) ?? false;
         
         $nomorSuratOptions = [];
@@ -249,6 +253,50 @@ class InvoiceSubmissionController extends Controller
             'success',
             $nomorSuratId ? 'Nomor surat berhasil dihubungkan ke invoice.' : 'Nomor surat dilepas dari invoice.'
         );
+    }
+
+    public function approve(Request $request, InvoiceSubmission $invoice): \Illuminate\Http\RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user?->hasRole('Manager')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'manager_notes' => 'nullable|string|max:500',
+        ]);
+
+        $invoice->update([
+            'status' => 'approved',
+            'manager_notes' => $validated['manager_notes'] ?? null,
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Invoice berhasil disetujui.');
+    }
+
+    public function reject(Request $request, InvoiceSubmission $invoice): \Illuminate\Http\RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user?->hasRole('Manager')) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'manager_notes' => 'required|string|max:500',
+        ]);
+
+        $invoice->update([
+            'status' => 'rejected',
+            'manager_notes' => $validated['manager_notes'],
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Invoice berhasil ditolak.');
     }
 
 
