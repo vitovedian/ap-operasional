@@ -4,55 +4,66 @@
     <meta charset="utf-8">
     <title>Surat Tugas Trainer - {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}</title>
     <style>
+        @page {
+            margin: 20px;
+            size: A4;
+        }
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
-            line-height: 1.6;
+            margin: 20px;
+            line-height: 1.4;
+            font-size: 12px;
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
         }
         .date-place {
             text-align: right;
-            margin-bottom: 20px;
+            font-size: 11px;
+            margin-bottom: 10px;
         }
         .greeting {
-            margin: 10px 0;
+            margin: 8px 0;
+            font-weight: bold;
         }
         .content {
-            margin: 20px 0;
+            margin: 10px 0;
             text-align: justify;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin: 10px 0;
+            font-size: 11px;
         }
         th, td {
             border: 1px solid #000;
-            padding: 8px;
+            padding: 4px;
             text-align: left;
         }
         th {
             background-color: #f0f0f0;
         }
         .signature-table {
-            width: 40%;
-            margin: 40px auto 0 0;
+            width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
         .signature-table td {
             border: none;
-            padding: 15px 5px;
+            padding: 3px 5px;
         }
         .closing {
-            margin-top: 30px;
+            margin-top: 20px;
+            clear: both;
         }
         .footer {
-            margin-top: 50px;
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
             text-align: center;
-            font-size: 12px;
+            font-size: 10px;
             color: #888;
         }
     </style>
@@ -110,20 +121,18 @@
         <p><b>Synergy Partner Prima</b></p>
     </div>
 
+    <div class="signature-section">
     <table class="signature-table">
-        <thead>
             <tr>
-                <th>Manager,</th>
-                <th>PIC,</th>
+                <td>Manager</td>
+                <td>PIC</td>
             </tr>
-        </thead>
-        <tbody>
             <tr>
-                <td>(..................)</td>
-                <td>(..................)</td>
+                <td style="padding-top: 40px;">(..................)</td>
+                <td style="padding-top: 40px;">(..................)</td>
             </tr>
-        </tbody>
     </table>
+    </div>
 
     <div class="footer">
         <p>Dokumen ini dihasilkan oleh sistem AP Operasional.</p>
