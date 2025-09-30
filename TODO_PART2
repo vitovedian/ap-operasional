@@ -20,8 +20,8 @@ Supervisor keuangan print ke PDF
 buat sehingga nomor surat menghasilkan string dengan format sebagai berikut:
 {id nomor surat}/SPP-{2 huruf singkatan tujuan surat}/{bulan pengajuan dalam format romawi}/{tahun pengajuan}
 
-perbaiki format PDF
+perbaiki format PDF (done)
 yang sudah (PIC)
 yang belum (Trainer, Pendamping)
 
-tambah format PDF Invoice
+tambah format PDF Invoicez

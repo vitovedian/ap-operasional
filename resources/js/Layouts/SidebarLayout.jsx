@@ -222,7 +222,7 @@ export default function SidebarLayout({ header, children }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-40 flex lg:hidden">
           <div className="fixed inset-0 bg-black/40" onClick={handleDrawerToggle} />
-          <aside className="relative ml-auto h-full w-[260px] bg-card shadow-lg">{drawerContent}</aside>
+          <aside className="relative h-full w-[260px] bg-card shadow-lg">{drawerContent}</aside>
         </div>
       )}
 
