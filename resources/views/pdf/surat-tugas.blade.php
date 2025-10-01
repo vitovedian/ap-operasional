@@ -87,7 +87,10 @@
                 </tr>
                 <tr>
                     <td><strong>PIC Penanggung Jawab</strong></td>
-                    <td>{{ $suratTugas->pic ? $suratTugas->pic->name : '-' }}</td>
+                    @php
+                        $picNames = $suratTugas->pics->pluck('name')->filter()->implode(', ');
+                    @endphp
+                    <td>{{ $picNames !== '' ? $picNames : ($suratTugas->pic ? $suratTugas->pic->name : '-') }}</td>
                 </tr>
                 <tr>
                     <td><strong>Pengaju</strong></td>
@@ -103,28 +106,32 @@
                     <td width="30%"><strong>Fee Pendampingan</strong></td>
                     <td width="70%">Rp {{ number_format($suratTugas->fee_pendampingan, 0, ',', '.') }}</td>
                 </tr>
+                @php
+                    $instruktors = collect(range(1, 5))->map(function ($index) use ($suratTugas) {
+                        $name = $suratTugas->{"instruktor_{$index}_nama"};
+                        $fee = $suratTugas->{"instruktor_{$index}_fee"} ?? 0;
+
+                        return $name ? ['nama' => $name, 'fee' => (int) $fee] : null;
+                    })->filter()->values();
+                    $totalInstruktur = $instruktors->sum('fee');
+                @endphp
+
+                @if($instruktors->isEmpty())
                 <tr>
-                    <td><strong>Instruktur 1</strong></td>
-                    <td>
-                        @if($suratTugas->instruktor_1_nama)
-                            {{ $suratTugas->instruktor_1_nama }} (Rp {{ number_format($suratTugas->instruktor_1_fee, 0, ',', '.') }})
-                        @else
-                            -
-                        @endif
-                    </td>
+                    <td><strong>Instruktur</strong></td>
+                    <td>-</td>
                 </tr>
-                @if($suratTugas->instruktor_2_nama)
-                <tr>
-                    <td><strong>Instruktur 2</strong></td>
-                    <td>{{ $suratTugas->instruktor_2_nama }} (Rp {{ number_format($suratTugas->instruktor_2_fee, 0, ',', '.') }})</td>
-                </tr>
+                @else
+                    @foreach($instruktors as $idx => $instruktor)
+                    <tr>
+                        <td><strong>Instruktur {{ $idx + 1 }}</strong></td>
+                        <td>{{ $instruktor['nama'] }} (Rp {{ number_format($instruktor['fee'], 0, ',', '.') }})</td>
+                    </tr>
+                    @endforeach
                 @endif
                 <tr>
                     <td><strong>Total Estimasi</strong></td>
-                    <td>Rp {{ number_format(
-                        ($suratTugas->fee_pendampingan ?? 0) + 
-                        ($suratTugas->instruktor_1_fee ?? 0) + 
-                        ($suratTugas->instruktor_2_fee ?? 0), 0, ',', '.') }}
+                    <td>Rp {{ number_format(($suratTugas->fee_pendampingan ?? 0) + $totalInstruktur, 0, ',', '.') }}
                     </td>
                 </tr>
             </table>

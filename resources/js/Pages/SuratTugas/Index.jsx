@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import PDFDropdown from '@/Components/PDFDropdown';
 import { cn } from '@/lib/utils';
 
@@ -34,17 +35,15 @@ export default function SuratTugasIndex({
   const { flash } = props;
   const hasSelfEditable = Array.isArray(submissions?.data) && submissions.data.some((item) => item.can_self_edit);
 
+  const defaultPicSelections = picOptions[0]?.id ? [picOptions[0].id] : [];
+
   const initialForm = {
     tanggal_pengajuan: '',
     kegiatan: '',
     tanggal_kegiatan: '',
-    pic_id: picOptions[0]?.id || '',
+    pic_ids: defaultPicSelections,
     nama_pendampingan: '',
     fee_pendampingan: '',
-    instruktor_1_nama: '',
-    instruktor_1_fee: '',
-    instruktor_2_nama: '',
-    instruktor_2_fee: '',
   };
 
   const toIDRString = (value) => {
@@ -62,6 +61,33 @@ export default function SuratTugasIndex({
     setForm((prev) => ({ ...prev, [key]: digits }));
   };
 
+  const togglePicSelection = (picId, nextState) => {
+    setForm((prev) => {
+      const current = Array.isArray(prev.pic_ids) ? prev.pic_ids : [];
+      const normalizedId = Number(picId);
+      const isChecked = nextState === true;
+
+      if (isChecked && ! current.includes(normalizedId)) {
+        return {
+          ...prev,
+          pic_ids: [...current, normalizedId],
+        };
+      }
+
+      if (! isChecked) {
+        if (current.length <= 1) {
+          return prev;
+        }
+        return {
+          ...prev,
+          pic_ids: current.filter((value) => value !== normalizedId),
+        };
+      }
+
+      return prev;
+    });
+  };
+
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(initialForm);
@@ -74,36 +100,94 @@ export default function SuratTugasIndex({
   const [openAssign, setOpenAssign] = useState(false);
   const [assigning, setAssigning] = useState(null);
   const [selectedNomor, setSelectedNomor] = useState('');
+  const [picDropdownOpen, setPicDropdownOpen] = useState(false);
+  const picDropdownRef = useRef(null);
+  useEffect(() => {
+    if (!picDropdownOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (picDropdownRef.current && !picDropdownRef.current.contains(event.target)) {
+        setPicDropdownOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setPicDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [picDropdownOpen]);
+
   const nomorOptions = Array.isArray(nomorSuratOptions) ? nomorSuratOptions : [];
   const assignCurrentValue = assigning?.nomor_surat_submission_id
     ? String(assigning.nomor_surat_submission_id)
     : '';
   const assignHasChanges = assigning ? assignCurrentValue !== selectedNomor : false;
 
+  const togglePicDropdown = () => {
+    if (picOptions.length === 0) {
+      return;
+    }
+    setPicDropdownOpen((prev) => !prev);
+  };
+
+  const selectedPicSummary = () => {
+    const selected = picOptions.filter((pic) => form.pic_ids?.includes(pic.id));
+    if (selected.length === 0) {
+      return 'Pilih PIC';
+    }
+
+    if (selected.length === 1) {
+      return selected[0].name;
+    }
+
+    if (selected.length === 2) {
+      return `${selected[0].name}, ${selected[1].name}`;
+    }
+
+    return `${selected[0].name} +${selected.length - 1} lainnya`;
+  };
+
   const openEditDialog = (submission) => {
     setEditing(submission);
+    const fallbackPicIds = defaultPicSelections.length > 0 ? [...defaultPicSelections] : [];
+    const nextPicIds = Array.isArray(submission.pic_ids) && submission.pic_ids.length > 0
+      ? submission.pic_ids.map((value) => Number(value))
+      : submission.pic?.id
+        ? [submission.pic.id]
+        : fallbackPicIds;
+
     setForm({
       tanggal_pengajuan: submission.tanggal_pengajuan || '',
       kegiatan: submission.kegiatan || '',
       tanggal_kegiatan: submission.tanggal_kegiatan || '',
-      pic_id: submission.pic?.id || picOptions[0]?.id || '',
+      pic_ids: nextPicIds,
       nama_pendampingan: submission.nama_pendampingan || '',
       fee_pendampingan: submission.fee_pendampingan ? String(submission.fee_pendampingan) : '',
     });
 
     // Initialize instructors based on submission data
     const instruktors = [];
-    if (submission.instruktor_1_nama) {
-      instruktors.push({
-        nama: submission.instruktor_1_nama || '',
-        fee: submission.instruktor_1_fee ? String(submission.instruktor_1_fee) : ''
-      });
-    }
-    if (submission.instruktor_2_nama) {
-      instruktors.push({
-        nama: submission.instruktor_2_nama || '',
-        fee: submission.instruktor_2_fee ? String(submission.instruktor_2_fee) : ''
-      });
+    for (let index = 1; index <= 5; index += 1) {
+      const nameKey = `instruktor_${index}_nama`;
+      const feeKey = `instruktor_${index}_fee`;
+      const name = submission[nameKey];
+      const fee = submission[feeKey];
+
+      if (name) {
+        instruktors.push({
+          nama: name,
+          fee: fee ? String(fee) : '',
+        });
+      }
     }
 
     // If no instructors, add a default one
@@ -112,11 +196,12 @@ export default function SuratTugasIndex({
     }
 
     setInstructors(instruktors);
+    setPicDropdownOpen(false);
     setOpenEdit(true);
   };
 
   const addInstructor = () => {
-    if (instructors.length >= 2) return;
+    if (instructors.length >= 5) return;
     setInstructors((prev) => [...prev, { nama: '', fee: '' }]);
   };
 
@@ -139,29 +224,37 @@ export default function SuratTugasIndex({
     e.preventDefault();
     if (!editing) return;
 
-    const [first = { nama: '', fee: '' }, second = { nama: '', fee: '' }] = instructors;
+    const payload = {
+      tanggal_pengajuan: form.tanggal_pengajuan,
+      kegiatan: form.kegiatan,
+      tanggal_kegiatan: form.tanggal_kegiatan,
+      pic_ids: form.pic_ids,
+      nama_pendampingan: form.nama_pendampingan,
+      fee_pendampingan: form.fee_pendampingan,
+    };
+
+    const entries = instructors.slice(0, 5);
+    while (entries.length < 5) {
+      entries.push({ nama: '', fee: '' });
+    }
+
+    entries.forEach((instruktur, idx) => {
+      const index = idx + 1;
+      payload[`instruktor_${index}_nama`] = instruktur.nama;
+      payload[`instruktor_${index}_fee`] = instruktur.fee;
+    });
 
     router.put(
       route('surat-tugas.update', editing.id),
-      {
-        tanggal_pengajuan: form.tanggal_pengajuan,
-        kegiatan: form.kegiatan,
-        tanggal_kegiatan: form.tanggal_kegiatan,
-        pic_id: form.pic_id,
-        nama_pendampingan: form.nama_pendampingan,
-        fee_pendampingan: form.fee_pendampingan,
-        instruktor_1_nama: first.nama,
-        instruktor_1_fee: first.fee,
-        instruktor_2_nama: second.nama,
-        instruktor_2_fee: second.fee,
-      },
+      payload,
       {
         preserveScroll: true,
         onSuccess: () => {
           setOpenEdit(false);
           setEditing(null);
-          setForm(initialForm);
+          setForm({ ...initialForm, pic_ids: [...defaultPicSelections] });
           setInstructors([{ nama: '', fee: '' }]);
+          setPicDropdownOpen(false);
         },
       }
     );
@@ -232,10 +325,10 @@ export default function SuratTugasIndex({
           nama: instr.nama,
           fee: Number(instr.fee || 0),
         }))
-      : [
-          { nama: item.instruktor_1_nama, fee: Number(item.instruktor_1_fee || 0) },
-          { nama: item.instruktor_2_nama, fee: Number(item.instruktor_2_fee || 0) },
-        ].filter((instr) => instr.nama);
+      : Array.from({ length: 5 }, (_, idx) => ({
+          nama: item[`instruktor_${idx + 1}_nama`],
+          fee: Number(item[`instruktor_${idx + 1}_fee`] || 0),
+        })).filter((instr) => instr.nama);
 
     setDetail({
       ...item,
@@ -244,6 +337,7 @@ export default function SuratTugasIndex({
       total_fee_instruktur: Number(item.total_fee_instruktur || 0),
       total_fee: Number(item.total_fee || 0),
       instruktors,
+      pics: Array.isArray(item.pics) ? item.pics : [],
       download_urls: {
         // utama: route('surat-tugas.download', item.id),
         pic: route('surat-tugas.download-pic', item.id),
@@ -254,6 +348,13 @@ export default function SuratTugasIndex({
       can_download_pdf: Boolean(item.can_download_pdf),
     });
     setOpenDetail(true);
+  };
+
+  const handleEditOpenChange = (value) => {
+    setOpenEdit(value);
+    if (!value) {
+      setPicDropdownOpen(false);
+    }
   };
 
   return (
@@ -375,7 +476,11 @@ export default function SuratTugasIndex({
                       <TableCell>{item.tanggal_pengajuan}</TableCell>
                       <TableCell>{item.tanggal_kegiatan}</TableCell>
                       <TableCell>{item.kegiatan}</TableCell>
-                      <TableCell>{item.pic?.name || '-'}</TableCell>
+                      <TableCell>
+                        {Array.isArray(item.pics) && item.pics.length > 0
+                          ? item.pics.map((pic) => pic.name).join(', ')
+                          : '-'}
+                      </TableCell>
                       <TableCell>{item.nama_pendampingan}</TableCell>
                       <TableCell className="text-center">{toIDR(item.fee_pendampingan)}</TableCell>
                       <TableCell>
@@ -464,7 +569,7 @@ export default function SuratTugasIndex({
         </div>
       </div>
 
-      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+      <Dialog open={openEdit} onOpenChange={handleEditOpenChange}>
         <form onSubmit={submitUpdate} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Edit Surat Tugas</DialogTitle>
@@ -482,19 +587,44 @@ export default function SuratTugasIndex({
               <Input value={form.kegiatan} onChange={bind('kegiatan')} required />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="PIC">
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  value={form.pic_id}
-                  onChange={bind('pic_id')}
-                  required
-                >
-                  {picOptions.map((pic) => (
-                    <option key={pic.id} value={pic.id}>
-                      {pic.name}
-                    </option>
-                  ))}
-                </select>
+              <Field label="PIC Penanggung Jawab">
+                <div className="relative" ref={picDropdownRef}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex w-full items-center justify-between gap-2"
+                    onClick={togglePicDropdown}
+                    disabled={picOptions.length === 0}
+                  >
+                    <span className="truncate text-left text-sm font-normal">
+                      {picOptions.length === 0 ? 'Tidak ada PIC tersedia' : selectedPicSummary()}
+                    </span>
+                    <span className="text-muted-foreground">v</span>
+                  </Button>
+
+                  {picDropdownOpen && picOptions.length > 0 && (
+                    <div className="absolute left-0 z-20 mt-2 w-full rounded-md border border-border bg-background p-2 shadow-lg">
+                      <div className="max-h-60 space-y-2 overflow-auto">
+                        {picOptions.map((pic) => {
+                          const checkboxId = `edit-pic-${pic.id}`;
+                          return (
+                            <div key={pic.id} className="flex items-center gap-2 text-sm text-foreground">
+                              <Checkbox
+                                id={checkboxId}
+                                checked={form.pic_ids?.includes(pic.id) || false}
+                                onChange={(event) => togglePicSelection(pic.id, event.target.checked)}
+                              />
+                              <label htmlFor={checkboxId} className="leading-none">
+                                {pic.name}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Pilih minimal satu PIC untuk penugasan.</p>
               </Field>
               <Field label="Nama Pendampingan">
                 <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} required />
@@ -507,7 +637,7 @@ export default function SuratTugasIndex({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-foreground">Instruktor</h2>
-                <Button type="button" size="sm" variant="outline" onClick={addInstructor} disabled={instructors.length >= 2}>
+                <Button type="button" size="sm" variant="outline" onClick={addInstructor} disabled={instructors.length >= 5}>
                   Tambah Instruktor
                 </Button>
               </div>
@@ -711,8 +841,18 @@ export default function SuratTugasIndex({
             <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">PIC & Pengaju</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <DetailRow label="PIC" value={detail.pic?.name || '-'} />
-                <DetailRow label="Email PIC" value={detail.pic?.email || '-'} />
+                <DetailRow
+                  label="PIC"
+                  value={Array.isArray(detail.pics) && detail.pics.length > 0
+                    ? detail.pics.map((pic) => pic.name).join(', ')
+                    : '-'}
+                />
+                <DetailRow
+                  label="Email PIC"
+                  value={Array.isArray(detail.pics) && detail.pics.length > 0
+                    ? detail.pics.map((pic) => pic.email).join(', ')
+                    : '-'}
+                />
                 <DetailRow label="Pengaju" value={detail.pengaju?.name || '-'} />
                 <DetailRow label="Email Pengaju" value={detail.pengaju?.email || '-'} />
               </div>

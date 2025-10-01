@@ -54,6 +54,9 @@ class SuratTugasAssignNomorTest extends TestCase
             'instruktor_2_fee' => 0,
             'status' => 'pending',
         ]);
+        $suratTugas->pics()->sync([
+            $pic->id => ['position' => 1],
+        ]);
 
         $nomorSurat = NomorSuratSubmission::create([
             'user_id' => $creator->id,

@@ -77,6 +77,16 @@
 
         <p>Dengan jadwal sebagai berikut :</p>
 
+        @php
+            $instruktors = collect(range(1, 5))->map(function ($index) use ($suratTugas) {
+                $name = $suratTugas->{"instruktor_{$index}_nama"};
+                $fee = $suratTugas->{"instruktor_{$index}_fee"} ?? 0;
+                return $name ? ['nama' => $name, 'fee' => (int) $fee] : null;
+            })->filter()->values();
+            $jumlahJpl = $suratTugas->jumlah_jpl ?? 1;
+            $totalFee = $instruktors->sum('fee') * $jumlahJpl;
+        @endphp
+
         <table>
             <thead>
                 <tr>
@@ -86,15 +96,23 @@
                 </tr>
             </thead>
             <tbody>
+                @forelse($instruktors as $instruktor)
+                <tr>
+                    <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
+                    <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }} - {{ $instruktor['nama'] }}</td>
+                    <td>Rp {{ number_format($instruktor['fee'], 0, ',', '.') }} x {banyak jpl}</td>
+                </tr>
+                @empty
                 <tr>
                     <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
                     <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }}</td>
-                    <td>Rp {{ number_format($suratTugas->instruktor_1_fee ?? 0, 0, ',', '.') }} x {banyak jpl}</td>
+                    <td>-</td>
                 </tr>
+                @endforelse
             </tbody>
         </table>
         
-        <p><strong>Total: Rp {{ number_format(($suratTugas->instruktor_1_fee ?? 0) * ($suratTugas->jumlah_jpl ?? 1), 0, ',', '.') }}</strong></p>
+        <p><strong>Total: Rp {{ number_format($totalFee, 0, ',', '.') }}</strong></p>
 
         <p><strong>Dengan Tugas sebagai berikut :</strong></p>
         <ol>

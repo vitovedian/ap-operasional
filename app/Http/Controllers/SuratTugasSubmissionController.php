@@ -25,7 +25,7 @@ class SuratTugasSubmissionController extends Controller
     {
         $user = $request->user();
         $query = SuratTugasSubmission::query()
-            ->with(['user', 'pic', 'processor', 'nomorSurat'])
+            ->with(['user', 'pic', 'pics', 'processor', 'nomorSurat'])
             ->orderByDesc('id')
             ->when(
                 $user
@@ -40,8 +40,25 @@ class SuratTugasSubmissionController extends Controller
             ->paginate(10)
             ->through(function (SuratTugasSubmission $submission) use ($user) {
                 $status = $submission->status ?? 'pending';
-                $totalInstruktur = ((int) $submission->instruktor_1_fee) + ((int) $submission->instruktor_2_fee);
+                $pics = $submission->pics
+                    ->map(fn (User $pic) => [
+                        'id' => $pic->id,
+                        'name' => $pic->name,
+                        'email' => $pic->email,
+                    ])
+                    ->values();
+                $instruktors = collect(range(1, 5))->map(function (int $index) use ($submission) {
+                    $nameKey = "instruktor_{$index}_nama";
+                    $feeKey = "instruktor_{$index}_fee";
+
+                    return [
+                        'nama' => $submission->{$nameKey},
+                        'fee' => (int) $submission->{$feeKey},
+                    ];
+                })->filter(fn ($instruktor) => filled($instruktor['nama']))->values();
+
                 $feePendampingan = (int) $submission->fee_pendampingan;
+                $totalInstruktur = $instruktors->sum('fee');
                 $totalKeseluruhan = $feePendampingan + $totalInstruktur;
                 return [
                     'id' => $submission->id,
@@ -54,18 +71,23 @@ class SuratTugasSubmissionController extends Controller
                         'name' => $submission->pic->name,
                         'email' => $submission->pic->email,
                     ] : null,
+                    'pics' => $pics,
+                    'pic_ids' => $pics->pluck('id')->map(fn ($id) => (int) $id)->all(),
                     'nama_pendampingan' => $submission->nama_pendampingan,
                     'fee_pendampingan' => $feePendampingan,
                     'instruktor_1_nama' => $submission->instruktor_1_nama,
                     'instruktor_1_fee' => (int) $submission->instruktor_1_fee,
                     'instruktor_2_nama' => $submission->instruktor_2_nama,
                     'instruktor_2_fee' => (int) $submission->instruktor_2_fee,
+                    'instruktor_3_nama' => $submission->instruktor_3_nama,
+                    'instruktor_3_fee' => (int) $submission->instruktor_3_fee,
+                    'instruktor_4_nama' => $submission->instruktor_4_nama,
+                    'instruktor_4_fee' => (int) $submission->instruktor_4_fee,
+                    'instruktor_5_nama' => $submission->instruktor_5_nama,
+                    'instruktor_5_fee' => (int) $submission->instruktor_5_fee,
                     'total_fee_instruktur' => $totalInstruktur,
                     'total_fee' => $totalKeseluruhan,
-                    'instruktors' => collect([
-                        ['nama' => $submission->instruktor_1_nama, 'fee' => (int) $submission->instruktor_1_fee],
-                        ['nama' => $submission->instruktor_2_nama, 'fee' => (int) $submission->instruktor_2_fee],
-                    ])->filter(fn ($instruktor) => filled($instruktor['nama']))->values(),
+                    'instruktors' => $instruktors,
                     'pengaju' => $submission->user ? [
                         'id' => $submission->user->id,
                         'name' => $submission->user->name,
@@ -159,42 +181,89 @@ class SuratTugasSubmissionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'tanggal_pengajuan' => ['required', 'date'],
             'kegiatan' => ['required', 'string', 'max:255'],
             'tanggal_kegiatan' => ['required', 'date'],
-            'pic_id' => ['required', 'exists:users,id'],
+            'pic_ids' => ['required', 'array', 'min:1'],
+            'pic_ids.*' => ['integer', Rule::exists('users', 'id')],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
             'fee_pendampingan' => ['nullable'],
-            'instruktor_1_nama' => ['required', 'string', 'max:255'],
-            'instruktor_1_fee' => ['required'],
-            'instruktor_2_nama' => ['nullable', 'string', 'max:255'],
-            'instruktor_2_fee' => ['nullable'],
-        ]);
+        ];
 
-        $pic = User::find($validated['pic_id']);
-        if (! $pic || ! $pic->hasRole('PIC')) {
+        foreach (range(1, 5) as $index) {
+            $nameRule = $index === 1 ? ['required', 'string', 'max:255'] : ['nullable', 'string', 'max:255'];
+            $feeRule = $index === 1 ? ['required'] : ['nullable'];
+
+            $rules["instruktor_{$index}_nama"] = $nameRule;
+            $rules["instruktor_{$index}_fee"] = $feeRule;
+        }
+
+        $validated = $request->validate($rules);
+
+        $picIds = collect($validated['pic_ids'] ?? [])
+            ->map(fn ($value) => (int) $value)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($picIds->isEmpty()) {
+            return back()->with('error', 'Pilih minimal satu PIC.');
+        }
+
+        $pics = User::whereIn('id', $picIds)->get();
+
+        if ($pics->count() !== $picIds->count()) {
             return back()->with('error', 'PIC yang dipilih tidak valid.');
         }
 
-        $feePendampingan = (int) preg_replace('/\D/', '', (string) $request->input('fee_pendampingan'));
-        $instruktor1Fee = (int) preg_replace('/\D/', '', (string) $request->input('instruktor_1_fee'));
-        $instruktor2Fee = (int) preg_replace('/\D/', '', (string) $request->input('instruktor_2_fee'));
+        $invalidPic = $pics->first(fn (User $user) => ! $user->hasRole('PIC'));
+        if ($invalidPic) {
+            return back()->with('error', 'PIC yang dipilih tidak valid.');
+        }
 
-        SuratTugasSubmission::create([
+        $primaryPicId = $picIds->first();
+
+        $feePendampingan = (int) preg_replace('/\D/', '', (string) $request->input('fee_pendampingan'));
+        $instruktorFees = [];
+        foreach (range(1, 5) as $index) {
+            $feeKey = "instruktor_{$index}_fee";
+            $instruktorFees[$feeKey] = (int) preg_replace('/\D/', '', (string) $request->input($feeKey));
+        }
+
+        $payload = [
             'user_id' => Auth::id(),
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
             'kegiatan' => $validated['kegiatan'],
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
-            'pic_id' => $validated['pic_id'],
+            'pic_id' => $primaryPicId,
             'nama_pendampingan' => $validated['nama_pendampingan'],
             'fee_pendampingan' => $feePendampingan,
-            'instruktor_1_nama' => $validated['instruktor_1_nama'],
-            'instruktor_1_fee' => $instruktor1Fee,
-            'instruktor_2_nama' => $validated['instruktor_2_nama'] ?? null,
-            'instruktor_2_fee' => $instruktor2Fee,
             'status' => 'pending',
-        ]);
+        ];
+
+        foreach (range(1, 5) as $index) {
+            $nameKey = "instruktor_{$index}_nama";
+            $feeKey = "instruktor_{$index}_fee";
+
+            $nameValue = $validated[$nameKey] ?? null;
+            if ($nameValue === '') {
+                $nameValue = null;
+            }
+
+            $payload[$nameKey] = $nameValue;
+            $payload[$feeKey] = $nameValue ? ($instruktorFees[$feeKey] ?? 0) : 0;
+        }
+
+        $submission = SuratTugasSubmission::create($payload);
+
+        $submission->pics()->sync(
+            $picIds
+                ->mapWithKeys(fn ($id, $index) => [
+                    $id => ['position' => $index + 1],
+                ])
+                ->all()
+        );
 
         return back()->with('success', 'Pengajuan Surat Tugas tersimpan');
     }
@@ -215,7 +284,29 @@ class SuratTugasSubmissionController extends Controller
             }
         }
 
-        $suratTugas->loadMissing(['user', 'pic', 'processor', 'nomorSurat']);
+        $suratTugas->loadMissing(['user', 'pic', 'pics', 'processor', 'nomorSurat']);
+
+        $instruktors = collect(range(1, 5))->map(function (int $index) use ($suratTugas) {
+            $nameKey = "instruktor_{$index}_nama";
+            $feeKey = "instruktor_{$index}_fee";
+
+            return [
+                'nama' => $suratTugas->{$nameKey},
+                'fee' => (int) $suratTugas->{$feeKey},
+            ];
+        })->filter(fn ($instruktor) => filled($instruktor['nama']))->values();
+
+        $feePendampingan = (int) $suratTugas->fee_pendampingan;
+        $totalInstruktur = $instruktors->sum('fee');
+        $totalKeseluruhan = $feePendampingan + $totalInstruktur;
+
+        $pics = $suratTugas->pics
+            ->map(fn (User $pic) => [
+                'id' => $pic->id,
+                'name' => $pic->name,
+                'email' => $pic->email,
+            ])
+            ->values();
 
         $data = [
             'id' => $suratTugas->id,
@@ -223,11 +314,21 @@ class SuratTugasSubmissionController extends Controller
             'kegiatan' => $suratTugas->kegiatan,
             'tanggal_kegiatan' => optional($suratTugas->tanggal_kegiatan)->format('Y-m-d'),
             'nama_pendampingan' => $suratTugas->nama_pendampingan,
-            'fee_pendampingan' => (int) $suratTugas->fee_pendampingan,
+            'fee_pendampingan' => $feePendampingan,
+            'pic_ids' => $pics->pluck('id')->map(fn ($id) => (int) $id)->all(),
             'instruktor_1_nama' => $suratTugas->instruktor_1_nama,
             'instruktor_1_fee' => (int) $suratTugas->instruktor_1_fee,
             'instruktor_2_nama' => $suratTugas->instruktor_2_nama,
             'instruktor_2_fee' => (int) $suratTugas->instruktor_2_fee,
+            'instruktor_3_nama' => $suratTugas->instruktor_3_nama,
+            'instruktor_3_fee' => (int) $suratTugas->instruktor_3_fee,
+            'instruktor_4_nama' => $suratTugas->instruktor_4_nama,
+            'instruktor_4_fee' => (int) $suratTugas->instruktor_4_fee,
+            'instruktor_5_nama' => $suratTugas->instruktor_5_nama,
+            'instruktor_5_fee' => (int) $suratTugas->instruktor_5_fee,
+            'total_fee_instruktur' => $totalInstruktur,
+            'total_fee' => $totalKeseluruhan,
+            'instruktors' => $instruktors,
             'status' => $suratTugas->status ?? 'pending',
             'catatan_revisi' => $suratTugas->catatan_revisi,
             'processed_at' => optional($suratTugas->processed_at)->format('Y-m-d H:i'),
@@ -236,6 +337,7 @@ class SuratTugasSubmissionController extends Controller
                 'name' => $suratTugas->pic->name,
                 'email' => $suratTugas->pic->email,
             ] : null,
+            'pics' => $pics,
             'pengaju' => $suratTugas->user ? [
                 'id' => $suratTugas->user->id,
                 'name' => $suratTugas->user->name,
@@ -275,18 +377,34 @@ class SuratTugasSubmissionController extends Controller
 
     public function update(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'tanggal_pengajuan' => ['required', 'date'],
             'kegiatan' => ['required', 'string', 'max:255'],
             'tanggal_kegiatan' => ['required', 'date'],
-            'pic_id' => ['required', 'exists:users,id'],
+            'pic_ids' => ['required', 'array', 'min:1'],
+            'pic_ids.*' => ['integer', Rule::exists('users', 'id')],
             'nama_pendampingan' => ['required', 'string', 'max:255'],
             'fee_pendampingan' => ['nullable'],
-            'instruktor_1_nama' => ['required', 'string', 'max:255'],
-            'instruktor_1_fee' => ['required'],
-            'instruktor_2_nama' => ['nullable', 'string', 'max:255'],
-            'instruktor_2_fee' => ['nullable'],
-        ]);
+        ];
+
+        foreach (range(1, 5) as $index) {
+            $rules["instruktor_{$index}_nama"] = $index === 1
+                ? ['required', 'string', 'max:255']
+                : ['nullable', 'string', 'max:255'];
+            $rules["instruktor_{$index}_fee"] = $index === 1 ? ['required'] : ['nullable'];
+        }
+
+        $validated = $request->validate($rules);
+
+        $picIds = collect($validated['pic_ids'] ?? [])
+            ->map(fn ($value) => (int) $value)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($picIds->isEmpty()) {
+            return back()->with('error', 'Pilih minimal satu PIC.');
+        }
 
         $user = $request->user();
         $isAdmin = $user?->hasRole('Admin');
@@ -304,23 +422,49 @@ class SuratTugasSubmissionController extends Controller
             }
         }
 
-        $pic = User::find($validated['pic_id']);
-        if (! $pic || ! $pic->hasRole('PIC')) {
+        $pics = User::whereIn('id', $picIds)->get();
+
+        if ($pics->count() !== $picIds->count()) {
             return back()->with('error', 'PIC yang dipilih tidak valid.');
         }
 
-        $suratTugas->fill([
+        $invalidPic = $pics->first(fn (User $candidate) => ! $candidate->hasRole('PIC'));
+        if ($invalidPic) {
+            return back()->with('error', 'PIC yang dipilih tidak valid.');
+        }
+
+        $primaryPicId = $picIds->first();
+
+        $feePendampingan = (int) preg_replace('/\D/', '', (string) $request->input('fee_pendampingan'));
+        $instruktorFees = [];
+        foreach (range(1, 5) as $index) {
+            $feeKey = "instruktor_{$index}_fee";
+            $instruktorFees[$feeKey] = (int) preg_replace('/\D/', '', (string) $request->input($feeKey));
+        }
+
+        $updates = [
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
             'kegiatan' => $validated['kegiatan'],
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
-            'pic_id' => $validated['pic_id'],
+            'pic_id' => $primaryPicId,
             'nama_pendampingan' => $validated['nama_pendampingan'],
-            'fee_pendampingan' => (int) preg_replace('/\D/', '', (string) $request->input('fee_pendampingan')),
-            'instruktor_1_nama' => $validated['instruktor_1_nama'],
-            'instruktor_1_fee' => (int) preg_replace('/\D/', '', (string) $request->input('instruktor_1_fee')),
-            'instruktor_2_nama' => $validated['instruktor_2_nama'] ?? null,
-            'instruktor_2_fee' => (int) preg_replace('/\D/', '', (string) $request->input('instruktor_2_fee')),
-        ]);
+            'fee_pendampingan' => $feePendampingan,
+        ];
+
+        foreach (range(1, 5) as $index) {
+            $nameKey = "instruktor_{$index}_nama";
+            $feeKey = "instruktor_{$index}_fee";
+
+            $nameValue = $validated[$nameKey] ?? null;
+            if ($nameValue === '') {
+                $nameValue = null;
+            }
+
+            $updates[$nameKey] = $nameValue;
+            $updates[$feeKey] = $nameValue ? ($instruktorFees[$feeKey] ?? 0) : 0;
+        }
+
+        $suratTugas->fill($updates);
 
         if (($isKaryawan || $isPic) && ! $isAdmin) {
             $suratTugas->status = 'pending';
@@ -330,6 +474,14 @@ class SuratTugasSubmissionController extends Controller
         }
 
         $suratTugas->save();
+
+        $suratTugas->pics()->sync(
+            $picIds
+                ->mapWithKeys(fn ($id, $index) => [
+                    $id => ['position' => $index + 1],
+                ])
+                ->all()
+        );
 
         return back()->with('success', 'Surat tugas diperbarui');
     }
@@ -382,7 +534,7 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -402,7 +554,7 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -422,7 +574,7 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -442,7 +594,7 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -462,7 +614,7 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $suratTugas->loadMissing(['nomorSurat', 'pic', 'user', 'processor']);
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -481,8 +633,10 @@ class SuratTugasSubmissionController extends Controller
         }
 
         if ($user->hasRole('PIC')) {
+            $submission->loadMissing('pics');
+
             return ($submission->status ?? 'pending') === 'approved'
-                && $submission->pic_id === $user->id;
+                && $submission->pics->contains('id', $user->id);
         }
 
         return false;

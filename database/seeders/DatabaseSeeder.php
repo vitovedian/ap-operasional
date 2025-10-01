@@ -269,31 +269,37 @@ class DatabaseSeeder extends Seeder
             }
 
             $instruktors = $seed['instruktors'] ?? [];
-            $instruktor1 = $instruktors[0] ?? ['nama' => null, 'fee' => 0];
-            $instruktor2 = $instruktors[1] ?? ['nama' => null, 'fee' => 0];
 
-            SuratTugasSubmission::updateOrCreate(
+            $payload = [
+                'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
+                'pic_id' => $pic->id,
+                'nama_pendampingan' => $seed['nama_pendampingan'],
+                'fee_pendampingan' => $seed['fee_pendampingan'],
+                'status' => $seed['status'],
+                'catatan_revisi' => $seed['catatan_revisi'],
+                'processed_by' => $processor?->id,
+                'processed_at' => $seed['processed_at'],
+                'nomor_surat_submission_id' => $nomor?->id,
+            ];
+
+            foreach (range(1, 5) as $index) {
+                $instruktor = $instruktors[$index - 1] ?? ['nama' => null, 'fee' => 0];
+                $payload["instruktor_{$index}_nama"] = $instruktor['nama'];
+                $payload["instruktor_{$index}_fee"] = $instruktor['fee'];
+            }
+
+            $suratTugas = SuratTugasSubmission::updateOrCreate(
                 [
                     'user_id' => $pengaju->id,
                     'kegiatan' => $seed['kegiatan'],
                     'tanggal_kegiatan' => $seed['tanggal_kegiatan'],
                 ],
-                [
-                    'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
-                    'pic_id' => $pic->id,
-                    'nama_pendampingan' => $seed['nama_pendampingan'],
-                    'fee_pendampingan' => $seed['fee_pendampingan'],
-                    'instruktor_1_nama' => $instruktor1['nama'],
-                    'instruktor_1_fee' => $instruktor1['fee'],
-                    'instruktor_2_nama' => $instruktor2['nama'],
-                    'instruktor_2_fee' => $instruktor2['fee'],
-                    'status' => $seed['status'],
-                    'catatan_revisi' => $seed['catatan_revisi'],
-                    'processed_by' => $processor?->id,
-                    'processed_at' => $seed['processed_at'],
-                    'nomor_surat_submission_id' => $nomor?->id,
-                ]
+                $payload
             );
+
+            $suratTugas->pics()->sync([
+                $pic->id => ['position' => 1],
+            ]);
         }
 
         $spjSeeds = [

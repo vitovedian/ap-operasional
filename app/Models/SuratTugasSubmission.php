@@ -21,6 +21,12 @@ class SuratTugasSubmission extends Model
         'instruktor_1_fee',
         'instruktor_2_nama',
         'instruktor_2_fee',
+        'instruktor_3_nama',
+        'instruktor_3_fee',
+        'instruktor_4_nama',
+        'instruktor_4_fee',
+        'instruktor_5_nama',
+        'instruktor_5_fee',
         'status',
         'catatan_revisi',
         'processed_by',
@@ -42,6 +48,15 @@ class SuratTugasSubmission extends Model
     public function pic()
     {
         return $this->belongsTo(User::class, 'pic_id');
+    }
+
+    public function pics()
+    {
+        return $this
+            ->belongsToMany(User::class, 'surat_tugas_submission_pic', 'surat_tugas_submission_id', 'pic_id')
+            ->withPivot('position')
+            ->withTimestamps()
+            ->orderBy('surat_tugas_submission_pic.position');
     }
 
     public function processor()

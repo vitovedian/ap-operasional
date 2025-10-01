@@ -62,6 +62,9 @@ class SuratTugasPdfDownloadTest extends TestCase
             'status' => 'approved',
             'nomor_surat_submission_id' => $nomorSurat->id,
         ]);
+        $suratTugas->pics()->sync([
+            $pic->id => ['position' => 1],
+        ]);
 
         $response = $this->actingAs($supervisor)->get(route('surat-tugas.download', $suratTugas));
 
@@ -108,6 +111,9 @@ class SuratTugasPdfDownloadTest extends TestCase
             'status' => 'approved',
             'nomor_surat_submission_id' => $nomorSurat->id,
         ]);
+        $suratTugas->pics()->sync([
+            $pic->id => ['position' => 1],
+        ]);
 
         $response = $this->actingAs($pic)->get(route('surat-tugas.download', $suratTugas));
 
@@ -135,6 +141,9 @@ class SuratTugasPdfDownloadTest extends TestCase
             'instruktor_2_nama' => null,
             'instruktor_2_fee' => 0,
             'status' => 'pending',
+        ]);
+        $suratTugas->pics()->sync([
+            $pic->id => ['position' => 1],
         ]);
 
         $this->actingAs($pic)
@@ -166,6 +175,9 @@ class SuratTugasPdfDownloadTest extends TestCase
             'instruktor_2_nama' => null,
             'instruktor_2_fee' => 0,
             'status' => 'approved',
+        ]);
+        $suratTugas->pics()->sync([
+            $otherPic->id => ['position' => 1],
         ]);
 
         $this->actingAs($pic)
