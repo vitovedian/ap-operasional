@@ -48,6 +48,8 @@ class HandleInertiaRequests extends Middleware
                 'canViewAllLists' => fn () => $isAdmin || $isManager || $isSupervisor,
                 'canApproveSuratTugas' => fn () => $isManager,
                 'canSubmitForms' => fn () => $isAdmin || $isKaryawan || $isPic,
+                'canSubmitNomorSurat' => fn () => $isAdmin || $isSupervisor || $isKaryawan || $isPic,
+                'canSubmitAtk' => fn () => $isAdmin || $isKaryawan || $isPic,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

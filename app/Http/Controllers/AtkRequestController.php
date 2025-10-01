@@ -77,8 +77,10 @@ class AtkRequestController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $this->authorizeCreation($request);
+
         return Inertia::render('AtkRequest/Create', [
             'budgetingOptions' => $this->budgetingOptions(),
         ]);
@@ -112,6 +114,8 @@ class AtkRequestController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorizeCreation($request);
+
         $validated = $this->validateData($request);
 
         AtkRequest::create($validated + [
@@ -242,5 +246,14 @@ class AtkRequestController extends Controller
             ],
             array_keys(self::BUDGETING_OPTIONS)
         );
+    }
+
+    private function authorizeCreation(Request $request): void
+    {
+        $user = $request->user();
+
+        if (! $user || ! $user->hasAnyRole(['Admin', 'Karyawan', 'PIC'])) {
+            abort(403);
+        }
     }
 }

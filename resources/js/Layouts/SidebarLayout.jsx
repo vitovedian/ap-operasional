@@ -28,6 +28,8 @@ export default function SidebarLayout({ header, children }) {
   const isKaryawan = Boolean(props.auth.isKaryawan);
   const isPic = Boolean(props.auth.isPic);
   const canSubmitForms = Boolean(props.auth.canSubmitForms);
+  const canSubmitNomorSurat = Boolean(props.auth.canSubmitNomorSurat ?? props.auth.canSubmitForms);
+  const canSubmitAtk = Boolean(props.auth.canSubmitAtk ?? false);
 
   const canViewInvoicesList = isAdmin || isManager || isSupervisor || isKaryawan || isPic;
   const canViewSuratTugasList = canViewInvoicesList;
@@ -35,7 +37,6 @@ export default function SidebarLayout({ header, children }) {
   const canViewSpjList = canViewInvoicesList;
   const canViewInventoryList = canViewInvoicesList;
   const canViewAtkRequests = isAdmin || isManager || isSupervisor || isPic;
-  const canSubmitAtk = isAdmin || isSupervisor || isPic;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -142,7 +143,7 @@ export default function SidebarLayout({ header, children }) {
           },
         ]
       : []),
-    ...(canSubmitForms
+    ...(canSubmitNomorSurat
       ? [
           {
             label: 'Pengajuan Nomor Surat',
