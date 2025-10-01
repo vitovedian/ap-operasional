@@ -116,7 +116,9 @@ class SuratTugasSubmissionController extends Controller
                         'pendamping' => route('surat-tugas.download-pendamping', $submission->id),
                         'instruktur' => route('surat-tugas.download-instruktur', $submission->id),
                     ] : null,
-                    'preview_url' => $user && $this->userCanDownload($user, $submission)
+                    'preview_url' => $status === 'approved'
+                        && $user
+                        && $this->userCanDownload($user, $submission)
                         ? route('surat-tugas.preview-pdf', $submission->id)
                         : null,
                     'can_self_edit' => $user
@@ -379,7 +381,9 @@ class SuratTugasSubmissionController extends Controller
                 'pendamping' => route('surat-tugas.download-pendamping', $suratTugas->id),
                 'instruktur' => route('surat-tugas.download-instruktur', $suratTugas->id),
             ] : null,
-            'previewUrl' => $user && $this->userCanDownload($user, $suratTugas)
+            'previewUrl' => ($suratTugas->status ?? 'pending') === 'approved'
+                && $user
+                && $this->userCanDownload($user, $suratTugas)
                 ? route('surat-tugas.preview-pdf', $suratTugas->id)
                 : null,
         ]);
@@ -394,6 +398,14 @@ class SuratTugasSubmissionController extends Controller
         }
 
         $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user']);
+
+        if (($suratTugas->status ?? 'pending') !== 'approved') {
+            abort(403);
+        }
+
+        if (($suratTugas->status ?? 'pending') !== 'approved') {
+            abort(403);
+        }
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);
@@ -629,6 +641,12 @@ class SuratTugasSubmissionController extends Controller
 
         $suratTugas->save();
 
+        if ($isAdmin) {
+            $suratTugas->refresh();
+            $suratTugas->user_id = $suratTugas->getOriginal('user_id');
+            $suratTugas->save();
+        }
+
         if ($picIds !== null) {
             $suratTugas->pics()->sync(
                 $picIds
@@ -691,6 +709,10 @@ class SuratTugasSubmissionController extends Controller
         }
 
         $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
+
+        if (($suratTugas->status ?? 'pending') !== 'approved') {
+            abort(403);
+        }
 
         if (! $this->userCanDownload($user, $suratTugas)) {
             abort(403);

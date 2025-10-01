@@ -889,9 +889,19 @@ export default function SuratTugasIndex({
           </div>
         )}
         <DialogFooter>
-          {detail?.can_download_pdf && detail?.preview_url && (
-            <Button asChild>
-              <Link href={detail.preview_url}>Preview PDF</Link>
+          {detail && (
+            <Button
+              type="button"
+              variant={detail.status === 'approved' ? 'default' : 'outline'}
+              disabled={detail.status !== 'approved'}
+              className={detail.status !== 'approved' ? 'cursor-not-allowed opacity-60' : undefined}
+              onClick={() => {
+                if (detail.status === 'approved' && detail.preview_url) {
+                  router.get(detail.preview_url);
+                }
+              }}
+            >
+              {detail.status === 'approved' ? 'Preview PDF' : 'Preview PDF (Menunggu Persetujuan)'}
             </Button>
           )}
           <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
