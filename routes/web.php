@@ -11,9 +11,16 @@ use App\Http\Controllers\SuratTugasSubmissionController;
 use App\Http\Controllers\AtkRequestController;
 use App\Http\Controllers\PdfTestController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/maintenance', function () {
+        return Inertia::render('Maintenance');
+    })->name('maintenance');
 });
 
 Route::get('/dashboard', DashboardController::class)

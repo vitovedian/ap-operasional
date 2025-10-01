@@ -43,6 +43,21 @@ export default function SidebarLayout({ header, children }) {
 
   const isActive = (namePattern) => route().current(namePattern);
 
+  const maintenanceAllowedRoutes = new Set([
+    'dashboard',
+    'surat-tugas.index',
+    'surat-tugas.create',
+    'nomor-surat.index',
+    'nomor-surat.create',
+  ]);
+
+  const linkOrMaintenance = (routeName, params = {}) => {
+    if (isAdmin || maintenanceAllowedRoutes.has(routeName)) {
+      return route(routeName, params);
+    }
+    return route('maintenance');
+  };
+
   const dataNavItems = [
     {
       label: 'Dashboard',
@@ -55,7 +70,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Daftar Invoice',
             icon: FileText,
-            href: route('invoices.index'),
+            href: linkOrMaintenance('invoices.index'),
             active: isActive('invoices.index'),
           },
         ]
@@ -85,7 +100,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Daftar SPJ',
             icon: Receipt,
-            href: route('spj.index'),
+            href: linkOrMaintenance('spj.index'),
             active: isActive('spj.index'),
           },
         ]
@@ -95,7 +110,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Peminjaman Inventaris',
             icon: Archive,
-            href: route('peminjaman-inventaris.index'),
+            href: linkOrMaintenance('peminjaman-inventaris.index'),
             active: isActive('peminjaman-inventaris.index'),
           },
         ]
@@ -105,7 +120,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Permintaan ATK',
             icon: Package,
-            href: route('atk-requests.index'),
+            href: linkOrMaintenance('atk-requests.index'),
             active: isActive('atk-requests.*'),
           },
         ]
@@ -128,7 +143,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Pengajuan Invoice',
             icon: FileEdit,
-            href: route('invoices.create'),
+            href: linkOrMaintenance('invoices.create'),
             active: isActive('invoices.create'),
           },
         ]
@@ -158,7 +173,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Pengajuan SPJ',
             icon: FileEdit,
-            href: route('spj.create'),
+            href: linkOrMaintenance('spj.create'),
             active: isActive('spj.create'),
           },
         ]
@@ -168,7 +183,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Pengajuan Inventaris',
             icon: FileEdit,
-            href: route('peminjaman-inventaris.create'),
+            href: linkOrMaintenance('peminjaman-inventaris.create'),
             active: isActive('peminjaman-inventaris.create'),
           },
         ]
@@ -178,7 +193,7 @@ export default function SidebarLayout({ header, children }) {
           {
             label: 'Pengajuan ATK',
             icon: FileEdit,
-            href: route('atk-requests.create'),
+            href: linkOrMaintenance('atk-requests.create'),
             active: isActive('atk-requests.create'),
           },
         ]
