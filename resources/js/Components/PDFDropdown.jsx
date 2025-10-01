@@ -46,7 +46,7 @@ export default function PDFDropdown({ downloadUrls, suratTugasId, size = "defaul
         onClick={() => setIsOpen(!isOpen)}
         type="button"
       >
-        PDF Templates
+        Unduh PDF
         <svg
           className={`ml-2 h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"

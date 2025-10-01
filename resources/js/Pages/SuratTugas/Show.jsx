@@ -30,7 +30,7 @@ export default function SuratTugasShow({
               <Detail label="Tanggal Pengajuan" value={submission.tanggal_pengajuan} />
               <Detail label="Tanggal Kegiatan" value={submission.tanggal_kegiatan} />
               <Detail label="Kegiatan" value={submission.kegiatan} full />
-              <Detail label="Nama Pendampingan" value={submission.nama_pendampingan} full />
+              <Detail label="Nama Pendampingan" value={submission.nama_pendampingan || '-'} full />
               <Detail label="Fee Pendampingan" value={`Rp ${formatIDR(submission.fee_pendampingan)}`} />
               <Detail label="Nomor Surat" value={submission.nomor_surat || '-'} />
               <Detail label="Instruktor 1" value={`${submission.instruktor_1_nama} (Rp ${formatIDR(submission.instruktor_1_fee)})`} />

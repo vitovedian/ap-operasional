@@ -83,7 +83,7 @@
                 </tr>
                 <tr>
                     <td><strong>Nama Pendampingan</strong></td>
-                    <td>{{ $suratTugas->nama_pendampingan }}</td>
+                    <td>{{ $suratTugas->nama_pendampingan ?: '-' }}</td>
                 </tr>
                 <tr>
                     <td><strong>PIC Penanggung Jawab</strong></td>

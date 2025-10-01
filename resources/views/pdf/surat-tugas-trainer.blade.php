@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Tugas Trainer - {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}</title>
+    <title>Surat Tugas Trainer - {{ $selectedInstructor['name'] ?? $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}</title>
     <style>
         @page {
             margin: 20px;
@@ -75,7 +75,7 @@
 
     <div class="greeting">
         Kepada Yth : <br>
-        {{ $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}<br>
+        {{ $selectedInstructor['name'] ?? $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}<br>
     </div>
 
     <div class="content">
@@ -87,12 +87,23 @@
         Dengan jadwal sebagai berikut :</p>
 
         @php
+            $jumlahJpl = $suratTugas->jumlah_jpl ?? 1;
             $instruktors = collect(range(1, 5))->map(function ($index) use ($suratTugas) {
                 $name = $suratTugas->{"instruktor_{$index}_nama"};
                 $fee = $suratTugas->{"instruktor_{$index}_fee"} ?? 0;
-                return $name ? ['nama' => $name, 'fee' => (int) $fee] : null;
+                return $name ? ['index' => $index, 'nama' => $name, 'fee' => (int) $fee] : null;
             })->filter()->values();
-            $jumlahJpl = $suratTugas->jumlah_jpl ?? 1;
+
+            if (!empty($selectedInstructor['name'] ?? null)) {
+                $instruktors = collect([$selectedInstructor])->map(function ($instr) {
+                    return [
+                        'index' => $instr['index'] ?? null,
+                        'nama' => $instr['name'],
+                        'fee' => (int) ($instr['fee'] ?? 0),
+                    ];
+                });
+            }
+
             $totalFee = $instruktors->sum('fee') * $jumlahJpl;
         @endphp
 

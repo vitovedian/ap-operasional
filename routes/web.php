@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|Karyawan|P
     Route::get('/nomor-surat', [NomorSuratSubmissionController::class, 'index'])->name('nomor-surat.index');
 });
 
-Route::middleware(['auth', 'verified', 'role:Admin|Karyawan|PIC'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:Admin|Supervisor|Karyawan|PIC'])->group(function () {
     Route::get('/nomor-surat/create', [NomorSuratSubmissionController::class, 'create'])->name('nomor-surat.create');
     Route::post('/nomor-surat', [NomorSuratSubmissionController::class, 'store'])->name('nomor-surat.store');
 });
@@ -129,6 +129,9 @@ Route::middleware(['auth', 'verified', 'role:Admin|Supervisor'])->group(function
 });
 
 Route::middleware(['auth', 'verified', 'role:Admin|Manager|Supervisor|PIC'])->group(function () {
+    Route::get('/surat-tugas/{suratTugas}/preview', [SuratTugasSubmissionController::class, 'previewPdf'])->name('surat-tugas.preview-pdf');
+    Route::get('/surat-tugas/{suratTugas}/preview-pic', [SuratTugasSubmissionController::class, 'streamPicTemplate'])->name('surat-tugas.preview-pic-stream');
+    Route::get('/surat-tugas/{suratTugas}/preview-trainer', [SuratTugasSubmissionController::class, 'streamTrainerTemplate'])->name('surat-tugas.preview-trainer-stream');
     Route::get('/surat-tugas/{suratTugas}/download', [SuratTugasSubmissionController::class, 'download'])->name('surat-tugas.download');
     Route::get('/surat-tugas/{suratTugas}/download-pic', [SuratTugasSubmissionController::class, 'downloadPicTemplate'])->name('surat-tugas.download-pic');
     Route::get('/surat-tugas/{suratTugas}/download-trainer', [SuratTugasSubmissionController::class, 'downloadTrainerTemplate'])->name('surat-tugas.download-trainer');

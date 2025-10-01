@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import PDFDropdown from '@/Components/PDFDropdown';
 import { cn } from '@/lib/utils';
 
 function toIDR(n) {
@@ -224,14 +223,31 @@ export default function SuratTugasIndex({
     e.preventDefault();
     if (!editing) return;
 
-    const payload = {
-      tanggal_pengajuan: form.tanggal_pengajuan,
-      kegiatan: form.kegiatan,
-      tanggal_kegiatan: form.tanggal_kegiatan,
-      pic_ids: form.pic_ids,
-      nama_pendampingan: form.nama_pendampingan,
-      fee_pendampingan: form.fee_pendampingan,
-    };
+    const payload = {};
+
+    if (form.tanggal_pengajuan) {
+      payload.tanggal_pengajuan = form.tanggal_pengajuan;
+    }
+
+    if (form.kegiatan?.trim()) {
+      payload.kegiatan = form.kegiatan.trim();
+    }
+
+    if (form.tanggal_kegiatan) {
+      payload.tanggal_kegiatan = form.tanggal_kegiatan;
+    }
+
+    if (Array.isArray(form.pic_ids) && form.pic_ids.length > 0) {
+      payload.pic_ids = form.pic_ids;
+    }
+
+    if (form.nama_pendampingan?.trim()) {
+      payload.nama_pendampingan = form.nama_pendampingan.trim();
+    }
+
+    if (form.fee_pendampingan !== '') {
+      payload.fee_pendampingan = form.fee_pendampingan;
+    }
 
     const entries = instructors.slice(0, 5);
     while (entries.length < 5) {
@@ -240,8 +256,17 @@ export default function SuratTugasIndex({
 
     entries.forEach((instruktur, idx) => {
       const index = idx + 1;
-      payload[`instruktor_${index}_nama`] = instruktur.nama;
-      payload[`instruktor_${index}_fee`] = instruktur.fee;
+      const trimmedName = instruktur.nama?.trim();
+
+      if (!trimmedName) {
+        return;
+      }
+
+      payload[`instruktor_${index}_nama`] = trimmedName;
+
+      if (instruktur.fee !== '') {
+        payload[`instruktor_${index}_fee`] = instruktur.fee;
+      }
     });
 
     router.put(
@@ -338,13 +363,12 @@ export default function SuratTugasIndex({
       total_fee: Number(item.total_fee || 0),
       instruktors,
       pics: Array.isArray(item.pics) ? item.pics : [],
-      download_urls: {
-        // utama: route('surat-tugas.download', item.id),
+      download_urls: item.download_urls || {
         pic: route('surat-tugas.download-pic', item.id),
         trainer: route('surat-tugas.download-trainer', item.id),
         pendamping: route('surat-tugas.download-pendamping', item.id),
-        // instruktur: route('surat-tugas.download-instruktur', item.id),
       },
+      preview_url: item.preview_url || route('surat-tugas.preview-pdf', item.id),
       can_download_pdf: Boolean(item.can_download_pdf),
     });
     setOpenDetail(true);
@@ -377,7 +401,7 @@ export default function SuratTugasIndex({
                     <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
                     <Detail label="Tanggal Kegiatan" value={item.tanggal_kegiatan} />
                     <Detail label="Kegiatan" value={item.kegiatan} />
-                    <Detail label="Pendampingan" value={item.nama_pendampingan} />
+                    <Detail label="Pendampingan" value={item.nama_pendampingan || '-'} />
                     <Detail label="Fee Pendampingan" value={`Rp ${toIDR(item.fee_pendampingan)}`} />
                     <Detail
                       label="Instruktor"
@@ -481,7 +505,7 @@ export default function SuratTugasIndex({
                           ? item.pics.map((pic) => pic.name).join(', ')
                           : '-'}
                       </TableCell>
-                      <TableCell>{item.nama_pendampingan}</TableCell>
+                      <TableCell>{item.nama_pendampingan || '-'}</TableCell>
                       <TableCell className="text-center">{toIDR(item.fee_pendampingan)}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
@@ -627,11 +651,16 @@ export default function SuratTugasIndex({
                 <p className="text-xs text-muted-foreground">Pilih minimal satu PIC untuk penugasan.</p>
               </Field>
               <Field label="Nama Pendampingan">
-                <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} required />
+                <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} placeholder="Opsional" />
               </Field>
             </div>
             <Field label="Fee Pendampingan (Rp)">
-              <Input value={toIDRString(form.fee_pendampingan)} onChange={bindNumeric('fee_pendampingan')} inputMode="numeric" required />
+              <Input
+                value={toIDRString(form.fee_pendampingan)}
+                onChange={bindNumeric('fee_pendampingan')}
+                inputMode="numeric"
+                placeholder="Opsional"
+              />
             </Field>
 
             <div className="space-y-3">
@@ -800,7 +829,7 @@ export default function SuratTugasIndex({
                 <DetailRow label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} emphasise />
                 <DetailRow label="Tanggal Kegiatan" value={detail.tanggal_kegiatan} emphasise />
                 <DetailRow label="Kegiatan" value={detail.kegiatan} emphasise />
-                <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan} emphasise />
+                <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan || '-'} emphasise />
                 <DetailRow label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} emphasise />
                 <div className="space-y-2">
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">Daftar Instruktor</span>
@@ -860,11 +889,10 @@ export default function SuratTugasIndex({
           </div>
         )}
         <DialogFooter>
-          {detail?.can_download_pdf && (
-            <PDFDropdown
-              downloadUrls={detail.download_urls}
-              suratTugasId={detail.id}
-            />
+          {detail?.can_download_pdf && detail?.preview_url && (
+            <Button asChild>
+              <Link href={detail.preview_url}>Preview PDF</Link>
+            </Button>
           )}
           <Button type="button" variant="outline" onClick={() => setOpenDetail(false)}>
             Tutup

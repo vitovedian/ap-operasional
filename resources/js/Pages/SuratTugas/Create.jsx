@@ -248,7 +248,7 @@ export default function CreateSuratTugas() {
                   <p className="text-xs text-muted-foreground">Pilih minimal satu PIC untuk penugasan.</p>
                 </Field>
                 <Field label="Nama Pendampingan">
-                  <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} required />
+                  <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} placeholder="Opsional" />
                 </Field>
               </div>
 

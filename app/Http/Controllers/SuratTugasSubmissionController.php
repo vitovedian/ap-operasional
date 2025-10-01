@@ -116,6 +116,9 @@ class SuratTugasSubmissionController extends Controller
                         'pendamping' => route('surat-tugas.download-pendamping', $submission->id),
                         'instruktur' => route('surat-tugas.download-instruktur', $submission->id),
                     ] : null,
+                    'preview_url' => $user && $this->userCanDownload($user, $submission)
+                        ? route('surat-tugas.preview-pdf', $submission->id)
+                        : null,
                     'can_self_edit' => $user
                         && $user->hasAnyRole(['Karyawan', 'PIC'])
                         && $submission->user_id === $user->id
@@ -187,7 +190,7 @@ class SuratTugasSubmissionController extends Controller
             'tanggal_kegiatan' => ['required', 'date'],
             'pic_ids' => ['required', 'array', 'min:1'],
             'pic_ids.*' => ['integer', Rule::exists('users', 'id')],
-            'nama_pendampingan' => ['required', 'string', 'max:255'],
+            'nama_pendampingan' => ['nullable', 'string', 'max:255'],
             'fee_pendampingan' => ['nullable'],
         ];
 
@@ -231,13 +234,17 @@ class SuratTugasSubmissionController extends Controller
             $instruktorFees[$feeKey] = (int) preg_replace('/\D/', '', (string) $request->input($feeKey));
         }
 
+        $namaPendampingan = $request->filled('nama_pendampingan')
+            ? trim((string) $request->input('nama_pendampingan'))
+            : '';
+
         $payload = [
             'user_id' => Auth::id(),
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
             'kegiatan' => $validated['kegiatan'],
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
             'pic_id' => $primaryPicId,
-            'nama_pendampingan' => $validated['nama_pendampingan'],
+            'nama_pendampingan' => $namaPendampingan,
             'fee_pendampingan' => $feePendampingan,
             'status' => 'pending',
         ];
@@ -372,38 +379,155 @@ class SuratTugasSubmissionController extends Controller
                 'pendamping' => route('surat-tugas.download-pendamping', $suratTugas->id),
                 'instruktur' => route('surat-tugas.download-instruktur', $suratTugas->id),
             ] : null,
+            'previewUrl' => $user && $this->userCanDownload($user, $suratTugas)
+                ? route('surat-tugas.preview-pdf', $suratTugas->id)
+                : null,
+        ]);
+    }
+
+    public function previewPdf(Request $request, SuratTugasSubmission $suratTugas): Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $picOptions = $suratTugas->pics
+            ->map(fn (User $pic) => [
+                'id' => $pic->id,
+                'name' => $pic->name,
+            ])
+            ->values();
+
+        $selectedPicId = (int) $request->input('pic_id');
+        if ($picOptions->isEmpty()) {
+            $selectedPicId = 0;
+        } elseif (! $picOptions->contains(fn ($option) => $option['id'] === $selectedPicId)) {
+            $selectedPicId = $picOptions->first()['id'];
+        }
+        if ($selectedPicId === 0) {
+            $selectedPicId = null;
+        }
+
+        $instructorOptions = collect(range(1, 5))
+            ->map(function (int $index) use ($suratTugas) {
+                $nameKey = "instruktor_{$index}_nama";
+                $feeKey = "instruktor_{$index}_fee";
+
+                $name = $suratTugas->{$nameKey};
+                if (! filled($name)) {
+                    return null;
+                }
+
+                return [
+                    'index' => $index,
+                    'name' => $name,
+                    'fee' => (int) $suratTugas->{$feeKey},
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $selectedInstructorIndex = (int) $request->input('instructor');
+        if ($instructorOptions->isEmpty()) {
+            $selectedInstructorIndex = 0;
+        } elseif (! $instructorOptions->contains(fn ($option) => $option['index'] === $selectedInstructorIndex)) {
+            $selectedInstructorIndex = $instructorOptions->first()['index'];
+        }
+        if ($selectedInstructorIndex === 0) {
+            $selectedInstructorIndex = null;
+        }
+
+        $template = $request->input('template', 'pic');
+        if (! in_array($template, ['pic', 'trainer'], true)) {
+            $template = 'pic';
+        }
+
+        $routeParameters = ['suratTugas' => $suratTugas->id];
+        if ($template === 'pic' && $selectedPicId) {
+            $routeParameters['pic_id'] = $selectedPicId;
+        }
+        if ($template === 'trainer' && $selectedInstructorIndex) {
+            $routeParameters['instructor'] = $selectedInstructorIndex;
+        }
+
+        $previewRoute = $template === 'trainer'
+            ? 'surat-tugas.preview-trainer-stream'
+            : 'surat-tugas.preview-pic-stream';
+
+        $downloadRoute = $template === 'trainer'
+            ? 'surat-tugas.download-trainer'
+            : 'surat-tugas.download-pic';
+
+        return Inertia::render('SuratTugas/PdfPreview', [
+            'submission' => [
+                'id' => $suratTugas->id,
+                'kegiatan' => $suratTugas->kegiatan,
+                'tanggal_pengajuan' => optional($suratTugas->tanggal_pengajuan)->format('Y-m-d'),
+                'nama_pic' => $picOptions->pluck('name')->filter()->implode(', ') ?: optional($suratTugas->pic)->name,
+                'status' => $suratTugas->status ?? 'pending',
+            ],
+            'previewUrl' => route($previewRoute, $routeParameters),
+            'downloadUrl' => route($downloadRoute, $routeParameters),
+            'backUrl' => route('surat-tugas.index'),
+            'picOptions' => $picOptions->all(),
+            'selectedPicId' => $selectedPicId,
+            'instructorOptions' => $instructorOptions->all(),
+            'selectedInstructorIndex' => $selectedInstructorIndex,
+            'template' => $template,
         ]);
     }
 
     public function update(Request $request, SuratTugasSubmission $suratTugas): RedirectResponse
     {
+        $keysToNullifyIfEmpty = [
+            'tanggal_pengajuan',
+            'kegiatan',
+            'tanggal_kegiatan',
+            'nama_pendampingan',
+        ];
+
+        foreach ($keysToNullifyIfEmpty as $key) {
+            if ($request->has($key) && $request->input($key) === '') {
+                $request->merge([$key => null]);
+            }
+        }
+
         $rules = [
-            'tanggal_pengajuan' => ['required', 'date'],
-            'kegiatan' => ['required', 'string', 'max:255'],
-            'tanggal_kegiatan' => ['required', 'date'],
-            'pic_ids' => ['required', 'array', 'min:1'],
-            'pic_ids.*' => ['integer', Rule::exists('users', 'id')],
-            'nama_pendampingan' => ['required', 'string', 'max:255'],
-            'fee_pendampingan' => ['nullable'],
+            'tanggal_pengajuan' => ['sometimes', 'nullable', 'date'],
+            'kegiatan' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'tanggal_kegiatan' => ['sometimes', 'nullable', 'date'],
+            'pic_ids' => ['sometimes', 'array', 'min:1'],
+            'pic_ids.*' => ['sometimes', 'integer', Rule::exists('users', 'id')],
+            'nama_pendampingan' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'fee_pendampingan' => ['sometimes', 'nullable'],
         ];
 
         foreach (range(1, 5) as $index) {
-            $rules["instruktor_{$index}_nama"] = $index === 1
-                ? ['required', 'string', 'max:255']
-                : ['nullable', 'string', 'max:255'];
-            $rules["instruktor_{$index}_fee"] = $index === 1 ? ['required'] : ['nullable'];
+            $rules["instruktor_{$index}_nama"] = ['sometimes', 'nullable', 'string', 'max:255'];
+            $rules["instruktor_{$index}_fee"] = ['sometimes', 'nullable'];
         }
 
         $validated = $request->validate($rules);
 
-        $picIds = collect($validated['pic_ids'] ?? [])
-            ->map(fn ($value) => (int) $value)
-            ->filter()
-            ->unique()
-            ->values();
+        $picIds = null;
+        if (array_key_exists('pic_ids', $validated)) {
+            $picIds = collect($validated['pic_ids'] ?? [])
+                ->map(fn ($value) => (int) $value)
+                ->filter()
+                ->unique()
+                ->values();
 
-        if ($picIds->isEmpty()) {
-            return back()->with('error', 'Pilih minimal satu PIC.');
+            if ($picIds->isEmpty()) {
+                return back()->with('error', 'Pilih minimal satu PIC.');
+            }
         }
 
         $user = $request->user();
@@ -422,49 +546,79 @@ class SuratTugasSubmissionController extends Controller
             }
         }
 
-        $pics = User::whereIn('id', $picIds)->get();
+        $primaryPicId = null;
 
-        if ($pics->count() !== $picIds->count()) {
-            return back()->with('error', 'PIC yang dipilih tidak valid.');
+        if ($picIds !== null) {
+            $pics = User::whereIn('id', $picIds)->get();
+
+            if ($pics->count() !== $picIds->count()) {
+                return back()->with('error', 'PIC yang dipilih tidak valid.');
+            }
+
+            $invalidPic = $pics->first(fn (User $candidate) => ! $candidate->hasRole('PIC'));
+            if ($invalidPic) {
+                return back()->with('error', 'PIC yang dipilih tidak valid.');
+            }
+
+            $primaryPicId = $picIds->first();
         }
 
-        $invalidPic = $pics->first(fn (User $candidate) => ! $candidate->hasRole('PIC'));
-        if ($invalidPic) {
-            return back()->with('error', 'PIC yang dipilih tidak valid.');
+        $updates = [];
+
+        if (array_key_exists('tanggal_pengajuan', $validated) && filled($validated['tanggal_pengajuan'])) {
+            $updates['tanggal_pengajuan'] = $validated['tanggal_pengajuan'];
         }
 
-        $primaryPicId = $picIds->first();
-
-        $feePendampingan = (int) preg_replace('/\D/', '', (string) $request->input('fee_pendampingan'));
-        $instruktorFees = [];
-        foreach (range(1, 5) as $index) {
-            $feeKey = "instruktor_{$index}_fee";
-            $instruktorFees[$feeKey] = (int) preg_replace('/\D/', '', (string) $request->input($feeKey));
+        if (array_key_exists('kegiatan', $validated) && filled($validated['kegiatan'])) {
+            $updates['kegiatan'] = trim((string) $validated['kegiatan']);
         }
 
-        $updates = [
-            'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
-            'kegiatan' => $validated['kegiatan'],
-            'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
-            'pic_id' => $primaryPicId,
-            'nama_pendampingan' => $validated['nama_pendampingan'],
-            'fee_pendampingan' => $feePendampingan,
-        ];
+        if (array_key_exists('tanggal_kegiatan', $validated) && filled($validated['tanggal_kegiatan'])) {
+            $updates['tanggal_kegiatan'] = $validated['tanggal_kegiatan'];
+        }
+
+        if ($primaryPicId !== null) {
+            $updates['pic_id'] = $primaryPicId;
+        }
+
+        if (array_key_exists('nama_pendampingan', $validated) && filled($validated['nama_pendampingan'])) {
+            $updates['nama_pendampingan'] = trim((string) $validated['nama_pendampingan']);
+        }
+
+        if ($request->has('fee_pendampingan')) {
+            $rawFeePendampingan = (string) $request->input('fee_pendampingan');
+            if ($rawFeePendampingan !== '') {
+                $updates['fee_pendampingan'] = (int) preg_replace('/\D/', '', $rawFeePendampingan);
+            }
+        }
 
         foreach (range(1, 5) as $index) {
             $nameKey = "instruktor_{$index}_nama";
             $feeKey = "instruktor_{$index}_fee";
 
-            $nameValue = $validated[$nameKey] ?? null;
-            if ($nameValue === '') {
-                $nameValue = null;
+            if (! array_key_exists($nameKey, $validated)) {
+                continue;
             }
 
-            $updates[$nameKey] = $nameValue;
-            $updates[$feeKey] = $nameValue ? ($instruktorFees[$feeKey] ?? 0) : 0;
+            $nameValue = $validated[$nameKey];
+
+            if (! filled($nameValue)) {
+                continue;
+            }
+
+            $updates[$nameKey] = trim((string) $nameValue);
+
+            if ($request->has($feeKey)) {
+                $rawFee = (string) $request->input($feeKey);
+                if ($rawFee !== '') {
+                    $updates[$feeKey] = (int) preg_replace('/\D/', '', $rawFee);
+                }
+            }
         }
 
-        $suratTugas->fill($updates);
+        if (! empty($updates)) {
+            $suratTugas->fill($updates);
+        }
 
         if (($isKaryawan || $isPic) && ! $isAdmin) {
             $suratTugas->status = 'pending';
@@ -475,13 +629,15 @@ class SuratTugasSubmissionController extends Controller
 
         $suratTugas->save();
 
-        $suratTugas->pics()->sync(
-            $picIds
-                ->mapWithKeys(fn ($id, $index) => [
-                    $id => ['position' => $index + 1],
-                ])
-                ->all()
-        );
+        if ($picIds !== null) {
+            $suratTugas->pics()->sync(
+                $picIds
+                    ->mapWithKeys(fn ($id, $index) => [
+                        $id => ['position' => $index + 1],
+                    ])
+                    ->all()
+            );
+        }
 
         return back()->with('success', 'Surat tugas diperbarui');
     }
@@ -560,10 +716,46 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
+        $selectedPicId = (int) $request->input('pic_id');
+        if ($selectedPicId) {
+            $selectedPic = $suratTugas->pics->firstWhere('id', $selectedPicId);
+            if ($selectedPic) {
+                $suratTugas->setRelation('pic', $selectedPic);
+            }
+        }
+
         $pdf = Pdf::loadView('pdf.surat-tugas-pic', ['suratTugas' => $suratTugas]);
         $fileName = sprintf('surat-tugas-pic-%d.pdf', $suratTugas->id);
 
         return $pdf->download($fileName);
+    }
+
+    public function streamPicTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $selectedPicId = (int) $request->input('pic_id');
+        if ($selectedPicId) {
+            $selectedPic = $suratTugas->pics->firstWhere('id', $selectedPicId);
+            if ($selectedPic) {
+                $suratTugas->setRelation('pic', $selectedPic);
+            }
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-pic', ['suratTugas' => $suratTugas]);
+        $fileName = sprintf('surat-tugas-pic-%d.pdf', $suratTugas->id);
+
+        return $pdf->stream($fileName, ['Attachment' => false]);
     }
 
     public function downloadTrainerTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
@@ -580,10 +772,50 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
-        $pdf = Pdf::loadView('pdf.surat-tugas-trainer', ['suratTugas' => $suratTugas]);
+        $selectedInstructorIndex = (int) $request->input('instructor');
+        $selectedInstructor = null;
+        if ($selectedInstructorIndex) {
+            $selectedInstructor = $this->getInstructorByIndex($suratTugas, $selectedInstructorIndex);
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-trainer', [
+            'suratTugas' => $suratTugas,
+            'selectedInstructorIndex' => $selectedInstructorIndex,
+            'selectedInstructor' => $selectedInstructor,
+        ]);
         $fileName = sprintf('surat-tugas-trainer-%d.pdf', $suratTugas->id);
 
         return $pdf->download($fileName);
+    }
+
+    public function streamTrainerTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        if (! $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor', 'PIC'])) {
+            abort(403);
+        }
+
+        $suratTugas->loadMissing(['nomorSurat', 'pic', 'pics', 'user', 'processor']);
+
+        if (! $this->userCanDownload($user, $suratTugas)) {
+            abort(403);
+        }
+
+        $selectedInstructorIndex = (int) $request->input('instructor');
+        $selectedInstructor = null;
+        if ($selectedInstructorIndex) {
+            $selectedInstructor = $this->getInstructorByIndex($suratTugas, $selectedInstructorIndex);
+        }
+
+        $pdf = Pdf::loadView('pdf.surat-tugas-trainer', [
+            'suratTugas' => $suratTugas,
+            'selectedInstructorIndex' => $selectedInstructorIndex,
+            'selectedInstructor' => $selectedInstructor,
+        ]);
+        $fileName = sprintf('surat-tugas-trainer-%d.pdf', $suratTugas->id);
+
+        return $pdf->stream($fileName, ['Attachment' => false]);
     }
 
     public function downloadPendampingTemplate(Request $request, SuratTugasSubmission $suratTugas): \Symfony\Component\HttpFoundation\Response
@@ -624,6 +856,27 @@ class SuratTugasSubmissionController extends Controller
         $fileName = sprintf('surat-tugas-instruktur-%d.pdf', $suratTugas->id);
 
         return $pdf->download($fileName);
+    }
+
+    private function getInstructorByIndex(SuratTugasSubmission $suratTugas, int $index): ?array
+    {
+        if ($index < 1 || $index > 5) {
+            return null;
+        }
+
+        $nameKey = "instruktor_{$index}_nama";
+        $feeKey = "instruktor_{$index}_fee";
+        $name = $suratTugas->{$nameKey};
+
+        if (! filled($name)) {
+            return null;
+        }
+
+        return [
+            'index' => $index,
+            'name' => $name,
+            'fee' => (int) $suratTugas->{$feeKey},
+        ];
     }
 
     private function userCanDownload(User $user, SuratTugasSubmission $submission): bool
