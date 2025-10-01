@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('position')->default(1);
             $table->timestamps();
 
-            $table->unique(['surat_tugas_submission_id', 'pic_id']);
+            $table->unique(['surat_tugas_submission_id', 'pic_id'], 'sts_submission_pic_unique');
         });
 
         DB::table('surat_tugas_submissions')
