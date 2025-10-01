@@ -51,7 +51,7 @@ export default function SuratTugasShow({
               <Detail label="Status" value={submission.status} valueClass={statusColor(submission.status)} />
               <Detail label="Catatan Revisi" value={submission.catatan_revisi || '-'} full />
               <Detail label="Diproses oleh" value={submission.processor?.name || '-'} />
-              <Detail label="Diproses pada" value={submission.processed_at ? new Date(submission.processed_at).toLocaleString('id-ID') : '-'} />
+              <Detail label="Diproses pada" value={submission.processed_at || '-'} />
             </CardContent>
           </Card>
         </div>

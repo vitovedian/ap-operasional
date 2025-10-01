@@ -287,6 +287,18 @@ export default function SuratTugasIndex({
                     <Detail label="Total Fee" value={`Rp ${toIDR(item.total_fee)}`} />
                     <Detail label="Status" value={item.status} valueClass={statusColor(status)} />
                     {item.catatan_revisi && <Detail label="Catatan" value={item.catatan_revisi} />}
+                    {status !== 'pending' && item.processed_by?.name && (
+                      <Detail
+                        label={status === 'approved' ? 'Disetujui Oleh' : 'Diproses Oleh'}
+                        value={item.processed_by.name}
+                      />
+                    )}
+                    {status !== 'pending' && item.processed_at && (
+                      <Detail
+                        label={status === 'approved' ? 'Disetujui Pada' : 'Diproses Pada'}
+                        value={item.processed_at}
+                      />
+                    )}
                     <Detail label="Nomor Surat" value={item.nomor_surat || '-'} />
                   </div>
                   <div className="mt-2 space-y-1.5">
@@ -384,12 +396,18 @@ export default function SuratTugasIndex({
                       <TableCell className="text-center">{item.nomor_surat || '-'}</TableCell>
                       <TableCell>{item.pengaju?.name || '-'}</TableCell>
                       <TableCell>
-                        <div className="text-xs">
-                          <div className={cn('font-medium', statusColor(status))}>{status}</div>
-                          {item.catatan_revisi && (
-                            <div className="text-[11px] text-muted-foreground">Catatan: {item.catatan_revisi}</div>
-                          )}
-                        </div>
+                      <div className="text-xs">
+                        <div className={cn('font-medium', statusColor(status))}>{status}</div>
+                        {item.catatan_revisi && (
+                          <div className="text-[11px] text-muted-foreground">Catatan: {item.catatan_revisi}</div>
+                        )}
+                        {status !== 'pending' && item.processed_by?.name && (
+                          <div className="text-[11px] text-muted-foreground">Oleh: {item.processed_by.name}</div>
+                        )}
+                        {status !== 'pending' && item.processed_at && (
+                          <div className="text-[11px] text-muted-foreground">Pada: {item.processed_at}</div>
+                        )}
+                      </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col items-stretch gap-1.5 text-right">

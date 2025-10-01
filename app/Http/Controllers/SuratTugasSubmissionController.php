@@ -77,7 +77,7 @@ class SuratTugasSubmissionController extends Controller
                         'id' => $submission->processor->id,
                         'name' => $submission->processor->name,
                     ] : null,
-                    'processed_at' => optional($submission->processed_at)->toDateTimeString(),
+                    'processed_at' => optional($submission->processed_at)->format('H:i'),
                     'nomor_surat' => $submission->nomorSurat?->formatted_nomor_surat,
                     'nomor_surat_detail' => $submission->nomorSurat ? [
                         'id' => $submission->nomorSurat->id,
@@ -230,7 +230,7 @@ class SuratTugasSubmissionController extends Controller
             'instruktor_2_fee' => (int) $suratTugas->instruktor_2_fee,
             'status' => $suratTugas->status ?? 'pending',
             'catatan_revisi' => $suratTugas->catatan_revisi,
-            'processed_at' => optional($suratTugas->processed_at)->toDateTimeString(),
+            'processed_at' => optional($suratTugas->processed_at)->format('H:i'),
             'pic' => $suratTugas->pic ? [
                 'id' => $suratTugas->pic->id,
                 'name' => $suratTugas->pic->name,

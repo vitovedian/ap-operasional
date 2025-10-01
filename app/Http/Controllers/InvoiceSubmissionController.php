@@ -82,6 +82,7 @@ class InvoiceSubmissionController extends Controller
             'canManageInvoices' => $user?->hasRole('Admin') ?? false,
             'canViewAllInvoices' => $canViewAll,
             'canAssignNomor' => $canAssignNomor,
+            'canModerateInvoices' => $user?->hasRole('Manager') ?? false,
             'nomorSuratOptions' => $nomorSuratOptions,
         ]);
     }

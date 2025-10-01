@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
@@ -14,11 +15,18 @@ function toIDR(n) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
+function statusColor(status) {
+  if (status === 'approved') return 'text-green-600';
+  if (status === 'rejected') return 'text-red-600';
+  return 'text-amber-600';
+}
+
 export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratOptionsFromProps = [] }) {
   const { props } = usePage();
   const { flash } = props;
   const canManage = Boolean(props?.canManageInvoices);
   const canAssignNomor = Boolean(props?.canAssignNomor);
+  const canModerate = Boolean(props?.canModerateInvoices);
 
   const initialForm = {
     tanggal_pengajuan: '',
@@ -40,6 +48,9 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
   const [nomorSuratOptions, setNomorSuratOptions] = useState(nomorSuratOptionsFromProps || []);
   const [form, setForm] = useState(initialForm);
   const [opeItems, setOpeItems] = useState([{ deskripsi: '', nominal: '' }]);
+  const [openReject, setOpenReject] = useState(false);
+  const [rejectingInvoice, setRejectingInvoice] = useState(null);
+  const [managerNote, setManagerNote] = useState('');
 
   const assignCurrentValue = assigningInvoice?.nomor_surat_submission_id
     ? String(assigningInvoice.nomor_surat_submission_id)
@@ -104,6 +115,46 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
           setSelectedNomor('');
           // Refresh data dengan memanggil route saat ini tanpa perlu reload
           router.visit(window.location.href, { preserveScroll: true });
+        },
+      }
+    );
+  };
+
+  const onApprove = (invoice) => {
+    router.post(
+      route('invoices.approve', invoice.id),
+      {},
+      {
+        preserveScroll: true,
+      }
+    );
+  };
+
+  const openRejectDialog = (invoice) => {
+    setRejectingInvoice(invoice);
+    setManagerNote(invoice.manager_notes || '');
+    setOpenReject(true);
+  };
+
+  const handleRejectDialogChange = (value) => {
+    setOpenReject(value);
+    if (!value) {
+      setRejectingInvoice(null);
+      setManagerNote('');
+    }
+  };
+
+  const submitReject = (event) => {
+    event.preventDefault();
+    if (!rejectingInvoice) return;
+
+    router.post(
+      route('invoices.reject', rejectingInvoice.id),
+      { manager_notes: managerNote },
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          handleRejectDialogChange(false);
         },
       }
     );
@@ -227,7 +278,12 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                   <Detail label="Total OPE" value={`Rp ${toIDR(inv.total_invoice_ope)}`} />
                   <Detail label="Total Tagihan" value={`Rp ${toIDR(inv.total_tagihan)}`} />
                   <Detail label="PPN" value={inv.ppn} />
+                  <Detail label="Nomor Surat" value={inv.nomor_surat || '-'} />
                   <Detail label="Pengaju" value={inv.user?.name || '-'} />
+                  <Detail label="Status" value={(inv.status || 'pending')} valueClass={statusColor(inv.status)} />
+                  {inv.manager_notes && <Detail label="Catatan Manager" value={inv.manager_notes} />}
+                  <Detail label="Disetujui Oleh" value={inv.approved_by || '-'} />
+                  <Detail label="Disetujui Pada" value={inv.approved_at || '-'} />
                 </div>
                 <div className="mt-3 space-y-1.5">
                   <Button variant="outline" className="w-full" onClick={() => openDetailDialog(inv)}>
@@ -241,6 +297,16 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                     >
                       {inv.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
                     </Button>
+                  )}
+                  {canModerate && (inv.status || 'pending') === 'pending' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="default" onClick={() => onApprove(inv)}>
+                        Terima
+                      </Button>
+                      <Button variant="outline" onClick={() => openRejectDialog(inv)}>
+                        Tolak
+                      </Button>
+                    </div>
                   )}
                   {canManage && (
                     <div className="grid grid-cols-2 gap-2">
@@ -271,7 +337,9 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                   <TableHead>PPN</TableHead>
                   <TableHead className="text-center">Total OPE (Rp)</TableHead>
                   <TableHead className="text-center">Total Tagihan (Rp)</TableHead>
+                  <TableHead className="text-center">Nomor Surat</TableHead>
                   <TableHead>Pengaju</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -285,28 +353,80 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                     <TableCell>{inv.ppn}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.total_invoice_ope)}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.total_tagihan)}</TableCell>
+                    <TableCell className="text-center">{inv.nomor_surat || '-'}</TableCell>
                     <TableCell>{inv.user?.name || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
-                        <Button variant="outline" className="sm:flex-1" onClick={() => openDetailDialog(inv)}>
+                      <div className="text-xs">
+                        <div className={cn('font-semibold capitalize', statusColor(inv.status))}>
+                          {inv.status || 'pending'}
+                        </div>
+                        {inv.manager_notes && (
+                          <div className="text-[11px] text-muted-foreground">Catatan: {inv.manager_notes}</div>
+                        )}
+                        {inv.approved_by && (
+                          <div className="text-[11px] text-muted-foreground">Oleh: {inv.approved_by}</div>
+                        )}
+                        {inv.approved_at && (
+                          <div className="text-[11px] text-muted-foreground">Pada: {inv.approved_at}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col items-stretch gap-1.5 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="justify-center text-xs"
+                          onClick={() => openDetailDialog(inv)}
+                        >
                           Detail
                         </Button>
                         {canAssignNomor && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="sm:flex-1"
+                            className="justify-center text-xs"
                             onClick={() => openAssignDialog(inv)}
                           >
                             {inv.nomor_surat ? 'Ubah Nomor' : 'Hubungkan Nomor'}
                           </Button>
                         )}
+                        {canModerate && (inv.status || 'pending') === 'pending' && (
+                          <div className="flex gap-1.5">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => onApprove(inv)}
+                            >
+                              Terima
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => openRejectDialog(inv)}
+                            >
+                              Tolak
+                            </Button>
+                          </div>
+                        )}
                         {canManage && (
-                          <div className="flex flex-1 gap-1.5">
-                            <Button variant="secondary" size="sm" className="flex-1" onClick={() => openEditDialog(inv)}>
+                          <div className="flex gap-1.5">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => openEditDialog(inv)}
+                            >
                               Edit
                             </Button>
-                            <Button variant="destructive" size="sm" className="flex-1" onClick={() => onDelete(inv)}>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => onDelete(inv)}
+                            >
                               Hapus
                             </Button>
                           </div>
@@ -360,6 +480,23 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
               </div>
             </section>
 
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Status & Catatan
+              </h3>
+              <div className="mt-3 space-y-2">
+                <DetailRow
+                  label="Status"
+                  value={detailedInvoice.status || 'pending'}
+                  valueClass={statusColor(detailedInvoice.status)}
+                  emphasise
+                />
+                <DetailRow label="Catatan Manager" value={detailedInvoice.manager_notes || '-'} />
+                <DetailRow label="Disetujui Oleh" value={detailedInvoice.approved_by || '-'} />
+                <DetailRow label="Disetujui Pada" value={detailedInvoice.approved_at || '-'} />
+              </div>
+            </section>
+
             <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Nomor Surat & Lampiran
@@ -370,7 +507,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                   <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-1">Lampiran</span>
                   <Button variant="outline" asChild>
                     <a href={detailedInvoice.download_url} target="_blank" rel="noopener">
-                      Unduh Bukti Surat Konfirmasi
+                      Unduh Bukti Confirmation Letter
                     </a>
                   </Button>
                 </div>
@@ -491,7 +628,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 11% dari tagihan ditambahkan hanya ketika PPN "include".
               </p>
             </Field>
-            <Field label="Bukti Surat Konfirmasi (PDF)">
+            <Field label="Bukti Confirmation Letter (PDF)">
               <Input type="file" accept="application/pdf" onChange={onFileChange} />
               {form.bukti_surat_konfirmasi && (
                 <p className="text-xs text-muted-foreground">{form.bukti_surat_konfirmasi.name}</p>
@@ -585,6 +722,33 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
           </form>
         </Dialog>
       )}
+
+      {canModerate && (
+        <Dialog open={openReject} onOpenChange={handleRejectDialogChange}>
+          <form onSubmit={submitReject} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Catatan Penolakan</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">Catatan untuk pemohon</Label>
+              <Textarea
+                value={managerNote}
+                onChange={(event) => setManagerNote(event.target.value)}
+                required
+                placeholder="Tuliskan alasan penolakan"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => handleRejectDialogChange(false)}>
+                Batal
+              </Button>
+              <Button type="submit" variant="destructive">
+                Kirim Catatan
+              </Button>
+            </DialogFooter>
+          </form>
+        </Dialog>
+      )}
     </SidebarLayout>
   );
 }
@@ -621,11 +785,11 @@ function sanitizeLabel(label) {
   return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');
 }
 
-function Detail({ label, value }) {
+function Detail({ label, value, valueClass = '' }) {
   return (
     <div className="space-y-1">
       <Label className="text-sm font-medium text-muted-foreground">{label}</Label>
-      <div className="font-medium">{value}</div>
+      <div className={cn('font-medium', valueClass)}>{value}</div>
     </div>
   );
 }
