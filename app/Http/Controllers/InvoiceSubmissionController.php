@@ -48,6 +48,7 @@ class InvoiceSubmissionController extends Controller
                     'approved_by' => $inv->approvedBy?->name,
                     'approved_at' => $inv->approved_at?->format('Y-m-d H:i'),
                     'download_url' => route('invoices.download', $inv->id),
+                    'bukti_surat_konfirmasi_name' => $inv->bukti_surat_konfirmasi ? basename($inv->bukti_surat_konfirmasi) : null,
                 ];
             })
             ->withQueryString();

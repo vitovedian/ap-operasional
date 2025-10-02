@@ -460,7 +460,6 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 Informasi Dasar
               </h3>
               <div className="mt-3 space-y-2">
-                <DetailRow label="ID" value={detailedInvoice.id} />
                 <DetailRow label="Tanggal Pengajuan" value={detailedInvoice.tanggal_pengajuan} />
                 <DetailRow label="Tanggal Invoice" value={detailedInvoice.tanggal_invoice} />
                 <DetailRow label="Kegiatan" value={detailedInvoice.kegiatan} />
@@ -480,9 +479,9 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
               </div>
             </section>
 
-            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm">
+            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Status & Catatan
+                Status & Lampiran
               </h3>
               <div className="mt-3 space-y-2">
                 <DetailRow
@@ -494,18 +493,10 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 <DetailRow label="Catatan Manager" value={detailedInvoice.manager_notes || '-'} />
                 <DetailRow label="Disetujui Oleh" value={detailedInvoice.approved_by || '-'} />
                 <DetailRow label="Disetujui Pada" value={detailedInvoice.approved_at || '-'} />
-              </div>
-            </section>
-
-            <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Nomor Surat & Lampiran
-              </h3>
-              <div className="mt-3 space-y-3">
                 <DetailRow label="Nomor Surat" value={detailedInvoice.nomor_surat || '-'} emphasise />
-                <div>
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground block mb-1">Lampiran</span>
-                  <Button variant="outline" asChild>
+                <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Lampiran</span>
+                  <Button variant="outline" size="sm" asChild>
                     <a href={detailedInvoice.download_url} target="_blank" rel="noopener">
                       Unduh Bukti Confirmation Letter
                     </a>
