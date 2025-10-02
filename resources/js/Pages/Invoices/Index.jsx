@@ -494,14 +494,21 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 <DetailRow label="Disetujui Oleh" value={detailedInvoice.approved_by || '-'} />
                 <DetailRow label="Disetujui Pada" value={detailedInvoice.approved_at || '-'} />
                 <DetailRow label="Nomor Surat" value={detailedInvoice.nomor_surat || '-'} emphasise />
-                <div className="flex flex-col gap-1 text-sm md:flex-row md:items-center md:justify-between">
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Lampiran</span>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={detailedInvoice.download_url} target="_blank" rel="noopener">
-                      Unduh Bukti Confirmation Letter
+                <DetailRow
+                  label="Lampiran"
+                  value={detailedInvoice.download_url ? (
+                    <a
+                      href={detailedInvoice.download_url}
+                      target="_blank"
+                      rel="noopener"
+                      className="text-primary hover:underline"
+                    >
+                      {detailedInvoice.bukti_surat_konfirmasi_name || 'Unduh Lampiran'}
                     </a>
-                  </Button>
-                </div>
+                  ) : (
+                    '-'
+                  )}
+                />
               </div>
             </section>
           </div>
