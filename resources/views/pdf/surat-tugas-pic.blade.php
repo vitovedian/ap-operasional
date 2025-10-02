@@ -67,12 +67,12 @@
     </div>
 
     <div class="greeting">
-        Ykh {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
+        Yth {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
         Assalamu’alaikum Wr.Wb.
     </div>
 
     <div class="content">
-        <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
+        <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia-Nya kepada kita semua, Aamin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
         secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}

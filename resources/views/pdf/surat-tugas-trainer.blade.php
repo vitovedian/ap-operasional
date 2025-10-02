@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Surat Tugas Trainer - {{ $selectedInstructor['name'] ?? $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}</title>
+    <title>Surat Tugas Instruktor - {{ $selectedInstructor['name'] ?? $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}</title>
     <style>
         @page {
             margin: 20px;
