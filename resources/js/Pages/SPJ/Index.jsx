@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -553,17 +553,31 @@ function Pagination({ links, className }) {
   if (!links?.length) return null;
   return (
     <div className={cn('flex flex-wrap items-center gap-2 px-4', className)}>
-      {links.map((link, idx) => (
-        <Button key={idx} variant={link.active ? 'default' : 'outline'} size="sm" disabled={!link.url} asChild>
-          <a href={link.url || '#'} dangerouslySetInnerHTML={{ __html: sanitizeLabel(link.label) }} />
-        </Button>
-      ))}
+      {links.map((link, idx) => {
+        const label = sanitizeLabel(link.label);
+        if (!link.url) {
+          return (
+            <Button key={idx} variant={link.active ? 'default' : 'outline'} size="sm" disabled>
+              <span dangerouslySetInnerHTML={{ __html: label }} />
+            </Button>
+          );
+        }
+
+        return (
+          <Button key={idx} variant={link.active ? 'default' : 'outline'} size="sm" asChild>
+            <Link href={link.url} dangerouslySetInnerHTML={{ __html: label }} />
+          </Button>
+        );
+      })}
     </div>
   );
 }
 
 function sanitizeLabel(label) {
-  return label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '');
+  const cleaned = label.replace(/&laquo;|&raquo;|&lsaquo;|&rsaquo;/g, '').trim();
+  if (cleaned === 'pagination.previous') return 'Sebelumnya';
+  if (cleaned === 'pagination.next') return 'Berikutnya';
+  return cleaned;
 }
 
 function Typography({ children }) {
