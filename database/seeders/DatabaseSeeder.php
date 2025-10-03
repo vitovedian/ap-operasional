@@ -99,8 +99,11 @@ class DatabaseSeeder extends Seeder
                 'tanggal_invoice' => now()->subDays(4)->toDateString(),
                 'kegiatan' => 'Pelatihan Digital Marketing',
                 'tagihan_invoice' => 3_500_000,
-                'total_invoice_ope' => 450_000,
                 'ppn' => 'include',
+                'ope_items' => [
+                    ['deskripsi' => 'Transportasi Tim', 'nominal' => 250_000],
+                    ['deskripsi' => 'Konsumsi Peserta', 'nominal' => 200_000],
+                ],
             ],
             [
                 'user_email' => 'pic@example.com',
@@ -108,8 +111,11 @@ class DatabaseSeeder extends Seeder
                 'tanggal_invoice' => now()->subDays(2)->toDateString(),
                 'kegiatan' => 'Workshop Pengembangan Produk',
                 'tagihan_invoice' => 4_250_000,
-                'total_invoice_ope' => 520_000,
                 'ppn' => 'include',
+                'ope_items' => [
+                    ['deskripsi' => 'Akomodasi Narasumber', 'nominal' => 320_000],
+                    ['deskripsi' => 'Materi Pelatihan', 'nominal' => 200_000],
+                ],
             ],
         ];
 
@@ -119,7 +125,21 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            InvoiceSubmission::updateOrCreate(
+            $opeItems = collect($seed['ope_items'] ?? [])
+                ->map(fn (array $item) => [
+                    'deskripsi' => $item['deskripsi'],
+                    'nominal' => (int) ($item['nominal'] ?? 0),
+                ]);
+
+            if ($opeItems->isEmpty()) {
+                $opeItems = collect([
+                    ['deskripsi' => 'Operasional lainnya', 'nominal' => 0],
+                ]);
+            }
+
+            $totalOpe = $opeItems->sum('nominal');
+
+            $invoice = InvoiceSubmission::updateOrCreate(
                 [
                     'user_id' => $user->id,
                     'kegiatan' => $seed['kegiatan'],
@@ -129,13 +149,16 @@ class DatabaseSeeder extends Seeder
                     'tanggal_pengajuan' => $seed['tanggal_pengajuan'],
                     'tagihan_invoice' => $seed['tagihan_invoice'],
                     'ppn' => $seed['ppn'],
-                    'total_invoice_ope' => $seed['total_invoice_ope'],
+                    'total_invoice_ope' => $totalOpe,
                     'total_tagihan' => $seed['tagihan_invoice']
                         + ($seed['ppn'] === 'include' ? (int) round($seed['tagihan_invoice'] * 0.11) : 0)
-                        + $seed['total_invoice_ope'],
+                        + $totalOpe,
                     'bukti_surat_konfirmasi' => 'invoices/konfirmasi/dummy.pdf',
                 ]
             );
+
+            $invoice->opeItems()->delete();
+            $invoice->opeItems()->createMany($opeItems->all());
         }
 
         $nomorSuratSeeds = [

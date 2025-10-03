@@ -34,7 +34,6 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
     kegiatan: '',
     tagihan_invoice: '',
     ppn: 'tanpa',
-    total_invoice_ope: '',
     bukti_surat_konfirmasi: null,
   };
 
@@ -45,6 +44,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
   const [detailedInvoice, setDetailedInvoice] = useState(null);
   const [assigningInvoice, setAssigningInvoice] = useState(null);
   const [selectedNomor, setSelectedNomor] = useState('');
+  const [assignInitialNomor, setAssignInitialNomor] = useState('');
   const [nomorSuratOptions, setNomorSuratOptions] = useState(nomorSuratOptionsFromProps || []);
   const [form, setForm] = useState(initialForm);
   const [opeItems, setOpeItems] = useState([{ deskripsi: '', nominal: '' }]);
@@ -52,9 +52,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
   const [rejectingInvoice, setRejectingInvoice] = useState(null);
   const [managerNote, setManagerNote] = useState('');
 
-  const assignCurrentValue = assigningInvoice?.nomor_surat_submission_id
-    ? String(assigningInvoice.nomor_surat_submission_id)
-    : '';
+  const assignCurrentValue = assignInitialNomor;
   const assignHasChanges = assigningInvoice ? assignCurrentValue !== selectedNomor : false;
   const actionGroupClass = 'flex flex-wrap justify-end gap-2';
   const actionButtonClass = 'min-w-[112px] justify-center text-xs';
@@ -74,14 +72,18 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
       kegiatan: inv.kegiatan || '',
       tagihan_invoice: inv.tagihan_invoice ? String(inv.tagihan_invoice) : '',
       ppn: inv.ppn || 'tanpa',
-      total_invoice_ope: inv.total_invoice_ope ? String(inv.total_invoice_ope) : '',
       bukti_surat_konfirmasi: null,
     });
-    
-    // Initialize OPE items based on the total OPE - we'll create a single item since we don't have itemized data
-    // For now, just set default
-    setOpeItems([{ deskripsi: '', nominal: inv.total_invoice_ope ? String(inv.total_invoice_ope) : '' }]);
-    
+
+    const itemizedOpe = Array.isArray(inv.ope_items) && inv.ope_items.length
+      ? inv.ope_items.map((item) => ({
+          deskripsi: item.deskripsi || '',
+          nominal: item.nominal ? String(item.nominal) : '',
+        }))
+      : [{ deskripsi: '', nominal: '' }];
+
+    setOpeItems(itemizedOpe);
+
     setOpenEdit(true);
   };
 
@@ -92,7 +94,13 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
 
   const openAssignDialog = (inv) => {
     setAssigningInvoice(inv);
-    setSelectedNomor(inv.nomor_surat_submission_id ? String(inv.nomor_surat_submission_id) : '');
+    const initialNomor = inv.nomor_surat_submission_id ? String(inv.nomor_surat_submission_id) : '';
+    setAssignInitialNomor(initialNomor);
+    const optionsContainInitial = Array.isArray(nomorSuratOptionsFromProps)
+      ? nomorSuratOptionsFromProps.some((option) => String(option.id) === initialNomor)
+      : false;
+    const initialSelection = optionsContainInitial ? initialNomor : '';
+    setSelectedNomor(initialSelection);
     // Gunakan nomor surat options dari props
     setNomorSuratOptions(nomorSuratOptionsFromProps);
     setOpenAssign(true);
@@ -113,6 +121,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
           setOpenAssign(false);
           setAssigningInvoice(null);
           setSelectedNomor('');
+          setAssignInitialNomor('');
           // Refresh data dengan memanggil route saat ini tanpa perlu reload
           router.visit(window.location.href, { preserveScroll: true });
         },
@@ -199,16 +208,6 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
     setOpeItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const updateFormFromOpeItems = () => {
-    const totalOpeValue = opeItems.reduce((sum, item) => sum + parseCurrency(item.nominal), 0);
-    setForm(prev => ({ ...prev, total_invoice_ope: String(totalOpeValue) }));
-  };
-
-  // Update form when opeItems change
-  useEffect(() => {
-    updateFormFromOpeItems();
-  }, [opeItems]);
-
   const formTagihan = parseCurrency(form.tagihan_invoice);
   const totalOpeValue = opeItems.reduce((sum, item) => sum + parseCurrency(item.nominal), 0);
   const includePpn = form.ppn === 'include';
@@ -225,7 +224,18 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
     fd.append('kegiatan', form.kegiatan);
     fd.append('tagihan_invoice', String(form.tagihan_invoice));
     fd.append('ppn', form.ppn);
-    fd.append('total_invoice_ope', String(form.total_invoice_ope));
+
+    const sanitizedItems = opeItems
+      .map((item) => ({
+        deskripsi: (item.deskripsi || '').trim(),
+        nominal: parseCurrency(item.nominal),
+      }))
+      .filter((item) => item.deskripsi.length > 0);
+
+    sanitizedItems.forEach((item, idx) => {
+      fd.append(`ope_items[${idx}][deskripsi]`, item.deskripsi);
+      fd.append(`ope_items[${idx}][nominal]`, String(item.nominal));
+    });
     if (form.bukti_surat_konfirmasi) {
       fd.append('bukti_surat_konfirmasi', form.bukti_surat_konfirmasi);
     }
@@ -237,6 +247,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
         setOpenEdit(false);
         setEditingInvoice(null);
         setForm(initialForm);
+        setOpeItems([{ deskripsi: '', nominal: '' }]);
       },
     });
   };
@@ -479,6 +490,24 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
               </div>
             </section>
 
+            {Array.isArray(detailedInvoice.ope_items) && detailedInvoice.ope_items.length > 0 && (
+              <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Rincian OPE
+                </h3>
+                <div className="mt-3 space-y-2">
+                  {detailedInvoice.ope_items.map((item, idx) => (
+                    <DetailRow
+                      key={item.id ?? idx}
+                      label={item.deskripsi || `Item ${idx + 1}`}
+                      value={`Rp ${toIDR(item.nominal ?? 0)}`}
+                      emphasise
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section className="rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:col-span-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Status & Lampiran
@@ -708,6 +737,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                   setOpenAssign(false);
                   setAssigningInvoice(null);
                   setSelectedNomor('');
+                  setAssignInitialNomor('');
                   setNomorSuratOptions([]);
                 }}
               >

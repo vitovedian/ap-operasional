@@ -49,4 +49,9 @@ class InvoiceSubmission extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function opeItems()
+    {
+        return $this->hasMany(InvoiceOpeItem::class);
+    }
 }

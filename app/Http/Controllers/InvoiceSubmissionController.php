@@ -7,6 +7,7 @@ use App\Models\NomorSuratSubmission;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,7 +24,7 @@ class InvoiceSubmissionController extends Controller
         $canViewAll = $user?->hasAnyRole(['Admin', 'Manager', 'Supervisor']) ?? false;
 
         $invoices = InvoiceSubmission::query()
-            ->with(['user', 'nomorSurat', 'approvedBy'])
+            ->with(['user', 'nomorSurat', 'approvedBy', 'opeItems'])
             ->when(! $canViewAll, fn ($query) => $query->where('user_id', $user?->id))
             ->orderByDesc('id')
             ->paginate(10)
@@ -49,6 +50,11 @@ class InvoiceSubmissionController extends Controller
                     'approved_at' => $inv->approved_at?->format('Y-m-d H:i'),
                     'download_url' => route('invoices.download', $inv->id),
                     'bukti_surat_konfirmasi_name' => $inv->bukti_surat_konfirmasi ? basename($inv->bukti_surat_konfirmasi) : null,
+                    'ope_items' => $inv->opeItems->map(fn ($item) => [
+                        'id' => $item->id,
+                        'deskripsi' => $item->deskripsi,
+                        'nominal' => (int) $item->nominal,
+                    ])->values(),
                 ];
             })
             ->withQueryString();
@@ -125,30 +131,46 @@ class InvoiceSubmissionController extends Controller
             'kegiatan' => ['required', 'string', 'max:255'],
             'tagihan_invoice' => ['required'],
             'ppn' => ['required', 'in:include,exclude,tanpa'],
-            'total_invoice_ope' => ['required'],
+            'ope_items' => ['required', 'array', 'min:1'],
+            'ope_items.*.deskripsi' => ['required', 'string', 'max:255'],
+            'ope_items.*.nominal' => ['required', 'integer', 'min:0'],
             'bukti_surat_konfirmasi' => ['required', 'file', 'mimes:pdf', 'max:5120'], // 5MB
         ]);
 
         // Normalize currency inputs (store in Rupiah as integer)
         $tagihan = (int) preg_replace('/\D/', '', (string) $request->input('tagihan_invoice'));
-        $totalOpe = (int) preg_replace('/\D/', '', (string) $request->input('total_invoice_ope'));
+        $opeItems = collect($validated['ope_items'])
+            ->map(function (array $item) {
+                $nominal = (int) preg_replace('/\D/', '', (string) $item['nominal']);
+
+                return [
+                    'deskripsi' => $item['deskripsi'],
+                    'nominal' => $nominal,
+                ];
+            });
+
+        $totalOpe = $opeItems->sum('nominal');
         $ppnRate = strcasecmp($validated['ppn'], 'include') === 0 ? 0.11 : 0;
         $ppnAmount = (int) round($tagihan * $ppnRate);
         $totalTagihan = $tagihan + $ppnAmount + $totalOpe;
 
         $path = $request->file('bukti_surat_konfirmasi')->store('invoices/konfirmasi');
 
-        InvoiceSubmission::create([
-            'user_id' => Auth::id(),
-            'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
-            'tanggal_invoice' => $validated['tanggal_invoice'],
-            'kegiatan' => $validated['kegiatan'],
-            'tagihan_invoice' => $tagihan,
-            'ppn' => $validated['ppn'],
-            'total_invoice_ope' => $totalOpe,
-            'total_tagihan' => $totalTagihan,
-            'bukti_surat_konfirmasi' => $path,
-        ]);
+        DB::transaction(function () use ($validated, $tagihan, $totalOpe, $totalTagihan, $path, $opeItems) {
+            $invoice = InvoiceSubmission::create([
+                'user_id' => Auth::id(),
+                'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
+                'tanggal_invoice' => $validated['tanggal_invoice'],
+                'kegiatan' => $validated['kegiatan'],
+                'tagihan_invoice' => $tagihan,
+                'ppn' => $validated['ppn'],
+                'total_invoice_ope' => $totalOpe,
+                'total_tagihan' => $totalTagihan,
+                'bukti_surat_konfirmasi' => $path,
+            ]);
+
+            $invoice->opeItems()->createMany($opeItems->all());
+        });
 
         return back()->with('success', 'Pengajuan Invoice tersimpan');
     }
@@ -161,35 +183,56 @@ class InvoiceSubmissionController extends Controller
             'kegiatan' => ['required', 'string', 'max:255'],
             'tagihan_invoice' => ['required'],
             'ppn' => ['required', 'in:include,exclude,tanpa'],
-            'total_invoice_ope' => ['required'],
+            'ope_items' => ['required', 'array', 'min:1'],
+            'ope_items.*.deskripsi' => ['required', 'string', 'max:255'],
+            'ope_items.*.nominal' => ['required', 'integer', 'min:0'],
             'bukti_surat_konfirmasi' => ['sometimes', 'file', 'mimes:pdf', 'max:5120'],
         ]);
 
         $tagihan = (int) preg_replace('/\D/', '', (string) $request->input('tagihan_invoice'));
-        $totalOpe = (int) preg_replace('/\D/', '', (string) $request->input('total_invoice_ope'));
+        $opeItems = collect($validated['ope_items'])
+            ->map(function (array $item) {
+                $nominal = (int) preg_replace('/\D/', '', (string) $item['nominal']);
+
+                return [
+                    'deskripsi' => $item['deskripsi'],
+                    'nominal' => $nominal,
+                ];
+            });
+
+        $totalOpe = $opeItems->sum('nominal');
         $ppnRate = strcasecmp($validated['ppn'], 'include') === 0 ? 0.11 : 0;
         $ppnAmount = (int) round($tagihan * $ppnRate);
         $totalTagihan = $tagihan + $ppnAmount + $totalOpe;
-
-        $invoice->fill([
-            'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
-            'tanggal_invoice' => $validated['tanggal_invoice'],
-            'kegiatan' => $validated['kegiatan'],
-            'tagihan_invoice' => $tagihan,
-            'ppn' => $validated['ppn'],
-            'total_invoice_ope' => $totalOpe,
-            'total_tagihan' => $totalTagihan,
-        ]);
-
+        $newAttachment = null;
         if ($request->hasFile('bukti_surat_konfirmasi')) {
-            if ($invoice->bukti_surat_konfirmasi && \Storage::exists($invoice->bukti_surat_konfirmasi)) {
-                \Storage::delete($invoice->bukti_surat_konfirmasi);
-            }
-
-            $invoice->bukti_surat_konfirmasi = $request->file('bukti_surat_konfirmasi')->store('invoices/konfirmasi');
+            $newAttachment = $request->file('bukti_surat_konfirmasi')->store('invoices/konfirmasi');
         }
 
-        $invoice->save();
+        DB::transaction(function () use ($invoice, $validated, $tagihan, $totalOpe, $totalTagihan, $opeItems, $newAttachment) {
+            if ($newAttachment) {
+                if ($invoice->bukti_surat_konfirmasi && \Storage::exists($invoice->bukti_surat_konfirmasi)) {
+                    \Storage::delete($invoice->bukti_surat_konfirmasi);
+                }
+
+                $invoice->bukti_surat_konfirmasi = $newAttachment;
+            }
+
+            $invoice->fill([
+                'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
+                'tanggal_invoice' => $validated['tanggal_invoice'],
+                'kegiatan' => $validated['kegiatan'],
+                'tagihan_invoice' => $tagihan,
+                'ppn' => $validated['ppn'],
+                'total_invoice_ope' => $totalOpe,
+                'total_tagihan' => $totalTagihan,
+            ]);
+
+            $invoice->save();
+
+            $invoice->opeItems()->delete();
+            $invoice->opeItems()->createMany($opeItems->all());
+        });
 
         return back()->with('success', 'Pengajuan Invoice diperbarui');
     }
@@ -230,6 +273,11 @@ class InvoiceSubmissionController extends Controller
 
         if (! $user?->hasAnyRole(['Admin', 'Supervisor'])) {
             abort(403);
+        }
+
+        $rawNomorId = $request->input('nomor_surat_submission_id');
+        if ($rawNomorId === 'null' || $rawNomorId === '' || $rawNomorId === null) {
+            $request->merge(['nomor_surat_submission_id' => null]);
         }
 
         $validated = $request->validate([

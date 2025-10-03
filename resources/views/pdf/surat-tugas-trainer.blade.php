@@ -12,7 +12,7 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             line-height: 1.4;
-            font-size: 12px;
+            /* font-size: 12px; */
         }
         .header {
             text-align: center;
@@ -20,7 +20,7 @@
         }
         .date-place {
             text-align: left;
-            font-size: 11px;
+            /* font-size: 11px; */
             margin-bottom: 10px;
         }
         .greeting {
@@ -34,7 +34,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 10px 0;
-            font-size: 11px;
+            /* font-size: 11px; */
         }
         th, td {
             border: 1px solid #000;
@@ -47,7 +47,7 @@
         .signature-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 60px;
         }
         .signature-table td {
             border: none;
@@ -79,11 +79,11 @@
     </div>
 
     <div class="content">
-        <p>Assalamu'alaikum Wr.Wb.
+        <p>Assalamu'alaikum Wr.Wb. <br>
         Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        maka kami menugaskan {Ibu/Bapak} sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
+        maka kami menugaskan Ibu/Bapak sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
         Dengan jadwal sebagai berikut :</p>
 
         @php
@@ -141,7 +141,7 @@
             <li>Memberikan RolePlay soal dan pembahasan</li>
         </ol>
 
-        <p>Terima kasih atas kerja sama dan supporting {Ibu/Bapak} kepada Synergy Partner Prima semoga terjalin komunikasi, kerja sama yang harmonis dan berdampak.</p>
+        <p>Terima kasih atas kerja sama dan supporting Ibu/Bapak kepada Synergy Partner Prima semoga terjalin komunikasi, kerja sama yang harmonis dan berdampak.</p>
 
         <p class="closing">Wassalamu'alaikum Wr.Wb.</p>
         <p class="closing">Hormat Kami,<Br>
@@ -155,8 +155,8 @@
                 <td>PIC</td>
             </tr>
             <tr>
-                <td style="padding-top: 40px;">(..................)</td>
-                <td style="padding-top: 40px;">(..................)</td>
+                <td style="padding-top: 120px;">(..................)</td>
+                <td style="padding-top: 120px;">(..................)</td>
             </tr>
         </table>
     </div>

@@ -80,7 +80,19 @@ export default function CreateInvoice() {
     fd.append('kegiatan', form.kegiatan);
     fd.append('tagihan_invoice', String(form.tagihan_invoice));
     fd.append('ppn', form.ppn);
-    fd.append('total_invoice_ope', String(totalOpeValue));
+
+    const sanitizedItems = opeItems
+      .map((item) => ({
+        deskripsi: (item.deskripsi || '').trim(),
+        nominal: parseCurrency(item.nominal),
+      }))
+      .filter((item) => item.deskripsi.length > 0);
+
+    sanitizedItems.forEach((item, idx) => {
+      fd.append(`ope_items[${idx}][deskripsi]`, item.deskripsi);
+      fd.append(`ope_items[${idx}][nominal]`, String(item.nominal));
+    });
+
     if (form.bukti_surat_konfirmasi) {
       fd.append('bukti_surat_konfirmasi', form.bukti_surat_konfirmasi);
     }

@@ -99,6 +99,7 @@ export default function SuratTugasIndex({
   const [openAssign, setOpenAssign] = useState(false);
   const [assigning, setAssigning] = useState(null);
   const [selectedNomor, setSelectedNomor] = useState('');
+  const [assignInitialNomor, setAssignInitialNomor] = useState('');
   const [picDropdownOpen, setPicDropdownOpen] = useState(false);
   const picDropdownRef = useRef(null);
   useEffect(() => {
@@ -126,9 +127,7 @@ export default function SuratTugasIndex({
   }, [picDropdownOpen]);
 
   const nomorOptions = Array.isArray(nomorSuratOptions) ? nomorSuratOptions : [];
-  const assignCurrentValue = assigning?.nomor_surat_submission_id
-    ? String(assigning.nomor_surat_submission_id)
-    : '';
+  const assignCurrentValue = assignInitialNomor;
   const assignHasChanges = assigning ? assignCurrentValue !== selectedNomor : false;
 
   const togglePicDropdown = () => {
@@ -287,7 +286,11 @@ export default function SuratTugasIndex({
 
   const openAssignDialog = (submission) => {
     setAssigning(submission);
-    setSelectedNomor(submission.nomor_surat_submission_id ? String(submission.nomor_surat_submission_id) : '');
+    const initialNomor = submission.nomor_surat_submission_id ? String(submission.nomor_surat_submission_id) : '';
+    setAssignInitialNomor(initialNomor);
+    const optionsContainInitial = nomorOptions.some((option) => String(option.id) === initialNomor);
+    const initialSelection = optionsContainInitial ? initialNomor : '';
+    setSelectedNomor(initialSelection);
     setOpenAssign(true);
   };
 
@@ -306,6 +309,7 @@ export default function SuratTugasIndex({
           setOpenAssign(false);
           setAssigning(null);
           setSelectedNomor('');
+          setAssignInitialNomor('');
         },
       }
     );
@@ -723,6 +727,7 @@ export default function SuratTugasIndex({
             if (!value) {
               setAssigning(null);
               setSelectedNomor('');
+              setAssignInitialNomor('');
             }
           }}
         >
@@ -777,6 +782,9 @@ export default function SuratTugasIndex({
                 variant="ghost"
                 onClick={() => {
                   setOpenAssign(false);
+                  setAssigning(null);
+                  setSelectedNomor('');
+                  setAssignInitialNomor('');
                 }}
               >
                 Batal

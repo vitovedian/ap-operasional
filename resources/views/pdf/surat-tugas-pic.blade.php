@@ -67,7 +67,7 @@
     </div>
 
     <div class="greeting">
-        Yth {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
+        Ykh {{ $suratTugas->pic ? $suratTugas->pic->name : '{Nama PIC}' }}<br>
         Assalamu’alaikum Wr.Wb.
     </div>
 

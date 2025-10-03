@@ -675,6 +675,11 @@ class SuratTugasSubmissionController extends Controller
             abort(403);
         }
 
+        $rawNomorId = $request->input('nomor_surat_submission_id');
+        if ($rawNomorId === 'null' || $rawNomorId === '' || $rawNomorId === null) {
+            $request->merge(['nomor_surat_submission_id' => null]);
+        }
+
         $validated = $request->validate([
             'nomor_surat_submission_id' => [
                 'nullable',
