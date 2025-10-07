@@ -21,6 +21,11 @@ function statusColor(status) {
   return 'text-amber-600';
 }
 
+const formatTanggalPengajuan = (record) => {
+  if (!record) return '-';
+  return record.tanggal_pengajuan_display || record.tanggal_pengajuan || '-';
+};
+
 export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratOptionsFromProps = [] }) {
   const { props } = usePage();
   const { flash } = props;
@@ -282,7 +287,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
             {invoices.data.map((inv) => (
               <div key={inv.id} className="rounded-lg border border-border bg-background p-3">
                 <div className="space-y-1 text-sm">
-                  <Detail label="Tanggal Pengajuan" value={inv.tanggal_pengajuan} />
+                  <Detail label="Tanggal Pengajuan" value={formatTanggalPengajuan(inv)} />
                   <Detail label="Tanggal Invoice" value={inv.tanggal_invoice} />
                   <Detail label="Kegiatan" value={inv.kegiatan} />
                   <Detail label="Tagihan" value={`Rp ${toIDR(inv.tagihan_invoice)}`} />
@@ -357,7 +362,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
               <TableBody>
                 {invoices.data.map((inv) => (
                   <TableRow key={inv.id}>
-                    <TableCell>{inv.tanggal_pengajuan}</TableCell>
+                    <TableCell>{formatTanggalPengajuan(inv)}</TableCell>
                     <TableCell>{inv.tanggal_invoice}</TableCell>
                     <TableCell className="text-center">{inv.kegiatan}</TableCell>
                     <TableCell className="text-center">{toIDR(inv.tagihan_invoice)}</TableCell>
@@ -471,7 +476,7 @@ export default function InvoicesIndex({ invoices, nomorSuratOptions: nomorSuratO
                 Informasi Dasar
               </h3>
               <div className="mt-3 space-y-2">
-                <DetailRow label="Tanggal Pengajuan" value={detailedInvoice.tanggal_pengajuan} />
+                <DetailRow label="Tanggal Pengajuan" value={formatTanggalPengajuan(detailedInvoice)} />
                 <DetailRow label="Tanggal Invoice" value={detailedInvoice.tanggal_invoice} />
                 <DetailRow label="Kegiatan" value={detailedInvoice.kegiatan} />
                 <DetailRow label="Pengaju" value={detailedInvoice.user?.name || '-'} />

@@ -21,6 +21,11 @@ function formatJenisKegiatan(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+function formatTanggalPengajuan(record) {
+  if (!record) return '-';
+  return record.tanggal_pengajuan_display || record.tanggal_pengajuan || '-';
+}
+
 function statusColor(status) {
   if (status === 'approved') return 'text-green-600';
   if (status === 'rejected') return 'text-red-600';
@@ -445,7 +450,7 @@ export default function SuratTugasIndex({
               return (
                 <div key={item.id} className="rounded-lg border border-border bg-background p-2">
                   <div className="space-y-1 text-xs">
-                    <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
+                    <Detail label="Tanggal Pengajuan" value={formatTanggalPengajuan(item)} />
                     <Detail label="Tanggal Kegiatan Dimulai" value={item.tanggal_kegiatan} />
                     <Detail label="Tanggal Kegiatan Berakhir" value={item.tanggal_kegiatan_berakhir || '-'} />
                     <Detail label="Jenis Kegiatan" value={formatJenisKegiatan(item.jenis_kegiatan)} />
@@ -548,7 +553,7 @@ export default function SuratTugasIndex({
                   const status = item.status || 'pending';
                   return (
                     <TableRow key={item.id}>
-                      <TableCell>{item.tanggal_pengajuan}</TableCell>
+                      <TableCell>{formatTanggalPengajuan(item)}</TableCell>
                       <TableCell>{item.tanggal_kegiatan}</TableCell>
                       <TableCell>{item.tanggal_kegiatan_berakhir || '-'}</TableCell>
                       <TableCell className="capitalize">{formatJenisKegiatan(item.jenis_kegiatan)}</TableCell>
@@ -905,7 +910,7 @@ export default function SuratTugasIndex({
                 Informasi Pengajuan
               </h3>
               <div className="mt-3 space-y-2">
-                <DetailRow label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} emphasise />
+                <DetailRow label="Tanggal Pengajuan" value={formatTanggalPengajuan(detail)} emphasise />
                 <DetailRow label="Tanggal Kegiatan Dimulai" value={detail.tanggal_kegiatan} emphasise />
                 <DetailRow label="Tanggal Kegiatan Berakhir" value={detail.tanggal_kegiatan_berakhir || '-'} emphasise />
                 <DetailRow label="Jenis Kegiatan" value={formatJenisKegiatan(detail.jenis_kegiatan)} emphasise />

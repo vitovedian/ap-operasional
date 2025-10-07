@@ -61,10 +61,20 @@ class SuratTugasSubmissionController extends Controller
                 $feePendampingan = (int) $submission->fee_pendampingan;
                 $totalInstruktur = $instruktors->sum('fee');
                 $totalKeseluruhan = $feePendampingan + $totalInstruktur;
+                $tanggalPengajuan = optional($submission->tanggal_pengajuan)->format('Y-m-d');
+                $createdAt = optional($submission->created_at)->timezone(config('app.timezone'));
+                $jamPengajuan = $createdAt?->format('H:i');
+                $tanggalPengajuanDisplay = $tanggalPengajuan;
+                if ($tanggalPengajuan && $jamPengajuan) {
+                    $tanggalPengajuanDisplay = trim($tanggalPengajuan . ' ' . $jamPengajuan);
+                }
+
                 return [
                     'id' => $submission->id,
                     'nomor_surat_submission_id' => $submission->nomor_surat_submission_id,
-                    'tanggal_pengajuan' => optional($submission->tanggal_pengajuan)->format('Y-m-d'),
+                    'tanggal_pengajuan' => $tanggalPengajuan,
+                    'tanggal_pengajuan_display' => $tanggalPengajuanDisplay,
+                    'jam_pengajuan' => $jamPengajuan,
                     'kegiatan' => $submission->kegiatan,
                     'jenis_kegiatan' => $submission->jenis_kegiatan ?? 'offline',
                     'tanggal_kegiatan' => optional($submission->tanggal_kegiatan)->format('Y-m-d'),
@@ -324,9 +334,19 @@ class SuratTugasSubmissionController extends Controller
             ])
             ->values();
 
+        $tanggalPengajuan = optional($suratTugas->tanggal_pengajuan)->format('Y-m-d');
+        $createdAt = optional($suratTugas->created_at)->timezone(config('app.timezone'));
+        $jamPengajuan = $createdAt?->format('H:i');
+        $tanggalPengajuanDisplay = $tanggalPengajuan;
+        if ($tanggalPengajuan && $jamPengajuan) {
+            $tanggalPengajuanDisplay = trim($tanggalPengajuan . ' ' . $jamPengajuan);
+        }
+
         $data = [
             'id' => $suratTugas->id,
-            'tanggal_pengajuan' => optional($suratTugas->tanggal_pengajuan)->format('Y-m-d'),
+            'tanggal_pengajuan' => $tanggalPengajuan,
+            'tanggal_pengajuan_display' => $tanggalPengajuanDisplay,
+            'jam_pengajuan' => $jamPengajuan,
             'kegiatan' => $suratTugas->kegiatan,
             'jenis_kegiatan' => $suratTugas->jenis_kegiatan ?? 'offline',
             'tanggal_kegiatan' => optional($suratTugas->tanggal_kegiatan)->format('Y-m-d'),

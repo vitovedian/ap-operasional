@@ -18,6 +18,8 @@ export default function SuratTugasShow({
 }) {
   if (!submission) return null;
 
+  const tanggalPengajuanDisplay = submission.tanggal_pengajuan_display || submission.tanggal_pengajuan || '-';
+
   return (
     <SidebarLayout header={<Typography>Detail Surat Tugas</Typography>}>
       <Head title={`Surat Tugas #${submission.id}`} />
@@ -29,7 +31,7 @@ export default function SuratTugasShow({
               <CardDescription>Detail utama surat tugas ini.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Detail label="Tanggal Pengajuan" value={submission.tanggal_pengajuan} />
+              <Detail label="Tanggal Pengajuan" value={tanggalPengajuanDisplay} />
               <Detail label="Tanggal Kegiatan Dimulai" value={submission.tanggal_kegiatan} />
               <Detail label="Tanggal Kegiatan Berakhir" value={submission.tanggal_kegiatan_berakhir || '-'} />
               <Detail label="Jenis Kegiatan" value={formatJenisKegiatan(submission.jenis_kegiatan)} />

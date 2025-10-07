@@ -121,6 +121,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>No.</th>
                     <th>Tanggal Kegiatan</th>
                     <th>Nama Kegiatan</th>
                     <th>Fee</th>
@@ -129,6 +130,7 @@
             <tbody>
                 @forelse($instruktors as $instruktor)
                 <tr>
+                    <td>1</td>
                     <td>{{ $rentangTanggal }}</td>
                     <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }} - {{ $instruktor['nama'] }}</td>
                     <td>Rp {{ number_format($instruktor['fee'], 0, ',', '.') }} x {banyak jpl}</td>

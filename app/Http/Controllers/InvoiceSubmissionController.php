@@ -29,9 +29,19 @@ class InvoiceSubmissionController extends Controller
             ->orderByDesc('id')
             ->paginate(10)
             ->through(function (InvoiceSubmission $inv) {
+                $tanggalPengajuan = $inv->tanggal_pengajuan ? $inv->tanggal_pengajuan->format('Y-m-d') : null;
+                $createdAt = $inv->created_at ? $inv->created_at->copy()->timezone(config('app.timezone')) : null;
+                $jamPengajuan = $createdAt?->format('H:i');
+                $tanggalPengajuanDisplay = $tanggalPengajuan;
+                if ($tanggalPengajuan && $jamPengajuan) {
+                    $tanggalPengajuanDisplay = trim($tanggalPengajuan . ' ' . $jamPengajuan);
+                }
+
                 return [
                     'id' => $inv->id,
-                    'tanggal_pengajuan' => $inv->tanggal_pengajuan ? $inv->tanggal_pengajuan->format('Y-m-d') : null,
+                    'tanggal_pengajuan' => $tanggalPengajuan,
+                    'tanggal_pengajuan_display' => $tanggalPengajuanDisplay,
+                    'jam_pengajuan' => $jamPengajuan,
                     'tanggal_invoice' => $inv->tanggal_invoice ? $inv->tanggal_invoice->format('Y-m-d') : null,
                     'kegiatan' => $inv->kegiatan,
                     'tagihan_invoice' => (int) $inv->tagihan_invoice,

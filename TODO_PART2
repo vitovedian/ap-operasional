@@ -45,3 +45,11 @@ opsi online/offline belum ada (ok)
 tambahkan pembuatan nomor surat otomatis
 jumlah_jpl (?)
 
+pilih bendera per form atau pilih bendera setelah login
+
+tombol nomor tugas (ada di setiap form):
+tanggal pengajuan (ngikut sama form)
+pilih bendera (untuk sekarang SPP, MBS, EPU, KIM)
+tujuan surat (dropdown, untuk sekarang invoice & surat tugas)
+nama klien
+preview nomor tugas
