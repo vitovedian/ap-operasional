@@ -32,8 +32,16 @@ make it so it has a list of these widgets:
 
 buat nama pendamping opsional (done)
 buat edit fee pendamping opsional (done)
-supervisor tidak dapat akses tambah nomor surat (403)
+supervisor tidak dapat akses tambah nomor surat (done)
 template surat tugas satu satu (done)
 
 invoice butuh template pdf
 invoice butuh preview pdf
+
+
+surat tugas:
+tanggal kegiatan tambahkan menjadi tanggal mulai-tanggal berakhir (ok)
+opsi online/offline belum ada (ok)
+tambahkan pembuatan nomor surat otomatis
+jumlah_jpl (?)
+

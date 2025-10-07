@@ -16,6 +16,11 @@ function toIDR(n) {
   return new Intl.NumberFormat('id-ID').format(num);
 }
 
+function formatJenisKegiatan(value) {
+  if (!value) return '-';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function statusColor(status) {
   if (status === 'approved') return 'text-green-600';
   if (status === 'rejected') return 'text-red-600';
@@ -40,6 +45,8 @@ export default function SuratTugasIndex({
     tanggal_pengajuan: '',
     kegiatan: '',
     tanggal_kegiatan: '',
+    tanggal_kegiatan_berakhir: '',
+    jenis_kegiatan: 'offline',
     pic_ids: defaultPicSelections,
     nama_pendampingan: '',
     fee_pendampingan: '',
@@ -126,6 +133,31 @@ export default function SuratTugasIndex({
     };
   }, [picDropdownOpen]);
 
+  useEffect(() => {
+    const startDate = form.tanggal_kegiatan;
+
+    setForm((prev) => {
+      if (!startDate) {
+        if (prev.tanggal_kegiatan_berakhir === '') {
+          return prev;
+        }
+        return {
+          ...prev,
+          tanggal_kegiatan_berakhir: '',
+        };
+      }
+
+      if (!prev.tanggal_kegiatan_berakhir || prev.tanggal_kegiatan_berakhir < startDate) {
+        return {
+          ...prev,
+          tanggal_kegiatan_berakhir: startDate,
+        };
+      }
+
+      return prev;
+    });
+  }, [form.tanggal_kegiatan]);
+
   const nomorOptions = Array.isArray(nomorSuratOptions) ? nomorSuratOptions : [];
   const assignCurrentValue = assignInitialNomor;
   const assignHasChanges = assigning ? assignCurrentValue !== selectedNomor : false;
@@ -167,6 +199,8 @@ export default function SuratTugasIndex({
       tanggal_pengajuan: submission.tanggal_pengajuan || '',
       kegiatan: submission.kegiatan || '',
       tanggal_kegiatan: submission.tanggal_kegiatan || '',
+      tanggal_kegiatan_berakhir: submission.tanggal_kegiatan_berakhir || '',
+      jenis_kegiatan: submission.jenis_kegiatan || 'offline',
       pic_ids: nextPicIds,
       nama_pendampingan: submission.nama_pendampingan || '',
       fee_pendampingan: submission.fee_pendampingan ? String(submission.fee_pendampingan) : '',
@@ -232,8 +266,16 @@ export default function SuratTugasIndex({
       payload.kegiatan = form.kegiatan.trim();
     }
 
+    if (form.jenis_kegiatan) {
+      payload.jenis_kegiatan = form.jenis_kegiatan;
+    }
+
     if (form.tanggal_kegiatan) {
       payload.tanggal_kegiatan = form.tanggal_kegiatan;
+    }
+
+    if (form.tanggal_kegiatan_berakhir) {
+      payload.tanggal_kegiatan_berakhir = form.tanggal_kegiatan_berakhir;
     }
 
     if (Array.isArray(form.pic_ids) && form.pic_ids.length > 0) {
@@ -365,6 +407,7 @@ export default function SuratTugasIndex({
       fee_pendampingan: Number(item.fee_pendampingan || 0),
       total_fee_instruktur: Number(item.total_fee_instruktur || 0),
       total_fee: Number(item.total_fee || 0),
+      jenis_kegiatan: item.jenis_kegiatan || 'offline',
       instruktors,
       pics: Array.isArray(item.pics) ? item.pics : [],
       download_urls: item.download_urls || {
@@ -403,8 +446,10 @@ export default function SuratTugasIndex({
                 <div key={item.id} className="rounded-lg border border-border bg-background p-2">
                   <div className="space-y-1 text-xs">
                     <Detail label="Tanggal Pengajuan" value={item.tanggal_pengajuan} />
-                    <Detail label="Tanggal Kegiatan" value={item.tanggal_kegiatan} />
-                    <Detail label="Kegiatan" value={item.kegiatan} />
+                    <Detail label="Tanggal Kegiatan Dimulai" value={item.tanggal_kegiatan} />
+                    <Detail label="Tanggal Kegiatan Berakhir" value={item.tanggal_kegiatan_berakhir || '-'} />
+                    <Detail label="Jenis Kegiatan" value={formatJenisKegiatan(item.jenis_kegiatan)} />
+                    <Detail label="Nama Kegiatan" value={item.kegiatan} />
                     <Detail label="Pendampingan" value={item.nama_pendampingan || '-'} />
                     <Detail label="Fee Pendampingan" value={`Rp ${toIDR(item.fee_pendampingan)}`} />
                     <Detail
@@ -483,8 +528,10 @@ export default function SuratTugasIndex({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">Tgl Pengajuan</TableHead>
-                  <TableHead className="text-center">Tgl Kegiatan</TableHead>
-                  <TableHead className="text-center">Kegiatan</TableHead>
+                  <TableHead className="text-center">Tgl Kegiatan Dimulai</TableHead>
+                  <TableHead className="text-center">Tgl Kegiatan Berakhir</TableHead>
+                  <TableHead className="text-center">Jenis Kegiatan</TableHead>
+                  <TableHead className="text-center">Nama Kegiatan</TableHead>
                   <TableHead className="text-center">PIC</TableHead>
                   <TableHead className="text-center">Pendamping</TableHead>
                   <TableHead className="text-center">Fee Pendamping (Rp)</TableHead>
@@ -503,6 +550,8 @@ export default function SuratTugasIndex({
                     <TableRow key={item.id}>
                       <TableCell>{item.tanggal_pengajuan}</TableCell>
                       <TableCell>{item.tanggal_kegiatan}</TableCell>
+                      <TableCell>{item.tanggal_kegiatan_berakhir || '-'}</TableCell>
+                      <TableCell className="capitalize">{formatJenisKegiatan(item.jenis_kegiatan)}</TableCell>
                       <TableCell>{item.kegiatan}</TableCell>
                       <TableCell>
                         {Array.isArray(item.pics) && item.pics.length > 0
@@ -603,18 +652,38 @@ export default function SuratTugasIndex({
             <DialogTitle>Edit Surat Tugas</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Tanggal Pengajuan">
                 <Input type="date" value={form.tanggal_pengajuan} onChange={bind('tanggal_pengajuan')} required />
               </Field>
-              <Field label="Tanggal Kegiatan">
+              <Field label="Tanggal Kegiatan Dimulai">
                 <Input type="date" value={form.tanggal_kegiatan} onChange={bind('tanggal_kegiatan')} required />
               </Field>
+              <Field label="Tanggal Kegiatan Berakhir">
+                <Input
+                  type="date"
+                  value={form.tanggal_kegiatan_berakhir}
+                  min={form.tanggal_kegiatan || undefined}
+                  onChange={bind('tanggal_kegiatan_berakhir')}
+                  required
+                />
+              </Field>
             </div>
-            <Field label="Kegiatan">
+            <Field label="Nama Kegiatan">
               <Input value={form.kegiatan} onChange={bind('kegiatan')} required />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Jenis Kegiatan">
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm capitalize ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={form.jenis_kegiatan}
+                  onChange={bind('jenis_kegiatan')}
+                  required
+                >
+                  <option value="offline">Offline</option>
+                  <option value="online">Online</option>
+                </select>
+              </Field>
               <Field label="PIC Penanggung Jawab">
                 <div className="relative" ref={picDropdownRef}>
                   <Button
@@ -654,18 +723,20 @@ export default function SuratTugasIndex({
                 </div>
                 <p className="text-xs text-muted-foreground">Pilih minimal satu PIC untuk penugasan.</p>
               </Field>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Nama Pendampingan">
                 <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} placeholder="Opsional" />
               </Field>
+              <Field label="Fee Pendampingan (Rp)">
+                <Input
+                  value={toIDRString(form.fee_pendampingan)}
+                  onChange={bindNumeric('fee_pendampingan')}
+                  inputMode="numeric"
+                  placeholder="Opsional"
+                />
+              </Field>
             </div>
-            <Field label="Fee Pendampingan (Rp)">
-              <Input
-                value={toIDRString(form.fee_pendampingan)}
-                onChange={bindNumeric('fee_pendampingan')}
-                inputMode="numeric"
-                placeholder="Opsional"
-              />
-            </Field>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -835,8 +906,10 @@ export default function SuratTugasIndex({
               </h3>
               <div className="mt-3 space-y-2">
                 <DetailRow label="Tanggal Pengajuan" value={detail.tanggal_pengajuan} emphasise />
-                <DetailRow label="Tanggal Kegiatan" value={detail.tanggal_kegiatan} emphasise />
-                <DetailRow label="Kegiatan" value={detail.kegiatan} emphasise />
+                <DetailRow label="Tanggal Kegiatan Dimulai" value={detail.tanggal_kegiatan} emphasise />
+                <DetailRow label="Tanggal Kegiatan Berakhir" value={detail.tanggal_kegiatan_berakhir || '-'} emphasise />
+                <DetailRow label="Jenis Kegiatan" value={formatJenisKegiatan(detail.jenis_kegiatan)} emphasise />
+                <DetailRow label="Nama Kegiatan" value={detail.kegiatan} emphasise />
                 <DetailRow label="Nama Pendampingan" value={detail.nama_pendampingan || '-'} emphasise />
                 <DetailRow label="Fee Pendampingan" value={`Rp ${toIDR(detail.fee_pendampingan)}`} emphasise />
                 <div className="space-y-2">

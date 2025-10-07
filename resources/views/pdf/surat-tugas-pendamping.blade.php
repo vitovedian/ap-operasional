@@ -62,6 +62,17 @@
         Jakarta, {{ optional($suratTugas->tanggal_pengajuan)->translatedFormat('d F Y') ?? '{Tanggal berformat}' }}
     </div>
 
+    @php
+        $tanggalMulai = optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y');
+        $tanggalSelesai = optional($suratTugas->tanggal_kegiatan_berakhir)->translatedFormat('d F Y');
+        $rentangTanggal = $tanggalMulai && $tanggalSelesai
+            ? $tanggalMulai . ' s.d. ' . $tanggalSelesai
+            : ($tanggalMulai ?? '{Tanggal Kegiatan}');
+        $jenisKegiatan = $suratTugas->jenis_kegiatan
+            ? ucfirst($suratTugas->jenis_kegiatan)
+            : '{Online/Offline}';
+    @endphp
+
     <div class="greeting">
         Ykh {{ $suratTugas->nama_pendampingan ?? '{Nama Pendamping}' }}<br>
         Assalamu'alaikum Wr.Wb.
@@ -71,7 +82,7 @@
         <p>Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }} maka kami menugaskan {Ibu/Bapak} sebagai {Pendamping}.</p>
+        secara {{ $jenisKegiatan }} maka kami menugaskan {Ibu/Bapak} sebagai {Pendamping}.</p>
 
         <p>Dengan agenda acara kegiatan:</p>
 
@@ -88,7 +99,7 @@
                 <tr>
                     <td>1</td>
                     <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }}</td>
-                    <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
+                    <td>{{ $rentangTanggal }}</td>
                     <td>{{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}</td>
                 </tr>
             </tbody>

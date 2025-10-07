@@ -13,7 +13,9 @@ class SuratTugasSubmission extends Model
         'user_id',
         'tanggal_pengajuan',
         'kegiatan',
+        'jenis_kegiatan',
         'tanggal_kegiatan',
+        'tanggal_kegiatan_berakhir',
         'pic_id',
         'nama_pendampingan',
         'fee_pendampingan',
@@ -37,6 +39,7 @@ class SuratTugasSubmission extends Model
     protected $casts = [
         'tanggal_pengajuan' => 'date',
         'tanggal_kegiatan' => 'date',
+        'tanggal_kegiatan_berakhir' => 'date',
         'processed_at' => 'datetime',
     ];
 

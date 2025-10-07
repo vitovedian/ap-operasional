@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 
 const formatIDR = (value) => new Intl.NumberFormat('id-ID').format(Number(value || 0));
 
+const formatJenisKegiatan = (value) => (!value ? '-' : value.charAt(0).toUpperCase() + value.slice(1));
+
 export default function SuratTugasShow({
   submission,
   canModerate = false,
@@ -28,8 +30,10 @@ export default function SuratTugasShow({
             </CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <Detail label="Tanggal Pengajuan" value={submission.tanggal_pengajuan} />
-              <Detail label="Tanggal Kegiatan" value={submission.tanggal_kegiatan} />
-              <Detail label="Kegiatan" value={submission.kegiatan} full />
+              <Detail label="Tanggal Kegiatan Dimulai" value={submission.tanggal_kegiatan} />
+              <Detail label="Tanggal Kegiatan Berakhir" value={submission.tanggal_kegiatan_berakhir || '-'} />
+              <Detail label="Jenis Kegiatan" value={formatJenisKegiatan(submission.jenis_kegiatan)} />
+              <Detail label="Nama Kegiatan" value={submission.kegiatan} full />
               <Detail label="Nama Pendampingan" value={submission.nama_pendampingan || '-'} full />
               <Detail label="Fee Pendampingan" value={`Rp ${formatIDR(submission.fee_pendampingan)}`} />
               <Detail label="Nomor Surat" value={submission.nomor_surat || '-'} />

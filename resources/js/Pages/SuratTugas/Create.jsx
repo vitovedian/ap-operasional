@@ -17,7 +17,9 @@ export default function CreateSuratTugas() {
   const [form, setForm] = useState({
     tanggal_pengajuan: '',
     tanggal_kegiatan: '',
+    tanggal_kegiatan_berakhir: '',
     kegiatan: '',
+    jenis_kegiatan: 'offline',
     pic_ids: defaultPicSelections,
     nama_pendampingan: '',
     fee_pendampingan: '',
@@ -58,6 +60,31 @@ export default function CreateSuratTugas() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [picDropdownOpen]);
+
+  useEffect(() => {
+    const startDate = form.tanggal_kegiatan;
+
+    setForm((prev) => {
+      if (!startDate) {
+        if (prev.tanggal_kegiatan_berakhir === '') {
+          return prev;
+        }
+        return {
+          ...prev,
+          tanggal_kegiatan_berakhir: '',
+        };
+      }
+
+      if (!prev.tanggal_kegiatan_berakhir || prev.tanggal_kegiatan_berakhir < startDate) {
+        return {
+          ...prev,
+          tanggal_kegiatan_berakhir: startDate,
+        };
+      }
+
+      return prev;
+    });
+  }, [form.tanggal_kegiatan]);
 
   const bind = (key) => (event) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
@@ -148,7 +175,9 @@ export default function CreateSuratTugas() {
     const payload = {
       tanggal_pengajuan: form.tanggal_pengajuan,
       tanggal_kegiatan: form.tanggal_kegiatan,
+      tanggal_kegiatan_berakhir: form.tanggal_kegiatan_berakhir,
       kegiatan: form.kegiatan,
+      jenis_kegiatan: form.jenis_kegiatan,
       pic_ids: form.pic_ids,
       nama_pendampingan: form.nama_pendampingan,
       fee_pendampingan: form.fee_pendampingan,
@@ -170,7 +199,9 @@ export default function CreateSuratTugas() {
         setForm({
           tanggal_pengajuan: '',
           tanggal_kegiatan: '',
+          tanggal_kegiatan_berakhir: '',
           kegiatan: '',
+          jenis_kegiatan: 'offline',
           pic_ids: [...defaultPicSelections],
           nama_pendampingan: '',
           fee_pendampingan: '',
@@ -194,20 +225,40 @@ export default function CreateSuratTugas() {
           </CardHeader>
           <CardContent>
             <form className="space-y-6" onSubmit={submit}>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Tanggal Pengajuan">
                   <Input type="date" value={form.tanggal_pengajuan} onChange={bind('tanggal_pengajuan')} required />
                 </Field>
-                <Field label="Tanggal Kegiatan">
+                <Field label="Tanggal Kegiatan Dimulai">
                   <Input type="date" value={form.tanggal_kegiatan} onChange={bind('tanggal_kegiatan')} required />
+                </Field>
+                <Field label="Tanggal Kegiatan Berakhir">
+                  <Input
+                    type="date"
+                    value={form.tanggal_kegiatan_berakhir}
+                    min={form.tanggal_kegiatan || undefined}
+                    onChange={bind('tanggal_kegiatan_berakhir')}
+                    required
+                  />
                 </Field>
               </div>
 
-              <Field label="Kegiatan">
+              <Field label="Nama Kegiatan">
                 <Input value={form.kegiatan} onChange={bind('kegiatan')} required />
               </Field>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Jenis Kegiatan">
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm capitalize ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={form.jenis_kegiatan}
+                    onChange={bind('jenis_kegiatan')}
+                    required
+                  >
+                    <option value="offline">Offline</option>
+                    <option value="online">Online</option>
+                  </select>
+                </Field>
                 <Field label="PIC Penanggung Jawab">
                   <div className="relative" ref={picDropdownRef}>
                     <Button
@@ -247,14 +298,16 @@ export default function CreateSuratTugas() {
                   </div>
                   <p className="text-xs text-muted-foreground">Pilih minimal satu PIC untuk penugasan.</p>
                 </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Nama Pendampingan">
                   <Input value={form.nama_pendampingan} onChange={bind('nama_pendampingan')} placeholder="Opsional" />
                 </Field>
+                <Field label="Fee Pendampingan (Rp)">
+                  <Input value={toIDRString(form.fee_pendampingan)} onChange={bindNumeric('fee_pendampingan')} inputMode="numeric" placeholder="Opsional" />
+                </Field>
               </div>
-
-              <Field label="Fee Pendampingan (Rp)">
-                <Input value={toIDRString(form.fee_pendampingan)} onChange={bindNumeric('fee_pendampingan')} inputMode="numeric" placeholder="Opsional" />
-              </Field>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

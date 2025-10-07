@@ -73,6 +73,17 @@
         No&#9;&#9;: {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->formatted_nomor_surat : '{Nomor Surat}' }}
     </div>
 
+    @php
+        $tanggalMulai = optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y');
+        $tanggalSelesai = optional($suratTugas->tanggal_kegiatan_berakhir)->translatedFormat('d F Y');
+        $rentangTanggal = $tanggalMulai && $tanggalSelesai
+            ? $tanggalMulai . ' s.d. ' . $tanggalSelesai
+            : ($tanggalMulai ?? '{Tanggal Kegiatan}');
+        $jenisKegiatan = $suratTugas->jenis_kegiatan
+            ? ucfirst($suratTugas->jenis_kegiatan)
+            : '{Online/Offline}';
+    @endphp
+
     <div class="greeting">
         Kepada Yth : <br>
         {{ $selectedInstructor['name'] ?? $suratTugas->instruktor_1_nama ?? $suratTugas->instruktor_2_nama ?? '{Nama Trainer}' }}<br>
@@ -83,7 +94,7 @@
         Semoga Allah SWT selalu melimpahkan rahmat dan karunia Nya kepada kita semua, Amin YRA.</p>
 
         <p>Sehubung dengan adanya kegiatan di {{ $suratTugas->nomorSurat ? $suratTugas->nomorSurat->nama_klien : '{Nama Bank}' }}
-        maka kami menugaskan Ibu/Bapak sebagai Trainer secara {{ $suratTugas->kegiatan ? 'Offline' : '{Online/Offline}' }}
+        maka kami menugaskan Ibu/Bapak sebagai Trainer secara {{ $jenisKegiatan }}
         Dengan jadwal sebagai berikut :</p>
 
         @php
@@ -118,13 +129,13 @@
             <tbody>
                 @forelse($instruktors as $instruktor)
                 <tr>
-                    <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
+                    <td>{{ $rentangTanggal }}</td>
                     <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }} - {{ $instruktor['nama'] }}</td>
                     <td>Rp {{ number_format($instruktor['fee'], 0, ',', '.') }} x {banyak jpl}</td>
                 </tr>
                 @empty
                 <tr>
-                    <td>{{ optional($suratTugas->tanggal_kegiatan)->translatedFormat('d F Y') ?: '{Tanggal Kegiatan}' }}</td>
+                    <td>{{ $rentangTanggal }}</td>
                     <td>{{ $suratTugas->kegiatan ?: '{Nama Kegiatan}' }}</td>
                     <td>-</td>
                 </tr>

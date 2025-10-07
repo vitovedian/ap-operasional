@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -65,7 +66,9 @@ class SuratTugasSubmissionController extends Controller
                     'nomor_surat_submission_id' => $submission->nomor_surat_submission_id,
                     'tanggal_pengajuan' => optional($submission->tanggal_pengajuan)->format('Y-m-d'),
                     'kegiatan' => $submission->kegiatan,
+                    'jenis_kegiatan' => $submission->jenis_kegiatan ?? 'offline',
                     'tanggal_kegiatan' => optional($submission->tanggal_kegiatan)->format('Y-m-d'),
+                    'tanggal_kegiatan_berakhir' => optional($submission->tanggal_kegiatan_berakhir)->format('Y-m-d'),
                     'pic' => $submission->pic ? [
                         'id' => $submission->pic->id,
                         'name' => $submission->pic->name,
@@ -189,7 +192,9 @@ class SuratTugasSubmissionController extends Controller
         $rules = [
             'tanggal_pengajuan' => ['required', 'date'],
             'kegiatan' => ['required', 'string', 'max:255'],
+            'jenis_kegiatan' => ['required', 'in:online,offline'],
             'tanggal_kegiatan' => ['required', 'date'],
+            'tanggal_kegiatan_berakhir' => ['required', 'date', 'after_or_equal:tanggal_kegiatan'],
             'pic_ids' => ['required', 'array', 'min:1'],
             'pic_ids.*' => ['integer', Rule::exists('users', 'id')],
             'nama_pendampingan' => ['nullable', 'string', 'max:255'],
@@ -244,7 +249,9 @@ class SuratTugasSubmissionController extends Controller
             'user_id' => Auth::id(),
             'tanggal_pengajuan' => $validated['tanggal_pengajuan'],
             'kegiatan' => $validated['kegiatan'],
+            'jenis_kegiatan' => strtolower($validated['jenis_kegiatan']),
             'tanggal_kegiatan' => $validated['tanggal_kegiatan'],
+            'tanggal_kegiatan_berakhir' => $validated['tanggal_kegiatan_berakhir'],
             'pic_id' => $primaryPicId,
             'nama_pendampingan' => $namaPendampingan,
             'fee_pendampingan' => $feePendampingan,
@@ -321,7 +328,9 @@ class SuratTugasSubmissionController extends Controller
             'id' => $suratTugas->id,
             'tanggal_pengajuan' => optional($suratTugas->tanggal_pengajuan)->format('Y-m-d'),
             'kegiatan' => $suratTugas->kegiatan,
+            'jenis_kegiatan' => $suratTugas->jenis_kegiatan ?? 'offline',
             'tanggal_kegiatan' => optional($suratTugas->tanggal_kegiatan)->format('Y-m-d'),
+            'tanggal_kegiatan_berakhir' => optional($suratTugas->tanggal_kegiatan_berakhir)->format('Y-m-d'),
             'nama_pendampingan' => $suratTugas->nama_pendampingan,
             'fee_pendampingan' => $feePendampingan,
             'pic_ids' => $pics->pluck('id')->map(fn ($id) => (int) $id)->all(),
@@ -503,6 +512,7 @@ class SuratTugasSubmissionController extends Controller
             'tanggal_pengajuan',
             'kegiatan',
             'tanggal_kegiatan',
+            'tanggal_kegiatan_berakhir',
             'nama_pendampingan',
         ];
 
@@ -515,7 +525,9 @@ class SuratTugasSubmissionController extends Controller
         $rules = [
             'tanggal_pengajuan' => ['sometimes', 'nullable', 'date'],
             'kegiatan' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'jenis_kegiatan' => ['sometimes', 'in:online,offline'],
             'tanggal_kegiatan' => ['sometimes', 'nullable', 'date'],
+            'tanggal_kegiatan_berakhir' => ['sometimes', 'nullable', 'date'],
             'pic_ids' => ['sometimes', 'array', 'min:1'],
             'pic_ids.*' => ['sometimes', 'integer', Rule::exists('users', 'id')],
             'nama_pendampingan' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -528,6 +540,26 @@ class SuratTugasSubmissionController extends Controller
         }
 
         $validated = $request->validate($rules);
+
+        $existingStart = optional($suratTugas->tanggal_kegiatan)->format('Y-m-d');
+        $existingEnd = optional($suratTugas->tanggal_kegiatan_berakhir)->format('Y-m-d');
+
+        $startCandidate = array_key_exists('tanggal_kegiatan', $validated) && filled($validated['tanggal_kegiatan'])
+            ? $validated['tanggal_kegiatan']
+            : $existingStart;
+
+        $endCandidate = array_key_exists('tanggal_kegiatan_berakhir', $validated)
+            ? $validated['tanggal_kegiatan_berakhir']
+            : $existingEnd;
+
+        if ($startCandidate && $endCandidate) {
+            $startDate = Carbon::parse($startCandidate);
+            $endDate = Carbon::parse($endCandidate);
+
+            if ($endDate->lt($startDate)) {
+                return back()->with('error', 'Tanggal kegiatan berakhir harus sama atau setelah tanggal dimulai.');
+            }
+        }
 
         $picIds = null;
         if (array_key_exists('pic_ids', $validated)) {
@@ -585,8 +617,18 @@ class SuratTugasSubmissionController extends Controller
             $updates['kegiatan'] = trim((string) $validated['kegiatan']);
         }
 
+        if (array_key_exists('jenis_kegiatan', $validated) && filled($validated['jenis_kegiatan'])) {
+            $updates['jenis_kegiatan'] = strtolower($validated['jenis_kegiatan']);
+        }
+
         if (array_key_exists('tanggal_kegiatan', $validated) && filled($validated['tanggal_kegiatan'])) {
             $updates['tanggal_kegiatan'] = $validated['tanggal_kegiatan'];
+        }
+
+        if (array_key_exists('tanggal_kegiatan_berakhir', $validated)) {
+            $updates['tanggal_kegiatan_berakhir'] = filled($validated['tanggal_kegiatan_berakhir'])
+                ? $validated['tanggal_kegiatan_berakhir']
+                : null;
         }
 
         if ($primaryPicId !== null) {
